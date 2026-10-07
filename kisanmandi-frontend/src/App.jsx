@@ -1,0 +1,34 @@
+import { Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Home from './pages/public/Home';
+import Login from './pages/public/Login';
+import Register from './pages/public/Register';
+import MandiDashboard from './pages/public/MandiDashboard';
+import BrowseProducts from './pages/public/BrowseProducts';
+import ProductDetail from './pages/public/ProductDetail';
+import NotFound from './pages/public/NotFound';
+import Unauthorized from './pages/public/Unauthorized';
+
+function App() {
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Navbar />
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/mandi" element={<MandiDashboard />} />
+          <Route path="/products" element={<BrowseProducts />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export default App;
