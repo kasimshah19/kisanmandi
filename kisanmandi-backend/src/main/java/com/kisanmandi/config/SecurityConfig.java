@@ -61,8 +61,8 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/v3/api-docs/**"
                 ).permitAll()
-                // Public product and mandi browsing
-                .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/mandi/**").permitAll()
+                // Public product, category and mandi browsing
+                .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/mandi/**").permitAll()
                 // Role-based access (farmer, customer, admin sections)
                 .requestMatchers("/api/farmer/**").hasRole("FARMER")
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
