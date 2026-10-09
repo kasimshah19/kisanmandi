@@ -14,6 +14,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class CategorySeeder implements CommandLineRunner {
 
     private final CategoryRepository categoryRepository;

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@SuppressWarnings("unchecked")
 public class CloudinaryService {
 
     @Autowired
