@@ -18,9 +18,12 @@ public class PublicProductController {
     public ResponseEntity<PageResponse<ProductResponse>> searchProducts(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) String district,
+            @RequestParam(required = false) String pincode,
+            @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(productService.searchPublicProducts(categoryId, q, page, size));
+        return ResponseEntity.ok(productService.searchPublicProducts(categoryId, q, district, pincode, sort, page, size));
     }
 
     @GetMapping("/{id}")

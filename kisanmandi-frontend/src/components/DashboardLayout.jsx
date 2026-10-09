@@ -2,20 +2,32 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, UserCircle, Package, PlusCircle, 
-  Settings, Users, Tags, Menu, X, Tractor 
+  Users, Tags, Menu, X, Tractor, ClipboardList 
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { farmerOrderService } from '../services/farmerOrderService';
 
 const DashboardLayout = ({ children, role }) => {
   const { user } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [placedCount, setPlacedCount] = useState(0);
+
+  // Fetch PLACED count for farmer sidebar badge
+  useEffect(() => {
+    if (role === 'FARMER') {
+      farmerOrderService.summary()
+        .then(res => setPlacedCount(res.data.placed || 0))
+        .catch(() => {});
+    }
+  }, [role, location.pathname]); // refresh on route change
 
   const farmerLinks = [
     { name: 'Dashboard', path: '/farmer/dashboard', icon: LayoutDashboard },
     { name: 'My Profile', path: '/farmer/profile', icon: UserCircle },
     { name: 'My Products', path: '/farmer/products', icon: Package },
     { name: 'Add Product', path: '/farmer/products/add', icon: PlusCircle },
+    { name: 'Orders', path: '/farmer/orders', icon: ClipboardList, badge: placedCount },
     { name: 'Mandi Rates', path: '/mandi', icon: Tractor },
   ];
 
@@ -66,7 +78,13 @@ const DashboardLayout = ({ children, role }) => {
                 `}
               >
                 <Icon size={20} />
-                <span>{link.name}</span>
+                <span className="flex-1">{link.name}</span>
+                {/* Badge for order count */}
+                {link.badge > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

@@ -26,6 +26,13 @@ public class User {
 
     private String phone;
 
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private FarmerProfile profile;
+
+    public String getFullName() {
+        return this.name;
+    }
+
     // Store role as a string in DB (e.g., "FARMER", "CUSTOMER", "ADMIN")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

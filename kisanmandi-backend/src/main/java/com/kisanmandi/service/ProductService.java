@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -135,10 +136,21 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ProductResponse> searchPublicProducts(Long categoryId, String q, int page, int size) {
+    public PageResponse<ProductResponse> searchPublicProducts(Long categoryId, String q, String district, String pincode, String sort, int page, int size) {
         if (size > 50) size = 50;
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Product> productPage = productRepository.searchPublicProducts(categoryId, q, pageable);
+
+        Sort.Direction direction = Sort.Direction.DESC;
+        String sortBy = "createdAt";
+        if ("priceAsc".equalsIgnoreCase(sort)) {
+            direction = Sort.Direction.ASC;
+            sortBy = "pricePerUnit";
+        } else if ("priceDesc".equalsIgnoreCase(sort)) {
+            direction = Sort.Direction.DESC;
+            sortBy = "pricePerUnit";
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<Product> productPage = productRepository.searchPublicProducts(categoryId, q, district, pincode, pageable);
         
         List<ProductResponse> content = productPage.getContent().stream()
                 .map(this::mapToResponse)

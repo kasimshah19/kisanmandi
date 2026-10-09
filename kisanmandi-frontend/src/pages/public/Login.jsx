@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { useAuth, getDashboardPath } from '../../context/AuthContext';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -12,9 +12,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // If already logged in, redirect to their dashboard
+  const location = useLocation();
+
+  // If already logged in, redirect to their previous page or dashboard
   if (isAuthenticated && user) {
-    return <Navigate to={getDashboardPath(user.role)} replace />;
+    const from = location.state?.from || getDashboardPath(user.role);
+    return <Navigate to={from} replace />;
   }
 
   const handleChange = (e) => {
@@ -28,7 +31,8 @@ export default function Login() {
     try {
       const data = await login(form);
       toast.success(`Welcome back, ${data.name}!`);
-      navigate(getDashboardPath(data.role));
+      const from = location.state?.from || getDashboardPath(data.role);
+      navigate(from, { replace: true });
     } catch (error) {
       // Show the backend error message (e.g., "Invalid email or password")
       const msg = error.response?.data?.message || 'Login failed. Please try again.';

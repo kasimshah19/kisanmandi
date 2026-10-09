@@ -19,6 +19,13 @@ import CustomerDashboard from './pages/customer/CustomerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import FarmerApproval from './pages/admin/FarmerApproval';
 import ManageCategories from './pages/admin/ManageCategories';
+import Cart from './pages/customer/Cart';
+import Checkout from './pages/customer/Checkout';
+import MyOrders from './pages/customer/MyOrders';
+import OrderTracking from './pages/customer/OrderTracking';
+import Addresses from './pages/customer/Addresses';
+import FarmerOrders from './pages/farmer/FarmerOrders';
+import FarmerOrderDetail from './pages/farmer/FarmerOrderDetail';
 
 function App() {
   return (
@@ -66,9 +73,51 @@ function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/farmer/orders" element={
+            <ProtectedRoute allowedRoles={['FARMER']}>
+              <FarmerOrders />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/farmer/orders/:id" element={
+            <ProtectedRoute allowedRoles={['FARMER']}>
+              <FarmerOrderDetail />
+            </ProtectedRoute>
+          } />
+
           <Route path="/customer/dashboard" element={
             <ProtectedRoute allowedRoles={['CUSTOMER']}>
               <CustomerDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/customer/cart" element={
+            <ProtectedRoute allowedRoles={['CUSTOMER']}>
+              <Cart />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/customer/checkout" element={
+            <ProtectedRoute allowedRoles={['CUSTOMER']}>
+              <Checkout />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/customer/orders" element={
+            <ProtectedRoute allowedRoles={['CUSTOMER']}>
+              <MyOrders />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/customer/orders/:id" element={
+            <ProtectedRoute allowedRoles={['CUSTOMER']}>
+              <OrderTracking />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/customer/addresses" element={
+            <ProtectedRoute allowedRoles={['CUSTOMER']}>
+              <Addresses />
             </ProtectedRoute>
           } />
           
