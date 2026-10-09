@@ -43,9 +43,7 @@ public class CartService {
             boolean available = true;
             String reason = null;
 
-            if (p.isDeleted() || !p.isActive() || !p.getCategory().isActive() || 
-                p.getFarmer().getProfile() == null || 
-                !"APPROVED".equals(p.getFarmer().getProfile().getApprovalStatus().name())) {
+            if (!p.isPubliclyVisible()) {
                 available = false;
                 reason = "Product is no longer available";
             } else if (p.getQuantityAvailable().compareTo(item.getQuantity()) < 0) {

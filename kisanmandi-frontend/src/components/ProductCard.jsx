@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
-import { ImageOff } from 'lucide-react';
+import { ImageOff, Star } from 'lucide-react';
 import { formatINR, unitLabel } from '../utils/format';
+import StarRating from './StarRating';
+import DistanceBadge from './DistanceBadge';
 
 // Product card used in BrowseProducts grid
 export default function ProductCard({ product }) {
@@ -46,6 +48,17 @@ export default function ProductCard({ product }) {
               {product.farmName}{product.village ? `, ${product.village}` : ''}
             </p>
           )}
+          <div className="flex items-center gap-2 mt-2">
+            {product.farmerRatingCount > 0 ? (
+              <div className="flex items-center gap-1">
+                <StarRating value={product.farmerRatingAvg} size={12} />
+                <span className="text-xs text-gray-500">({product.farmerRatingCount})</span>
+              </div>
+            ) : (
+              <span className="text-xs text-gray-400 bg-gray-100 px-1 rounded">New</span>
+            )}
+            <DistanceBadge distanceKm={product.distanceKm} />
+          </div>
         </div>
       </div>
     </Link>

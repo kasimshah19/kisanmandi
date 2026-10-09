@@ -18,30 +18,32 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c WHERE p.farmer.id = :farmerId AND p.deleted = false ORDER BY p.createdAt DESC")
     List<Product> findByFarmerIdAndDeletedFalse(@Param("farmerId") Long farmerId);
 
+    String PUBLIC_CONDITION = "p.active = true AND p.deleted = false AND p.adminHidden = false " +
+            "AND p.category.active = true AND fp.approvalStatus = 'APPROVED' AND p.farmer.status = 'ACTIVE'";
+
     @Query(value = "SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c " +
             "JOIN FarmerProfile fp ON fp.user.id = f.id " +
-            "WHERE p.active = true AND p.deleted = false " +
-            "AND c.active = true AND fp.approvalStatus = 'APPROVED' " +
+            "WHERE " + PUBLIC_CONDITION + " " +
             "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+            "AND (:farmerId IS NULL OR f.id = :farmerId) " +
             "AND (:q IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%'))) " +
             "AND (:district IS NULL OR LOWER(fp.district) = LOWER(:district)) " +
             "AND (:pincode IS NULL OR fp.pincode = :pincode)",
            countQuery = "SELECT COUNT(p) FROM Product p " +
             "JOIN FarmerProfile fp ON fp.user.id = p.farmer.id " +
-            "WHERE p.active = true AND p.deleted = false " +
-            "AND p.category.active = true AND fp.approvalStatus = 'APPROVED' " +
+            "WHERE " + PUBLIC_CONDITION + " " +
             "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
+            "AND (:farmerId IS NULL OR p.farmer.id = :farmerId) " +
             "AND (:q IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%'))) " +
             "AND (:district IS NULL OR LOWER(fp.district) = LOWER(:district)) " +
             "AND (:pincode IS NULL OR fp.pincode = :pincode)")
-    Page<Product> searchPublicProducts(@Param("categoryId") Long categoryId, @Param("q") String q, 
+    Page<Product> searchPublicProducts(@Param("categoryId") Long categoryId, @Param("farmerId") Long farmerId, @Param("q") String q, 
                                        @Param("district") String district, @Param("pincode") String pincode, 
                                        Pageable pageable);
 
     @Query("SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c " +
             "JOIN FarmerProfile fp ON fp.user.id = f.id " +
-            "WHERE p.id = :id AND p.active = true AND p.deleted = false " +
-            "AND c.active = true AND fp.approvalStatus = 'APPROVED'")
+            "WHERE p.id = :id AND " + PUBLIC_CONDITION)
     Optional<Product> findPublicById(@Param("id") Long id);
 
     @Modifying

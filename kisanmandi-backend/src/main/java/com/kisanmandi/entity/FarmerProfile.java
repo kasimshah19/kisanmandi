@@ -57,4 +57,11 @@ public class FarmerProfile {
     private LocalDateTime submittedAt;
 
     private LocalDateTime reviewedAt;
+    @Builder.Default
+    @Column(precision = 3, scale = 2, nullable = false, columnDefinition = "decimal(3,2) default 0.00")
+    private java.math.BigDecimal ratingAvg = java.math.BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private int ratingCount = 0;
 }

@@ -17,4 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Check if any user with ADMIN role exists (used by DataSeeder)
     boolean existsByRole(Role role);
+
+    long countByRole(Role role);
 }

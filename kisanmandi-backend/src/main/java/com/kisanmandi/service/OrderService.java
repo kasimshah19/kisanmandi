@@ -5,6 +5,7 @@ import com.kisanmandi.entity.*;
 import com.kisanmandi.exception.CartEmptyException;
 import com.kisanmandi.exception.InsufficientStockException;
 import com.kisanmandi.exception.InvalidStatusTransitionException;
+import com.kisanmandi.exception.ProductUnavailableException;
 import com.kisanmandi.exception.ResourceNotFoundException;
 import com.kisanmandi.repository.AddressRepository;
 import com.kisanmandi.repository.CartItemRepository;
@@ -36,6 +37,7 @@ public class OrderService {
     private final AddressRepository addressRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final com.kisanmandi.repository.ReviewRepository reviewRepository;
 
     @Transactional
     public List<OrderSummaryResponse> checkout(Long customerId, CheckoutRequest request) {
@@ -82,6 +84,10 @@ public class OrderService {
             for (CartItem cItem : farmerItems) {
                 Product p = cItem.getProduct();
                 
+                if (!p.isPubliclyVisible()) {
+                    throw new ProductUnavailableException(p.getName() + " is no longer available.");
+                }
+
                 // Atomic stock check and decrease
                 int updatedRows = productRepository.decreaseStock(p.getId(), cItem.getQuantity());
                 if (updatedRows == 0) {
@@ -255,6 +261,31 @@ public class OrderService {
             builder.farmerName(order.getFarmer().getName());
             builder.farmName(order.getFarmer().getProfile() != null ? order.getFarmer().getProfile().getFarmName() : "");
             builder.farmerPhone(order.getFarmer().getPhone());
+
+            if (order.getStatus() == OrderStatus.DELIVERED) {
+                java.util.Optional<Review> reviewOpt = reviewRepository.findByOrderId(order.getId());
+                if (reviewOpt.isEmpty()) {
+                    builder.canReview(true);
+                } else {
+                    builder.canReview(false);
+                    Review review = reviewOpt.get();
+                    
+                    String[] parts = review.getCustomer().getFullName().trim().split("\\s+");
+                    String reviewerName = parts.length == 1 ? parts[0] : parts[0] + " " + parts[parts.length - 1].substring(0, 1).toUpperCase() + ".";
+                    
+                    ReviewResponse rr = ReviewResponse.builder()
+                            .id(review.getId())
+                            .rating(review.getRating())
+                            .comment(review.getComment())
+                            .reviewerName(reviewerName)
+                            .createdAt(review.getCreatedAt())
+                            .orderNumber(order.getId().toString())
+                            .build();
+                    builder.myReview(rr);
+                }
+            } else {
+                builder.canReview(false);
+            }
         } else {
             builder.customerName(order.getCustomer().getName());
             builder.customerPhone(order.getCustomer().getPhone());

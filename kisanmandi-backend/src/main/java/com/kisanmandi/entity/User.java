@@ -48,6 +48,9 @@ public class User {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(length = 300)
+    private String blockedReason;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

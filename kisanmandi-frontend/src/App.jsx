@@ -7,18 +7,27 @@ import Register from './pages/public/Register';
 import MandiDashboard from './pages/public/MandiDashboard';
 import BrowseProducts from './pages/public/BrowseProducts';
 import ProductDetail from './pages/public/ProductDetail';
+import FarmerPublicProfile from './pages/public/FarmerPublicProfile';
 import NotFound from './pages/public/NotFound';
 import Unauthorized from './pages/public/Unauthorized';
 import ProtectedRoute from './routes/ProtectedRoute';
 import FarmerDashboard from './pages/farmer/FarmerDashboard';
+import MandiRates from './pages/farmer/MandiRates';
 import FarmerProfile from './pages/farmer/FarmerProfile';
 import MyProducts from './pages/farmer/MyProducts';
 import AddProduct from './pages/farmer/AddProduct';
 import EditProduct from './pages/farmer/EditProduct';
+import Earnings from './pages/farmer/Earnings';
+import Reviews from './pages/farmer/Reviews';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import MandiSyncLogs from './pages/admin/MandiSyncLogs';
 import FarmerApproval from './pages/admin/FarmerApproval';
 import ManageCategories from './pages/admin/ManageCategories';
+import ManageUsers from './pages/admin/ManageUsers';
+import ManageProducts from './pages/admin/ManageProducts';
+import AllOrders from './pages/admin/AllOrders';
+import ManageReviews from './pages/admin/ManageReviews';
 import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
 import MyOrders from './pages/customer/MyOrders';
@@ -40,6 +49,7 @@ function App() {
           <Route path="/mandi" element={<MandiDashboard />} />
           <Route path="/products" element={<BrowseProducts />} />
           <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/farmers/:id" element={<FarmerPublicProfile />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Protected Routes */}
@@ -52,6 +62,12 @@ function App() {
           <Route path="/farmer/profile" element={
             <ProtectedRoute allowedRoles={['FARMER']}>
               <FarmerProfile />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/farmer/mandi" element={
+            <ProtectedRoute allowedRoles={['FARMER']}>
+              <MandiRates />
             </ProtectedRoute>
           } />
 
@@ -82,6 +98,18 @@ function App() {
           <Route path="/farmer/orders/:id" element={
             <ProtectedRoute allowedRoles={['FARMER']}>
               <FarmerOrderDetail />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/farmer/earnings" element={
+            <ProtectedRoute allowedRoles={['FARMER']}>
+              <Earnings />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/farmer/reviews" element={
+            <ProtectedRoute allowedRoles={['FARMER']}>
+              <Reviews />
             </ProtectedRoute>
           } />
 
@@ -136,6 +164,36 @@ function App() {
           <Route path="/admin/categories" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <ManageCategories />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/mandi-sync" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <MandiSyncLogs />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <ManageUsers />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/products" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <ManageProducts />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/orders" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AllOrders />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/reviews" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <ManageReviews />
             </ProtectedRoute>
           } />
 

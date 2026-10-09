@@ -64,4 +64,18 @@ public class Product {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean adminHidden = false;
+
+    @Column(length = 300)
+    private String adminHiddenReason;
+
+    public boolean isPubliclyVisible() {
+        return active && !deleted && !adminHidden 
+            && category != null && category.isActive() 
+            && farmer != null && farmer.getStatus() == UserStatus.ACTIVE 
+            && farmer.getProfile() != null && farmer.getProfile().getApprovalStatus() == ApprovalStatus.APPROVED;
+    }
 }

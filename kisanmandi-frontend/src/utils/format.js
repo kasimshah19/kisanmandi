@@ -5,10 +5,30 @@ export function formatINR(amount) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(num);
 }
 
+// Format number to Indian grouping, no decimals if whole, max 2 decimals
+export function formatPrice(n) {
+  const num = Number(n);
+  if (isNaN(num)) return '0';
+  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(num);
+}
+
+// Convert quintal price to per Kg price
+export function perKg(quintalPrice) {
+  const num = Number(quintalPrice);
+  if (isNaN(num)) return '0.00';
+  return (num / 100).toFixed(2);
+}
+
 // Format ISO date string to readable date (e.g., "08 Oct 2026")
 export function formatDate(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Format ISO date string to short date (e.g., "12 Oct")
+export function formatShortDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 }
 
 // Format ISO date string to date + time (e.g., "08 Oct 2026, 2:30 PM")

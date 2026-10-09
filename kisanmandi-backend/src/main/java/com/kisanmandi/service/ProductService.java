@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -137,21 +138,23 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ProductResponse> searchPublicProducts(Long categoryId, String q, String district, String pincode, String sort, int page, int size) {
+    public PageResponse<ProductResponse> searchPublicProducts(Long categoryId, Long farmerId, String q, String district, String pincode, String sort, int page, int size) {
         if (size > 50) size = 50;
 
-        Sort.Direction direction = Sort.Direction.DESC;
-        String sortBy = "createdAt";
+        Sort finalSort;
         if ("priceAsc".equalsIgnoreCase(sort)) {
-            direction = Sort.Direction.ASC;
-            sortBy = "pricePerUnit";
+            finalSort = Sort.by(Sort.Direction.ASC, "pricePerUnit");
         } else if ("priceDesc".equalsIgnoreCase(sort)) {
-            direction = Sort.Direction.DESC;
-            sortBy = "pricePerUnit";
+            finalSort = Sort.by(Sort.Direction.DESC, "pricePerUnit");
+        } else if ("rating".equalsIgnoreCase(sort)) {
+            finalSort = Sort.by(Sort.Direction.DESC, "farmer.profile.ratingAvg")
+                            .and(Sort.by(Sort.Direction.DESC, "farmer.profile.ratingCount"));
+        } else {
+            finalSort = Sort.by(Sort.Direction.DESC, "createdAt");
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        Page<Product> productPage = productRepository.searchPublicProducts(categoryId, q, district, pincode, pageable);
+        Pageable pageable = PageRequest.of(page, size, finalSort);
+        Page<Product> productPage = productRepository.searchPublicProducts(categoryId, farmerId, q, district, pincode, pageable);
         
         List<ProductResponse> content = productPage.getContent().stream()
                 .map(this::mapToResponse)
@@ -213,6 +216,10 @@ public class ProductService {
                 .farmName(profileOpt.map(p -> p.getFarmName()).orElse(null))
                 .village(profileOpt.map(p -> p.getVillage()).orElse(null))
                 .district(profileOpt.map(p -> p.getDistrict()).orElse(null))
+                .farmerRatingAvg(profileOpt.map(p -> p.getRatingAvg()).orElse(BigDecimal.ZERO))
+                .farmerRatingCount(profileOpt.map(p -> p.getRatingCount()).orElse(0))
+                .adminHidden(product.isAdminHidden())
+                .adminHiddenReason(product.getAdminHiddenReason())
                 .build();
     }
 }

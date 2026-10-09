@@ -8,6 +8,7 @@ import Pagination from '../../components/Pagination';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/Skeleton';
 import useDebounce from '../../hooks/useDebounce';
+import NearMeBar from '../../components/NearMeBar';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 12;
@@ -29,6 +30,9 @@ export default function BrowseProducts() {
   const district = searchParams.get('district') || '';
   const pincode = searchParams.get('pincode') || '';
   const sort = searchParams.get('sort') || '';
+  const latitude = searchParams.get('latitude') || '';
+  const longitude = searchParams.get('longitude') || '';
+  const radius = searchParams.get('radius') || '10';
   const page = parseInt(searchParams.get('page') || '0', 10);
 
   // Local search input (debounced)
@@ -52,7 +56,7 @@ export default function BrowseProducts() {
   // Fetch products when filters change
   useEffect(() => {
     loadProducts();
-  }, [categoryId, q, district, pincode, sort, page]);
+  }, [categoryId, q, district, pincode, sort, latitude, longitude, radius, page]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -63,6 +67,9 @@ export default function BrowseProducts() {
         district: district || undefined,
         pincode: pincode || undefined,
         sort: sort || undefined,
+        latitude: latitude || undefined,
+        longitude: longitude || undefined,
+        radius: latitude ? radius : undefined,
         page,
         size: PAGE_SIZE,
       });
@@ -89,11 +96,39 @@ export default function BrowseProducts() {
     setSearchParams({});
   };
 
-  const hasFilters = categoryId || q || district || pincode || sort;
+  const handleLocationChange = (pos) => {
+    const params = new URLSearchParams(searchParams);
+    if (pos) {
+      params.set('latitude', pos.lat);
+      params.set('longitude', pos.lng);
+      params.set('radius', radius);
+      if (!params.get('sort')) params.set('sort', 'distanceAsc');
+    } else {
+      params.delete('latitude');
+      params.delete('longitude');
+      params.delete('radius');
+      if (params.get('sort') === 'distanceAsc') params.delete('sort');
+    }
+    params.set('page', '0');
+    setSearchParams(params);
+  };
+
+  const handleRadiusChange = (newRadius) => {
+    updateParam('radius', String(newRadius));
+  };
+
+  const hasFilters = categoryId || q || district || pincode || sort || latitude;
 
   return (
     <div className="max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Browse Products</h1>
+
+      <NearMeBar 
+        isActive={!!latitude && !!longitude}
+        currentRadius={Number(radius)}
+        onLocationChange={handleLocationChange}
+        onRadiusChange={handleRadiusChange}
+      />
 
       {/* Search bar */}
       <div className="flex gap-2 mb-4">
@@ -149,6 +184,7 @@ export default function BrowseProducts() {
                 <option value="">Newest first</option>
                 <option value="priceAsc">Price: Low to High</option>
                 <option value="priceDesc">Price: High to Low</option>
+                {latitude && longitude && <option value="distanceAsc">Distance: Nearest first</option>}
               </select>
             </div>
           </div>

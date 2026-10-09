@@ -30,4 +30,12 @@ public class ProductResponse {
     private String farmName;
     private String village;
     private String district;
+
+    // Farmer Rating
+    private BigDecimal farmerRatingAvg;
+    private int farmerRatingCount;
+
+    // Admin
+    private boolean adminHidden;
+    private String adminHiddenReason;
 }

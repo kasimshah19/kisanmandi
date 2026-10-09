@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import QuantityInput from '../../components/QuantityInput';
 import { SkeletonLine } from '../../components/Skeleton';
+import StarRating from '../../components/StarRating';
 import { formatINR, unitLabel } from '../../utils/format';
 import toast from 'react-hot-toast';
 
@@ -156,7 +157,25 @@ export default function ProductDetail() {
             {product.farmName && <p><span className="text-gray-500">Farm:</span> <span className="font-medium">{product.farmName}</span></p>}
             {product.village && <p><span className="text-gray-500">Village:</span> <span className="font-medium">{product.village}</span></p>}
             {product.district && <p><span className="text-gray-500">District:</span> <span className="font-medium">{product.district}</span></p>}
-            {product.farmerName && <p><span className="text-gray-500">Farmer:</span> <span className="font-medium">{product.farmerName}</span></p>}
+          </div>
+          
+          {/* Farmer Card */}
+          <div className="border border-green-200 bg-green-50 rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-green-700 uppercase font-bold tracking-wider mb-1">Sold By</p>
+              <h3 className="font-semibold text-gray-900">{product.farmerName}</h3>
+              {product.farmerRating > 0 ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <StarRating value={product.farmerRating} size={14} />
+                  <span className="text-xs text-gray-600">({product.reviewCount} reviews)</span>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">No reviews yet</p>
+              )}
+            </div>
+            <Link to={`/farmer/${product.farmerId}`} className="text-sm font-medium text-green-700 hover:text-green-800 bg-white border border-green-200 px-3 py-1.5 rounded transition">
+              View Profile
+            </Link>
           </div>
 
           {/* Cart controls */}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import ImageUpload from './ImageUpload';
 import { categoryService } from '../services/categoryService';
+import { farmerService } from '../services/farmerService';
+import MandiPriceHint from './mandi/MandiPriceHint';
 import toast from 'react-hot-toast';
 
 const ProductForm = ({ initialData, onSubmit, isLoading, submitText = 'Save Product' }) => {
@@ -14,6 +16,7 @@ const ProductForm = ({ initialData, onSubmit, isLoading, submitText = 'Save Prod
     quantityAvailable: ''
   });
   const [image, setImage] = useState(null);
+  const [farmerLocation, setFarmerLocation] = useState({ state: '', district: '' });
 
   useEffect(() => {
     loadCategories();
@@ -37,6 +40,21 @@ const ProductForm = ({ initialData, onSubmit, isLoading, submitText = 'Save Prod
       toast.error('Failed to load categories');
     }
   };
+
+  const loadFarmerProfile = async () => {
+    try {
+      const res = await farmerService.getProfile();
+      if (res.data) {
+        setFarmerLocation({ state: res.data.state || '', district: res.data.district || '' });
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    loadFarmerProfile();
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -65,6 +83,12 @@ const ProductForm = ({ initialData, onSubmit, isLoading, submitText = 'Save Prod
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
             placeholder="e.g., Fresh Organic Tomatoes"
+          />
+          <MandiPriceHint 
+            productName={formData.name} 
+            unit={formData.unit} 
+            state={farmerLocation.state} 
+            district={farmerLocation.district} 
           />
         </div>
 

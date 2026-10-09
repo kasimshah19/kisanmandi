@@ -108,6 +108,7 @@ export default function MyOrders() {
                     <span className="text-gray-500 block text-xs uppercase tracking-wider">Order #</span>
                     <span className="font-semibold text-gray-900">{orderNumber(order.id)}</span>
                   </div>
+                  {order.canReview && <div className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">Rate now</div>}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-500 text-xs hidden sm:inline">Status:</span>

@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { checkHealth } from '../../services/healthService';
+import { mandiService } from '../../services/mandiService';
+import { formatPrice } from '../../utils/format';
 
 export default function Home() {
   const [health, setHealth] = useState({ status: 'LOADING...', database: 'LOADING...' });
+  const [rates, setRates] = useState([]);
 
   useEffect(() => {
     const fetchHealth = async () => {
@@ -14,6 +18,23 @@ export default function Home() {
       }
     };
     fetchHealth();
+    
+    const fetchRates = async () => {
+      const topCommodities = ['Tomato', 'Onion', 'Potato', 'Wheat', 'Soyabean'];
+      const fetchedRates = [];
+      for (const commodity of topCommodities) {
+        try {
+          const res = await mandiService.getSummary({ commodity });
+          if (res.status === 200 && res.data) {
+            fetchedRates.push(res.data);
+          }
+        } catch (e) {
+          // tolerate failure silently
+        }
+      }
+      setRates(fetchedRates);
+    };
+    fetchRates();
   }, []);
 
   return (
@@ -25,6 +46,27 @@ export default function Home() {
           Connecting farmers directly with customers and providing real-time mandi prices.
         </p>
       </section>
+
+      {/* Today's Mandi Rates Strip */}
+      {rates.length > 0 && (
+        <section className="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800">Today's Mandi Rates</h2>
+            <Link to="/mandi" className="text-green-600 font-medium hover:underline text-sm">
+              See all mandi rates &rarr;
+            </Link>
+          </div>
+          <div className="flex overflow-x-auto pb-4 gap-4 hide-scroll-bar">
+            {rates.map(rate => (
+              <div key={rate.commodity} className="min-w-[160px] bg-green-50 border border-green-100 rounded-xl p-4 flex flex-col justify-center items-center text-center">
+                <span className="font-semibold text-gray-800 mb-1">{rate.commodity}</span>
+                <span className="text-green-700 font-bold text-lg">₹{formatPrice(rate.avgModalPrice)}</span>
+                <span className="text-xs text-gray-500 mt-1">/ quintal</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Backend Status Card */}
       <section className="max-w-md mx-auto">

@@ -103,7 +103,14 @@ const MyProducts = () => {
                 
                 <div className="p-4">
                   <h3 className="font-bold text-lg text-gray-900">{product.name}</h3>
-                  <p className="text-sm text-gray-500">{product.categoryName}</p>
+                  <p className="text-sm text-gray-500">
+                    {product.categoryName}
+                    {!product.active && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold rounded bg-yellow-100 text-yellow-800 px-1.5 py-0.5">
+                        <EyeOff size={12} /> Hidden
+                      </span>
+                    )}
+                  </p>
                   
                   <div className="mt-4 flex justify-between items-center">
                     <div>

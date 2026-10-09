@@ -39,4 +39,8 @@ public class OrderResponse {
     private String farmerName;
     private String farmName;
     private String farmerPhone;
+
+    // Review info
+    private boolean canReview;
+    private ReviewResponse myReview;
 }

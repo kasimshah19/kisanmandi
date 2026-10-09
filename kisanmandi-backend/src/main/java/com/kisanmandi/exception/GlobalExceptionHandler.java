@@ -127,6 +127,17 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(MandiApiException.class)
+    public ResponseEntity<Map<String, Object>> handleMandiApiException(MandiApiException ex) {
+        log.error("Mandi API Error: ", ex);
+        return buildResponse(HttpStatus.BAD_GATEWAY, "Mandi service is temporarily unavailable");
+    }
+
+    @ExceptionHandler(SyncAlreadyRunningException.class)
+    public ResponseEntity<Map<String, Object>> handleSyncAlreadyRunningException(SyncAlreadyRunningException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     // ─── Catch-all for unexpected errors → 500 ───
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleAll(Exception ex) {

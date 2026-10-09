@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { getCurrentPosition } from '../utils/geo';
+import { Navigation } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Reusable address form used in Addresses page and Checkout
 export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
@@ -10,8 +13,24 @@ export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
     state: initial?.state || '',
     pincode: initial?.pincode || '',
     defaultAddress: initial?.defaultAddress || false,
+    latitude: initial?.latitude || null,
+    longitude: initial?.longitude || null,
   });
   const [errors, setErrors] = useState({});
+  const [locating, setLocating] = useState(false);
+
+  const handleUseLocation = async () => {
+    setLocating(true);
+    try {
+      const pos = await getCurrentPosition();
+      setForm(prev => ({ ...prev, latitude: pos.lat, longitude: pos.lng }));
+      toast.success('Location saved');
+    } catch (err) {
+      toast.error(err.message || 'Failed to get location');
+    } finally {
+      setLocating(false);
+    }
+  };
 
   const validate = () => {
     const e = {};
@@ -95,6 +114,14 @@ export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
           className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
         <span className="text-sm text-gray-700">Make this my default address</span>
       </label>
+
+      {/* Location */}
+      <div className="py-2 border-t mt-2">
+        <button type="button" onClick={handleUseLocation} disabled={locating} className="flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-700 disabled:opacity-50">
+          <Navigation size={16} /> {locating ? 'Locating...' : 'Use my current location'}
+        </button>
+        {(form.latitude && form.longitude) && <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded ml-2">Location saved</span>}
+      </div>
 
       {/* Buttons */}
       <div className="flex gap-3 pt-2">

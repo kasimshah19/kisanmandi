@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, UserCircle, Package, PlusCircle, 
-  Users, Tags, Menu, X, Tractor, ClipboardList 
+  Users, Tags, Menu, X, Tractor, ClipboardList, Database, DollarSign, Star, MessageSquare 
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { farmerOrderService } from '../services/farmerOrderService';
@@ -28,13 +28,20 @@ const DashboardLayout = ({ children, role }) => {
     { name: 'My Products', path: '/farmer/products', icon: Package },
     { name: 'Add Product', path: '/farmer/products/add', icon: PlusCircle },
     { name: 'Orders', path: '/farmer/orders', icon: ClipboardList, badge: placedCount },
-    { name: 'Mandi Rates', path: '/mandi', icon: Tractor },
+    { name: 'Earnings', path: '/farmer/earnings', icon: DollarSign },
+    { name: 'Reviews', path: '/farmer/reviews', icon: Star },
+    { name: 'Mandi Rates', path: '/farmer/mandi', icon: Tractor },
   ];
 
   const adminLinks = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Farmer Approval', path: '/admin/farmers', icon: Users },
+    { name: 'Users', path: '/admin/users', icon: Users },
+    { name: 'Products', path: '/admin/products', icon: Package },
+    { name: 'Orders', path: '/admin/orders', icon: ClipboardList },
+    { name: 'Reviews', path: '/admin/reviews', icon: MessageSquare },
     { name: 'Categories', path: '/admin/categories', icon: Tags },
+    { name: 'Mandi Sync Logs', path: '/admin/mandi-sync', icon: Database },
   ];
 
   const links = role === 'ADMIN' ? adminLinks : farmerLinks;

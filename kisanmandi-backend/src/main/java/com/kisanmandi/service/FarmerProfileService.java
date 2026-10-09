@@ -112,4 +112,27 @@ public class FarmerProfileService {
                 .reviewedAt(profile.getReviewedAt())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public com.kisanmandi.dto.PublicFarmerResponse getPublicFarmerProfile(Long farmerId) {
+        FarmerProfile profile = farmerProfileRepository.findByUserId(farmerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Farmer not found"));
+        
+        if (profile.getApprovalStatus() != ApprovalStatus.APPROVED || 
+            profile.getUser().getStatus() != com.kisanmandi.entity.UserStatus.ACTIVE) {
+             throw new ResourceNotFoundException("Farmer not found");
+        }
+
+        return com.kisanmandi.dto.PublicFarmerResponse.builder()
+                .id(profile.getUser().getId())
+                .name(profile.getUser().getName())
+                .farmName(profile.getFarmName())
+                .village(profile.getVillage())
+                .district(profile.getDistrict())
+                .state(profile.getState())
+                .ratingAvg(profile.getRatingAvg())
+                .ratingCount(profile.getRatingCount())
+                .joinedAt(profile.getUser().getCreatedAt())
+                .build();
+    }
 }

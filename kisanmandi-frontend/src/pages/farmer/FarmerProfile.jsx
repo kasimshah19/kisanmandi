@@ -152,6 +152,13 @@ const FarmerProfile = () => {
           </div>
 
           <div className="border-t pt-6">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-sm text-blue-800 mb-6 flex items-start gap-3">
+              <MapPin size={20} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Enable "Nearby Farmers" discovery</p>
+                <p>Customers can easily find your farm if you enter your location accurately.</p>
+              </div>
+            </div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium">Farm Location (Optional)</h3>
               <button type="button" onClick={handleGetLocation} className="flex items-center space-x-2 text-sm text-green-600 hover:text-green-700">

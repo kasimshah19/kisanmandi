@@ -4,12 +4,16 @@ import DashboardLayout from '../../components/DashboardLayout';
 import StatusBadge from '../../components/StatusBadge';
 import { farmerService } from '../../services/farmerService';
 import { productService } from '../../services/productService';
-import { PlusCircle, Package } from 'lucide-react';
+import { farmerStatsService } from '../../services/phase5Services';
+import StatCard from '../../components/StatCard';
+import ChartCard from '../../components/ChartCard';
+import { TrendingUp, Star, DollarSign, Package, Eye, PlusCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FarmerDashboard = () => {
   const [profile, setProfile] = useState(null);
   const [products, setProducts] = useState([]);
+  const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,12 +22,14 @@ const FarmerDashboard = () => {
 
   const loadDashboard = async () => {
     try {
-      const [profileRes, productsRes] = await Promise.all([
+      const [profileRes, productsRes, statsRes] = await Promise.all([
         farmerService.getProfile(),
-        productService.getMyProducts().catch(() => ({ data: [] }))
+        productService.getMyProducts().catch(() => ({ data: [] })),
+        farmerStatsService.getStats().catch(() => null)
       ]);
       setProfile(profileRes.data);
       setProducts(productsRes.data);
+      setStats(statsRes);
     } catch (error) {
       toast.error('Failed to load dashboard data');
     } finally {
@@ -39,6 +45,19 @@ const FarmerDashboard = () => {
     <DashboardLayout role="FARMER">
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-800">Welcome to your Dashboard</h1>
+
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard title="Total Earnings" value={stats.totalEarnings} type="currency" icon={DollarSign} />
+            <StatCard title="Pending Payouts" value={stats.pendingPayouts} type="currency" icon={TrendingUp} />
+            <StatCard title="Average Rating" value={stats.averageRating} icon={Star} />
+            <StatCard title="Total Reviews" value={stats.totalReviews} icon={Eye} />
+          </div>
+        )}
+
+        {stats?.salesByMonth?.length > 0 && (
+          <ChartCard title="Sales Trend" data={stats.salesByMonth} type="bar" dataKey="sales" />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">

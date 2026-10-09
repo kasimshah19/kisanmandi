@@ -5,6 +5,8 @@ import { orderService } from '../../services/orderService';
 import OrderTimeline from '../../components/OrderTimeline';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ReviewForm from '../../components/ReviewForm';
+import StarRating from '../../components/StarRating';
 import { SkeletonCard } from '../../components/Skeleton';
 import { formatINR, formatDateTime, orderNumber, unitLabel } from '../../utils/format';
 import { isActiveStatus } from '../../utils/orderStatus';
@@ -16,6 +18,7 @@ export default function OrderTracking() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
     loadOrder();
@@ -57,7 +60,16 @@ export default function OrderTracking() {
         <Link to="/customer/orders" className="flex items-center gap-1 text-gray-600 hover:text-green-700 text-sm font-medium">
           <ArrowLeft size={16} /> Back to Orders
         </Link>
-        {canCancel && (
+        <div className="flex gap-2">
+          {order?.canReview && (
+            <button 
+              onClick={() => setReviewModalOpen(true)}
+              className="text-white hover:bg-green-700 text-sm font-medium px-3 py-1.5 rounded bg-green-600 transition"
+            >
+              Rate this farmer
+            </button>
+          )}
+          {canCancel && (
           <button 
             onClick={() => setCancelModalOpen(true)}
             className="text-red-600 hover:text-red-700 text-sm font-medium px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 transition"
@@ -65,6 +77,7 @@ export default function OrderTracking() {
             Cancel Order
           </button>
         )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
@@ -108,6 +121,13 @@ export default function OrderTracking() {
             </div>
 
             {/* Farmer Info */}
+            {order.myReview && (
+              <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100 mb-4">
+                <h3 className="font-semibold text-yellow-900 mb-2 text-sm uppercase tracking-wide">Your Review</h3>
+                <div className="mb-2"><StarRating value={order.myReview.rating} size={16} /></div>
+                {order.myReview.comment && <p className="text-sm text-yellow-800 whitespace-pre-wrap">{order.myReview.comment}</p>}
+              </div>
+            )}
             <div className="bg-green-50 rounded-lg p-4 border border-green-100">
               <h3 className="font-semibold text-green-900 mb-2 text-sm uppercase tracking-wide">Sold By</h3>
               <p className="font-medium text-green-800">{order.farmerName}</p>
@@ -149,6 +169,17 @@ export default function OrderTracking() {
         </div>
       </div>
 
+      {reviewModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-md">
+            <ReviewForm 
+              orderId={id}
+              onSuccess={() => { setReviewModalOpen(false); loadOrder(); }}
+              onCancel={() => setReviewModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
       <ConfirmDialog
         isOpen={cancelModalOpen}
         title="Cancel Order"

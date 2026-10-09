@@ -16,3 +16,4 @@ CLOUDINARY_API_SECRET=YOUR_API_SECRET
 
 # ─── Mandi API ──────────────────────────────────────────
 MANDI_API_KEY=YOUR_DATA_GOV_IN_KEY
+mandi.demo-seed.enabled=false
