@@ -98,67 +98,193 @@
 
 ## The Problem
 
-Smallholder farmers in India face systemic hurdles bringing their produce to market:
-1. **Middlemen Dependency**: Multiple tiers of village aggregators, commission agents, and wholesalers capture the majority of the consumer rupee, leaving the farmer with thin margins while consumers pay high retail markups.
-2. **Produce Freshness & Spoilage**: Fresh vegetables and fruits spend days navigating transit hubs and wholesale yards, diminishing nutritional value and shelf life.
-3. **Price Asymmetry**: Farmers often harvest and sell without knowing current wholesale market prices. Middlemen exploit this lack of real-time price transparency by offering below-market rates for bumper harvests.
+Agriculture forms the economic and social bedrock of India, sustaining over 40% of the national workforce. Yet, smallholder and marginal farmers—who cultivate less than two hectares of land and represent more than 85% of all agricultural holdings—face severe systemic bottlenecks that depress rural livelihoods while inflating consumer costs:
+
+```
+[ Farm Gate ] ──> [ Village Aggregator ] ──> [ Commission Agent (Arhtiya) ] ──> [ Wholesale Mandi ]
+                                                                                        │
+[ Retail Consumer ] <── [ Neighborhood Vendor ] <── [ Secondary Sub-Wholesaler ] <──────┘
+```
+
+### 1. Multi-Tiered Middlemen Dependency & The Value Capture Paradox
+Between the farm gate and the urban dinner table lies an entrenched chain of intermediaries: village aggregators (*Kaccha Arhtiyas*), wholesale commission agents (*Pucca Arhtiyas*), transport syndicates, secondary sub-wholesalers, and neighborhood vendors.
+- **Extreme Margin Erosion**: At every interchange, fees for loading, unloading, weighing, commission, and transit markups compound. The primary producer often captures only a fraction of the consumer rupee, despite bearing 100% of the financial and climate risk (weather volatility, pest attacks, surging seed and fertilizer costs).
+- **Consumer Markups**: Urban and semi-urban households pay steep retail prices for produce that has doubled or tripled in nominal cost solely due to intermediation margins.
+
+### 2. Cold-Chain Deficits, Transit Latency & Post-Harvest Spoilage
+India experiences substantial annual post-harvest horticultural losses due to fractured logistics and a lack of localized pre-cooling infrastructure:
+- **Prolonged Travel Windows**: Perishable vegetables (tomatoes, spinach, coriander, okra) and fruits spend 48 to 72+ hours moving through hot, congested transit corridors and open-air auction yards.
+- **Physical & Nutritional Depreciation**: Extended transit without climate-controlled storage causes rapid moisture loss, nutrient degradation, microbial decay, and handling damage. Produce reaches the end consumer stale, while tons of harvested crops rot before sale.
+
+### 3. Severe Information Asymmetry & The Distress Sale Trap
+Market intelligence at the farm gate is historically fragmented:
+- **Price Opacity**: Farmers harvest perishable commodities with little to no visibility into real-time modal rates across surrounding district APMC (*Agricultural Produce Market Committee*) mandis.
+- **Distress Selling**: Middlemen exploit this information void. During peak arrivals and bumper harvests, local buyers quote below-market rates under the threat that perishable produce cannot be held overnight. Lacking on-site cold storage or alternative channels, farmers are coerced into accepting fire-sale rates.
+
+### 4. Quality Commoditization & Absence of Direct Feedback
+- **Bulk Pooling**: Farmers who invest in organic compost, reduced chemical pesticides, or careful grading are forced to dump their produce into generic auction heaps. The identity of their harvest is erased, and quality premiums are lost.
+- **Zero Consumer Relationship**: The traditional supply chain completely severs the link between the grower and the consumer, preventing farmers from establishing brand equity, loyal recurring buyers, or direct reputation feedback.
+
+---
+
+### Supply Chain Comparison Matrix
+
+| Dimension | Traditional APMC Multi-Tiered Chain | KisanMandi Direct Model |
+| :--- | :--- | :--- |
+| **Intermediary Layers** | 4 to 6 Tiers (Aggregator, Arhtiya, Wholesaler, Vendor) | **0 Tiers (Direct Farm-to-Consumer)** |
+| **Farmer Price Share** | Heavily diminished by multi-tier commission cuts | **100% of Listed Produce Price** |
+| **Farm-to-Fork Latency** | 48 to 72+ Hours via central yards | **Same-Day / Next-Day Direct Dispatch** |
+| **Produce Freshness** | High transit spoilage & nutritional loss | **Direct Harvest-to-Doorstep Freshness** |
+| **Price Discovery** | Opaque verbal bargaining & local cartel pricing | **Real-Time Government APMC Price Benchmarks** |
+| **Product Identity** | Anonymized bulk pooling at auction yards | **Verified Farm Storefront & Direct Reputation** |
+| **Payment Friction** | Delayed settlement & intermediary credit cycles | **Immediate Cash on Delivery (COD)** |
 
 ---
 
 ## The Solution & Key Features
 
-KisanMandi bridges this divide through a dual-purpose digital platform: an **open farm-to-table marketplace** paired with a **real-time APMC Mandi market intelligence tracker**.
+KisanMandi resolves these systemic supply-chain failures through a unified **dual-engine digital platform**:
+1. **Direct Farm-to-Fork Hyperlocal Marketplace**: A peer-to-peer e-commerce bridge connecting verified local agricultural producers with nearby households and bulk consumers.
+2. **Real-Time APMC Mandi Intelligence Engine**: An automated data pipeline ingesting daily arrivals, minimum, maximum, and modal wholesale rates from 30+ government APMC mandis across India via the official `data.gov.in` (Agmarknet) API.
+
+```mermaid
+flowchart LR
+    subgraph Marketplace["Direct Farm-to-Fork Marketplace"]
+        F[("Verified Farmer")] <-->|Direct Order & COD| C[("Consumer / Household")]
+    end
+    subgraph Intelligence["APMC Market Intelligence Engine"]
+        Gov[("data.gov.in Agmarknet")] -->|Daily Sync / Analytics| Bench[("Mandi Price Tracker & Benchmarks")]
+    end
+    Bench -.->|Price Decision Support| F
+    Bench -.->|Fair-Price Transparency| C
+```
+
+---
 
 ### Features by User Role
 
-#### Customer
-- **Direct Farm Discovery**: Browse fresh produce directly from verified farmers in your region.
-- **Hyperlocal Geo Search**: Search farmers and crops by geographical distance using client GPS and the in-database Haversine spherical distance formula.
-- **Flexible Catalog Filters**: Filter by produce category, price range, stock availability, and rating.
-- **Address Book & Cart**: Manage multiple saved delivery addresses and cart items.
-- **Cash on Delivery (COD) Checkout**: Order directly from farmers with transparent Cash on Delivery payment.
-- **Real-Time Order Tracking**: Visual step-by-step order lifecycle progress (`PLACED` $\rightarrow$ `ACCEPTED` $\rightarrow$ `PACKED` $\rightarrow$ `OUT_FOR_DELIVERY` $\rightarrow$ `DELIVERED`).
-- **Verified Reviews & Ratings**: Submit 1 to 5-star ratings and written feedback once orders are delivered.
-- **Multilingual Accessibility**: Toggle between English, simple spoken Hindi, and Marathi with zero page reloads.
+#### 1. Customer (Consumer / Household Buyer)
+- **Direct Farm Discovery & Origin Transparency**: Browse freshly harvested produce directly from verified growers in your region. View farm background, location details, and authentic farmer profiles before purchasing.
+- **Zero-Cost Hyperlocal Geo-Discovery**: Search for nearby farmers and available crops using client-side GPS coordinates. Distance is computed dynamically via an in-database spherical Haversine formula (`6371 * acos(...)`), eliminating costly third-party map API dependencies while delivering accurate radial search within 5 km to 50 km.
+- **Multidimensional Catalog Filtering**: Search produce with granular multi-facet filters:
+  - Commodity category pills (Vegetables, Fruits, Grains, Pulses, Dairy, Spices)
+  - Price-range sliders (₹/kg or ₹/quintal)
+  - Real-time stock availability toggles
+  - Minimum farmer star rating thresholds
+- **Flexible Cart & Multi-Address Book**:
+  - Save multiple delivery addresses (Home, Office, Alternate) with default selection.
+  - Cart state machine recalculates item totals, validates live stock limits, and handles single-farmer order clarity.
+- **Transparent Cash on Delivery (COD) Checkout**: Built for mainstream Indian household convenience—no upfront card payments or payment gateway drop-offs. Pay upon physical delivery and inspection.
+- **Interactive 5-Stage Visual Order Stepper**: Monitor order progression in real time with a color-coded visual tracking pipeline:
+  $$\text{PLACED} \longrightarrow \text{ACCEPTED} \longrightarrow \text{PACKED} \longrightarrow \text{OUT\_FOR\_DELIVERY} \longrightarrow \text{DELIVERED}$$
+  Customers retain the ability to cancel an order before the farmer accepts and begins packing.
+- **Verified Closed-Loop Reviews & Ratings**: Anti-fraud review mechanism where ratings (1 to 5 stars) and qualitative feedback can **only** be submitted after an order has reached `DELIVERED` status, safeguarding farmer reputations against Sybil attacks and unverified reviews.
+- **Frictionless Trilingual Localization**: Instant client-side language switching between English, conversational spoken Hindi (*आम बोलचाल की हिंदी*), and Marathi (*मराठी*). Powered by `i18next` and native Devanagari typography, retaining natural agrarian loanwords (*mandi*, *quintal*, *aadath*, *kisan*, *order*).
 
-#### Farmer
-- **Digital Farm Onboarding**: Submit farm details (village, district, pin code, GPS coordinates) and upload identity/land records for admin verification.
-- **Crop Catalog Management**: List crops with flexible unit pricing (₹/kg or ₹/quintal), track stock in real time, and upload photos stored securely on Cloudinary.
-- **Incoming Order Queue**: Inspect incoming buyer orders, review delivery addresses, and manage dispatch status (`ACCEPT`, `PACK`, `DISPATCH`, `DELIVER`, or `REJECT`).
-- **Sales Analytics & Earnings**: Live dashboard monitoring gross revenue, pending orders, completed deliveries, and customer review summaries.
-- **APMC Mandi Price Benchmarking**: Compare your farm prices against real-time government wholesale mandi rates before setting prices.
-- **Public Farm Profile**: Share a dedicated farm storefront displaying approved crops and buyer feedback.
+---
 
-#### Platform Admin
-- **Farmer Verification**: Inspect submitted land/identity documents via time-limited secure Cloudinary links and approve or reject onboarding applications.
-- **Catalog & Category Governance**: Create and toggle active status for crop categories.
-- **User Moderation**: Temporarily block or unblock users violating community guidelines.
-- **Content Moderation**: Hide flagged products or inappropriate customer reviews with mandatory audit reasons.
-- **Platform Analytics**: Monitor overall user count, active farmers, order volumes, and GMV.
-- **Mandi Sync Operations**: Inspect automated daily synchronization logs and trigger manual APMC sync runs on demand.
+#### 2. Farmer (Agricultural Producer & FPO)
+- **Digital Farm Onboarding & KYC Identity Verification**:
+  - Register with complete farm metadata: Farm Name, Bio, Village, Taluka/Tehsil, District, State, PIN Code, and GPS Latitude/Longitude coordinates.
+  - Upload land ownership documents (7/12 extract, Patta) or government identity cards (Aadhaar, Kisan Credit Card) securely to Cloudinary for platform admin verification.
+- **Flexible Crop Catalog & Unit Economics**:
+  - List seasonal produce with high-resolution photos, harvest dates, and descriptions.
+  - Dual-unit pricing architecture: Set retail prices in **₹/kg** (for vegetables and fruits) or wholesale prices in **₹/quintal** (for grains and pulses) with automated mathematical conversions (1 Quintal = 100 kg).
+- **Real-Time Atomic Inventory Management**:
+  - Real-time stock counters that decrement automatically upon confirmed buyer checkout reservations.
+  - Synchronized database updates prevent overselling during simultaneous checkout attempts, with automated inventory restock if an order is cancelled or rejected.
+- **Operational Dispatch Queue & Order Management**:
+  - Live incoming order queue displaying customer name, contact details, item breakdown, and delivery address.
+  - Actionable status transitions: **Accept**, **Pack**, **Dispatch**, **Deliver**, or **Reject** (with required rejection explanation).
+- **Real-Time APMC Mandi Price Benchmarking**:
+  - Integrated market intelligence widget directly inside the crop creation form and dashboard.
+  - Farmers can view current modal and wholesale price trends from their local district APMC mandi before listing produce, ensuring they price competitively without leaving money on the table.
+- **Live Revenue Analytics & Financial Telemetry**:
+  - Visual metrics dashboard tracking Gross Merchandise Value (GMV), completed deliveries, pending dispatch queue, and customer review aggregates.
+- **Dedicated Public Farm Storefront**:
+  - Shareable digital farm profile URL showcasing the farmer's verification badge, biography, farm location, active crop inventory, and verified buyer reviews.
+
+---
+
+#### 3. Platform Administrator (Operations & Compliance)
+- **Strict Farmer Verification & KYC Compliance**:
+  - Review submitted farmer onboarding applications with one-click access to uploaded land and identity documents.
+  - Documents are viewed via secure, time-limited signed Cloudinary URLs, preventing public indexation of sensitive personal identification records.
+  - Approve or reject applications with mandatory administrative audit notes.
+- **Catalog Taxonomy & Category Governance**:
+  - Centrally manage marketplace commodity categories (Vegetables, Fruits, Grains, Pulses, Dairy, Spices, Organic).
+  - Create, update, or toggle category visibility platform-wide.
+- **Trust, Safety & User Account Moderation**:
+  - Inspect user accounts across all roles (`CUSTOMER`, `FARMER`, `ADMIN`).
+  - Temporarily block or reactivate accounts violating community guidelines, fair trade practices, or delivery commitments.
+- **Content Moderation & Dispute Audit Trails**:
+  - Audit and moderate flagged produce listings or spam customer reviews.
+  - Mandatory audit reason logging ensures complete operational accountability.
+- **Platform-Wide KPI & GMV Telemetry**:
+  - Executive dashboard monitoring aggregate user counts, verified farmer counts, total order throughput, Gross Merchandise Value (GMV), and daily platform growth.
+- **Automated Mandi Sync Operations**:
+  - Monitor daily automated Agmarknet data ingestion runs, inspection logs, error states, and records upserted.
+  - Trigger immediate on-demand manual sync runs via the admin interface with real-time sync progress feedback.
 
 ---
 
 ### Features by Technical Module
 
-- **Stateless Auth & RBAC**: JWT bearer tokens, BCrypt password hashing, role segregation (`CUSTOMER`, `FARMER`, `ADMIN`), and token expiration handling.
-- **Security & Throttling**: Sliding-window IP rate limiting (`RateLimitFilter`) protecting authentication and public endpoints from abuse.
-- **Cloud Media Pipeline**: Direct file streaming to Cloudinary with secure public ID management and non-public verification document links.
-- **Order State Machine & Atomic Inventory**: Strict status transitions (`PLACED` $\rightarrow$ `ACCEPTED` $\rightarrow$ `PACKED` $\rightarrow$ `OUT_FOR_DELIVERY` $\rightarrow$ `DELIVERED`). Stock is atomically reserved at checkout and refunded if cancelled or rejected.
-- **Immutable Financial Snapshots**: Past orders freeze the shipping address and line item details (name, unit price, image) so subsequent farmer or address updates never mutate historical receipts.
-- **APMC Mandi Price Engine**: Automated data pipeline ingesting daily arrivals from data.gov.in (Agmarknet) with bulk upserts, composite unique deduplication, and trend analytics.
-- **Sleep-Resilient Webhook Cron**: External GitHub Actions workflow that awakens sleep-mode backend containers on free cloud tiers to run daily scheduled syncs.
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 KISANMANDI CORE MODULES                                │
+├──────────────────────────┬─────────────────────────────┬───────────────────────────────┤
+│    SECURITY & ACCESS     │      COMMERCE ENGINE        │      DATA INTELLIGENCE        │
+├──────────────────────────┼─────────────────────────────┼───────────────────────────────┤
+│ • Stateless JWT Bearer   │ • 5-Stage Order State Mach. │ • Spring WebClient Reactive   │
+│ • Role-Based RBAC        │ • Atomic Inventory Reserve  │ • Bulk Upsert & Deduplication │
+│ • Sliding-Window Limiter │ • Immutable Past Snapshots  │ • Sleep-Resilient Hybrid Cron │
+│ • BCrypt Password Hash   │ • COD Payment Verification  │ • In-DB Haversine Calculation │
+└──────────────────────────┴─────────────────────────────┴───────────────────────────────┘
+```
+
+#### 1. Stateless Authentication & Granular RBAC
+- Built on **Spring Security 6** with stateless JSON Web Tokens (JWT) signed via HMAC-SHA256 (`jjwt 0.12.6`).
+- Cryptographic password hashing using **BCrypt** with an adaptive work factor of 10.
+- Strict multi-tenant Role-Based Access Control enforcing boundary segregation (`ROLE_CUSTOMER`, `ROLE_FARMER`, `ROLE_ADMIN`) across all API controllers and client routes.
+
+#### 2. Edge Throttling & DDoS Protection
+- Custom `RateLimitFilter` utilizing an in-memory sliding-window token bucket algorithm.
+- Protects authentication endpoints (`/api/auth/**`) and public search APIs against brute-force attacks, credential stuffing, and scraping bots without adding external Redis overhead.
+
+#### 3. Cloud Media & Secure Document Pipeline
+- Multipart file streaming directly to **Cloudinary** via backend service wrappers.
+- Segregated storage folders (`kisanmandi/products` for public produce images vs. `kisanmandi/documents` for private KYC records).
+- Strict MIME-type whitelisting (JPEG, PNG, WebP, PDF), file size boundaries, and time-limited authenticated access for farmer verification documents.
+
+#### 4. Deterministic Order Finite State Machine (FSM)
+- Strict state transition enforcement: An order cannot jump states (e.g., cannot transition directly from `PLACED` to `DELIVERED`).
+- Encapsulated within Spring `@Transactional` boundaries to guarantee atomicity: stock is deducted atomically at checkout and automatically refunded if an order is cancelled or rejected.
+
+#### 5. Immutable Financial & Receipt Snapshots
+- When an order is placed, delivery address attributes and product line items (product name, unit, unit price at purchase time, product image URL) are deep-copied into dedicated columns in `orders` and `order_items`.
+- Subsequent farmer price updates, crop deletions, or customer profile address edits **never mutate historical receipts or financial audits**.
+
+#### 6. Automated APMC Agmarknet Ingestion Pipeline
+- Asynchronous, non-blocking HTTP ingestion using Spring Boot `WebClient` interfacing with the official `data.gov.in` Agmarknet API.
+- Implements a resilient bulk upsert strategy backed by a composite unique database index:
+  $$\text{UNIQUE}(\text{commodity}, \text{state}, \text{district}, \text{market}, \text{arrival\_date})$$
+- Automatically dedupes existing records and updates price revisions across repeated runs without database bloat.
+
+#### 7. Sleep-Resilient Hybrid Scheduled Architecture
+- **Internal Worker**: Spring `@Scheduled` cron job triggers daily at 08:00 IST and 19:00 IST when containers are running.
+- **External Webhook Worker**: A dedicated GitHub Actions workflow (`.github/workflows/mandi-sync.yml`) runs on an external cron schedule, dispatches a wake-up ping, and fires an authenticated HTTP `POST /api/internal/mandi/sync` request with a shared bearer secret. This guarantees sync execution even on free-tier container platforms (such as Render) that enter sleep mode after inactivity.
 
 ---
 
 ## What Makes KisanMandi Unique
 
-1. **Addresses a Real Socio-Economic Need**: Solves genuine supply-chain friction for Indian farmers by bypassing exploitative commission agents.
-2. **Government Open Data Integration**: Live integration with the data.gov.in Agmarknet API providing daily wholesale prices from 30+ APMC mandis.
-3. **Rigorous Role-Based Access Control**: Strict multi-tenant role authorization where customers, farmers, and administrators have completely segregated views, workflows, and APIs.
-4. **Resilient Scheduled Synchronization**: Combines internal Spring `@Scheduled` tasks with an authenticated headless external webhook (`POST /api/internal/mandi/sync`) to overcome free-tier cloud sleep timeouts.
-5. **Hyperlocal Mathematical Discovery**: In-database spherical geometry calculation (Haversine formula) enabling users to find the nearest farm gate without expensive proprietary map APIs.
-6. **Accessible Multilingual Design**: Thoughtfully translated into spoken conversational Hindi and Marathi using Devanagari typography, retaining natural loanwords farmers use daily (*mandi*, *quintal*, *order*, *login*).
+1. **Addresses a Real Socio-Economic Need**: Rather than serving as an elite niche portal, KisanMandi is engineered for real Indian agricultural realities—eliminating exploitative commission agents (*arhtiyas*) and putting price control back into the hands of primary producers.
+2. **Live Government Open Data Integration**: Seamless live integration with the official `data.gov.in` Agmarknet API, streaming wholesale arrivals and modal prices across 30+ major mandis into the platform daily.
+3. **Zero-Cost In-Database Hyperlocal Discovery**: Solves the geo-discovery challenge through native in-database mathematical spherical geometry (Haversine formula on indexed latitude/longitude columns), delivering accurate radial distance searches without expensive proprietary map API billing.
+4. **Rigorous Three-Tier Role-Based Architecture**: Complete architectural segregation between Customers, Farmers, and Platform Administrators across database entities, Spring Security filter chains, and React navigation hierarchies.
+5. **Sleep-Resilient Hybrid Cloud Synchronization**: Overcomes the notorious cold-start sleep timeout limitations of free cloud container tiers by pairing internal Spring scheduling with external authenticated headless GitHub Actions webhooks.
+6. **Culturally Grounded Conversational Localization**: Thoughtfully translated into spoken conversational Hindi and Marathi using authentic Devanagari typography. Unlike mechanical machine translations, it preserves the natural agricultural loanwords that rural farmers and Indian households use every day (*mandi*, *quintal*, *aadath*, *kisan*, *order*, *login*).
 
 ---
 
