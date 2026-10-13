@@ -2,13 +2,19 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { adminService } from '../../services/adminService';
+import ErrorState from '../../components/ErrorState';
+import { SkeletonRow } from '../../components/Skeleton';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, FileText, Eye } from 'lucide-react';
 
 const FarmerApproval = () => {
+  useDocumentTitle('Farmer Verification | KisanMandi');
+
   const [farmers, setFarmers] = useState([]);
   const [statusTab, setStatusTab] = useState('PENDING');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const [selectedFarmer, setSelectedFarmer] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,11 +26,14 @@ const FarmerApproval = () => {
 
   const loadFarmers = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const res = await adminService.getFarmers(statusTab);
       setFarmers(res.data);
-    } catch (error) {
-      toast.error('Failed to load farmers');
+    } catch (err) {
+      const msg = err.friendlyMessage || err.response?.data?.message || 'Failed to load farmers';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +93,17 @@ const FarmerApproval = () => {
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center">Loading...</div>
+          <div className="space-y-4">
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </div>
+        ) : error ? (
+          <ErrorState
+            title="Could not load farmers"
+            message={error}
+            onRetry={loadFarmers}
+          />
         ) : farmers.length === 0 ? (
           <div className="bg-white p-8 rounded-xl border border-gray-200 text-center text-gray-500">
             No farmers found with status {statusTab}.

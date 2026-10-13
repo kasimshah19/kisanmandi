@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { mandiService } from '../../services/mandiService';
 import { formatDate } from '../../utils/format';
 import toast from 'react-hot-toast';
@@ -9,8 +10,12 @@ import PriceSummaryCards from '../../components/mandi/PriceSummaryCards';
 import PriceTrendChart from '../../components/mandi/PriceTrendChart';
 import MarketCompareChart from '../../components/mandi/MarketCompareChart';
 import PriceTable from '../../components/mandi/PriceTable';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function MandiDashboard() {
+  const { t } = useTranslation();
+  useDocumentTitle(`${t('mandi.title')} | KisanMandi`);
+
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Read initial filters from URL
@@ -89,7 +94,7 @@ export default function MandiDashboard() {
               const defaultState = statesRes.data.includes('Maharashtra') ? 'Maharashtra' : statesRes.data[0];
               handleFilterChange({ state: defaultState, date: res.data.latestPriceDate });
             }
-          }).catch(console.error);
+          }).catch(() => {});
         } else if (!filters.date) {
            handleFilterChange({ date: res.data.latestPriceDate });
         }
@@ -228,12 +233,12 @@ export default function MandiDashboard() {
   if (!isDataAvailable) {
     return (
       <div className="py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Mandi Rates</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">{t('mandi.title')}</h1>
         <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center">
           <div className="animate-pulse flex flex-col items-center">
             <div className="w-16 h-16 bg-gray-200 rounded-full mb-4"></div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Mandi data is being fetched</h2>
-            <p className="text-gray-500">Please check again later.</p>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">{t('mandi.fetching_data')}</h2>
+            <p className="text-gray-500">{t('mandi.check_later')}</p>
           </div>
         </div>
       </div>
@@ -244,10 +249,10 @@ export default function MandiDashboard() {
     <div className="py-4 md:py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">Mandi Rates</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">{t('mandi.title')}</h1>
           <p className="text-sm text-gray-500">
-            Last updated: {status?.latestPriceDate ? formatDate(status.latestPriceDate) : 'Loading...'} | 
-            <span className="italic ml-1">Source: data.gov.in (Agmarknet)</span>
+            {t('mandi.last_updated', { date: status?.latestPriceDate ? formatDate(status.latestPriceDate) : t('common.loading') })} | 
+            <span className="italic ml-1">{t('mandi.source_credit')}</span>
           </p>
         </div>
         

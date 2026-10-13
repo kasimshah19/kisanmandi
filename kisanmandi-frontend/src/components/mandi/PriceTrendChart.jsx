@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatShortDate, formatPrice } from '../../utils/format';
 import Skeleton from '../Skeleton';
 import EmptyState from '../EmptyState';
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, t }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border border-gray-200 shadow-md rounded-lg text-sm">
@@ -16,7 +17,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         ))}
         {payload[0]?.payload?.marketsCount && (
           <p className="text-gray-500 text-xs mt-1 border-t pt-1">
-            Markets: {payload[0].payload.marketsCount}
+            {t ? t('mandi.markets_covered') : 'Markets'}: {payload[0].payload.marketsCount}
           </p>
         )}
       </div>
@@ -26,6 +27,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function PriceTrendChart({ data, isLoading, days, onDaysChange, commodity, hasDemoData }) {
+  const { t } = useTranslation();
   const chartData = useMemo(() => {
     if (!data) return [];
     // Convert backend numbers and sort by date ascending
@@ -41,7 +43,7 @@ export default function PriceTrendChart({ data, isLoading, days, onDaysChange, c
   if (!commodity) {
     return (
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-center h-80">
-        <p className="text-gray-500">Select a commodity to see its trend</p>
+        <p className="text-gray-500">{t('mandi.select_commodity_hint')}</p>
       </div>
     );
   }
@@ -58,7 +60,7 @@ export default function PriceTrendChart({ data, isLoading, days, onDaysChange, c
   if (!chartData || chartData.length === 0) {
     return (
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-80">
-        <EmptyState message="No trend data available for this selection." />
+        <EmptyState message={t('mandi.no_trend_data')} />
       </div>
     );
   }
@@ -67,7 +69,7 @@ export default function PriceTrendChart({ data, isLoading, days, onDaysChange, c
     <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-800">Price Trend: {commodity}</h3>
+          <h3 className="text-lg font-bold text-gray-800">{t('mandi.price_trend_for', { commodity })}</h3>
           {hasDemoData && (
             <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mt-1 font-semibold">
               Includes demo data (for testing only)
@@ -79,13 +81,13 @@ export default function PriceTrendChart({ data, isLoading, days, onDaysChange, c
             onClick={() => onDaysChange(7)}
             className={`px-4 py-1 text-sm rounded-md transition-colors ${days === 7 ? 'bg-white shadow-sm font-medium text-green-700' : 'text-gray-600 hover:text-gray-800'}`}
           >
-            7 Days
+            {t('mandi.days_7')}
           </button>
           <button
             onClick={() => onDaysChange(30)}
             className={`px-4 py-1 text-sm rounded-md transition-colors ${days === 30 ? 'bg-white shadow-sm font-medium text-green-700' : 'text-gray-600 hover:text-gray-800'}`}
           >
-            30 Days
+            {t('mandi.days_30')}
           </button>
         </div>
       </div>
@@ -102,11 +104,11 @@ export default function PriceTrendChart({ data, isLoading, days, onDaysChange, c
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
             <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={(val) => `₹${val}`} width={60} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip t={t} />} />
             <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }} />
-            <Line type="monotone" dataKey="avgModalPrice" name="Modal Price" stroke="#16a34a" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-            <Line type="monotone" dataKey="avgMaxPrice" name="Max Price" stroke="#ef4444" strokeWidth={1.5} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="avgMinPrice" name="Min Price" stroke="#3b82f6" strokeWidth={1.5} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="avgModalPrice" name={t('mandi.modal_price')} stroke="#16a34a" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+            <Line type="monotone" dataKey="avgMaxPrice" name={t('mandi.max_price')} stroke="#ef4444" strokeWidth={1.5} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="avgMinPrice" name={t('mandi.min_price')} stroke="#3b82f6" strokeWidth={1.5} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>

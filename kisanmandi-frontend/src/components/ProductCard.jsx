@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ImageOff, Star } from 'lucide-react';
 import { formatINR, unitLabel } from '../utils/format';
+import { getOptimizedImageUrl } from '../utils/image';
 import StarRating from './StarRating';
 import DistanceBadge from './DistanceBadge';
 
 // Product card used in BrowseProducts grid
 export default function ProductCard({ product }) {
+  const { t } = useTranslation();
   const price = Number(product.pricePerUnit);
   const stock = Number(product.quantityAvailable);
   const isOutOfStock = stock <= 0;
@@ -16,18 +19,21 @@ export default function ProductCard({ product }) {
         {/* Out of stock ribbon */}
         {isOutOfStock && (
           <div className="absolute top-3 left-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-r-lg z-10">
-            Out of Stock
+            {t('products.out_of_stock')}
           </div>
         )}
 
         {/* Product image */}
-        <div className="aspect-square bg-gray-100 overflow-hidden">
+        <div className="aspect-square bg-gray-100 overflow-hidden relative">
           {product.imageUrl ? (
             <img
-              src={product.imageUrl}
-              alt={product.name}
+              src={getOptimizedImageUrl(product.imageUrl, 400)}
+              alt={product.name || 'Produce item'}
+              loading="lazy"
+              width="400"
+              height="400"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+              onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
             />
           ) : null}
           {/* Fallback placeholder */}

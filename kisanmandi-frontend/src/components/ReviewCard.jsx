@@ -1,11 +1,13 @@
-﻿import React from 'react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import StarRating from './StarRating';
 import { formatDate } from '../utils/format';
 
 export default function ReviewCard({ review }) {
+  const { t } = useTranslation();
   const maskedName = review.reviewerName 
     ? review.reviewerName.split(' ')[0] + (review.reviewerName.split(' ')[1] ? ' ' + review.reviewerName.split(' ')[1][0] + '.' : '')
-    : 'Customer';
+    : t('common.customer');
 
   return (
     <div className="p-4 bg-white rounded-lg border border-gray-100 shadow-sm flex flex-col gap-2">

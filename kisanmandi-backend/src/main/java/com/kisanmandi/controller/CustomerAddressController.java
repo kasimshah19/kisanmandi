@@ -4,6 +4,8 @@ import com.kisanmandi.dto.AddressRequest;
 import com.kisanmandi.dto.AddressResponse;
 import com.kisanmandi.service.AuthService;
 import com.kisanmandi.service.AddressService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Customer Addresses", description = "Customer delivery address book management")
 @RestController
 @RequestMapping("/api/customer/addresses")
 @RequiredArgsConstructor
@@ -20,17 +23,20 @@ public class CustomerAddressController {
     private final AddressService addressService;
     private final AuthService authService;
 
+    @Operation(summary = "Get list of saved delivery addresses")
     @GetMapping
     public ResponseEntity<List<AddressResponse>> getAddresses() {
         return ResponseEntity.ok(addressService.getCustomerAddresses(authService.getCurrentUser().getId()));
     }
 
+    @Operation(summary = "Create and save a new delivery address")
     @PostMapping
     public ResponseEntity<AddressResponse> createAddress(
             @Valid @RequestBody AddressRequest request) {
         return new ResponseEntity<>(addressService.createAddress(authService.getCurrentUser().getId(), request), HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Update an existing delivery address")
     @PutMapping("/{id}")
     public ResponseEntity<AddressResponse> updateAddress(
             @PathVariable Long id,
@@ -38,16 +44,16 @@ public class CustomerAddressController {
         return ResponseEntity.ok(addressService.updateAddress(authService.getCurrentUser().getId(), id, request));
     }
 
+    @Operation(summary = "Delete a saved delivery address")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAddress(
-            @PathVariable Long id) {
+    public ResponseEntity<Void> deleteAddress(@PathVariable Long id) {
         addressService.deleteAddress(authService.getCurrentUser().getId(), id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Set an address as the default delivery address")
     @PatchMapping("/{id}/default")
-    public ResponseEntity<Void> setDefaultAddress(
-            @PathVariable Long id) {
+    public ResponseEntity<Void> setDefaultAddress(@PathVariable Long id) {
         addressService.setDefaultAddress(authService.getCurrentUser().getId(), id);
         return ResponseEntity.ok().build();
     }

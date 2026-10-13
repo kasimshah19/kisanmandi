@@ -3,6 +3,7 @@ package com.kisanmandi.service;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.kisanmandi.exception.ImageUploadException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 @SuppressWarnings("unchecked")
 public class CloudinaryService {
@@ -62,7 +64,7 @@ public class CloudinaryService {
             cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", resourceType));
         } catch (Exception e) {
             // Best effort, log it but don't crash
-            System.err.println("Failed to delete from Cloudinary: " + publicId);
+            log.warn("Failed to delete from Cloudinary: {}", publicId);
         }
     }
 

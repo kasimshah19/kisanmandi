@@ -1,21 +1,27 @@
 import { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ConfirmDialog = ({ 
   isOpen, 
   title, 
   message, 
-  confirmText = "Confirm", 
-  cancelText = "Cancel", 
+  confirmText, 
+  cancelText, 
   confirmStyle = "danger",
   onConfirm, 
   onCancel,
   showReasonInput = false,
-  reasonLabel = "Reason"
+  reasonLabel
 }) => {
+  const { t } = useTranslation();
   const [reason, setReason] = useState('');
 
   if (!isOpen) return null;
+
+  const effectiveConfirmText = confirmText || t('common.confirm');
+  const effectiveCancelText = cancelText || t('common.cancel');
+  const effectiveReasonLabel = reasonLabel || t('common.reason');
 
   const handleConfirm = () => {
     if (showReasonInput) {
@@ -32,7 +38,7 @@ const ConfirmDialog = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
@@ -52,13 +58,13 @@ const ConfirmDialog = ({
 
           {showReasonInput && (
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{reasonLabel} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{effectiveReasonLabel} *</label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 rows="3"
-                placeholder="Enter a reason..."
+                placeholder="..."
                 required
               />
             </div>
@@ -70,14 +76,14 @@ const ConfirmDialog = ({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
           >
-            {cancelText}
+            {effectiveCancelText}
           </button>
           <button
             onClick={handleConfirm}
             disabled={showReasonInput && !reason.trim()}
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${btnColors[confirmStyle]}`}
           >
-            {confirmText}
+            {effectiveConfirmText}
           </button>
         </div>
       </div>

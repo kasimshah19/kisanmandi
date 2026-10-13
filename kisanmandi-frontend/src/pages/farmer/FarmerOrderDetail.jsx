@@ -1,33 +1,44 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MapPin, Receipt, Phone, User, Info } from 'lucide-react';
 import { farmerOrderService } from '../../services/farmerOrderService';
 import DashboardLayout from '../../components/DashboardLayout';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
 import { SkeletonCard } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 import { formatINR, formatDateTime, orderNumber, unitLabel } from '../../utils/format';
 import { isActiveStatus } from '../../utils/orderStatus';
 import toast from 'react-hot-toast';
 
 export default function FarmerOrderDetail() {
   const { id } = useParams();
+  const { t } = useTranslation();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Status update state
   const [updating, setUpdating] = useState(false);
   const [updateNote, setUpdateNote] = useState('');
+
+  useDocumentTitle(order ? `${orderNumber(order.id)} | KisanMandi` : `Order Details | KisanMandi`);
 
   useEffect(() => {
     loadOrder();
   }, [id]);
 
   const loadOrder = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await farmerOrderService.get(id);
       setOrder(res.data);
-    } catch (error) {
-      toast.error('Failed to load order details');
+    } catch (err) {
+      const msg = err.friendlyMessage || err.response?.data?.message || t('errors.generic_retry');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -35,38 +46,48 @@ export default function FarmerOrderDetail() {
 
   const handleUpdateStatus = async (newStatus) => {
     if (newStatus === 'REJECTED' && !updateNote.trim()) {
-      toast.error('Please provide a reason for rejecting the order');
+      toast.error(t('farmer.rejection_note_placeholder'));
       return;
     }
 
     setUpdating(true);
     try {
       await farmerOrderService.updateStatus(id, newStatus, updateNote);
-      toast.success(`Order status updated to ${newStatus}`);
+      toast.success(t(`status.${newStatus}`));
       setUpdateNote('');
       loadOrder();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update status');
+      toast.error(error.response?.data?.message || t('errors.generic_retry'));
     } finally {
       setUpdating(false);
     }
   };
 
   if (loading) return <DashboardLayout role="FARMER"><SkeletonCard /></DashboardLayout>;
-  if (!order) return <DashboardLayout role="FARMER"><div className="text-center py-10">Order not found</div></DashboardLayout>;
+  if (!order) {
+    return (
+      <DashboardLayout role="FARMER">
+        <ErrorState
+          title={t('common.not_found_title')}
+          message={error || t('common.not_found_desc')}
+          onRetry={loadOrder}
+        />
+      </DashboardLayout>
+    );
+  }
 
   // Determine available next actions
   const actions = [];
   const s = order.status;
   if (s === 'PLACED') {
-    actions.push({ label: 'Accept Order', status: 'ACCEPTED', color: 'bg-indigo-600 hover:bg-indigo-700' });
-    actions.push({ label: 'Reject', status: 'REJECTED', color: 'bg-red-600 hover:bg-red-700 outline' });
+    actions.push({ label: t('farmer.accept_order'), status: 'ACCEPTED', color: 'bg-indigo-600 hover:bg-indigo-700' });
+    actions.push({ label: t('farmer.reject_order'), status: 'REJECTED', color: 'bg-red-600 hover:bg-red-700 outline' });
   } else if (s === 'ACCEPTED') {
-    actions.push({ label: 'Mark as Packed', status: 'PACKED', color: 'bg-purple-600 hover:bg-purple-700' });
+    actions.push({ label: t('farmer.mark_packed'), status: 'PACKED', color: 'bg-purple-600 hover:bg-purple-700' });
   } else if (s === 'PACKED') {
-    actions.push({ label: 'Out for Delivery', status: 'OUT_FOR_DELIVERY', color: 'bg-orange-600 hover:bg-orange-700' });
+    actions.push({ label: t('farmer.mark_shipped'), status: 'OUT_FOR_DELIVERY', color: 'bg-orange-600 hover:bg-orange-700' });
   } else if (s === 'OUT_FOR_DELIVERY') {
-    actions.push({ label: 'Mark as Delivered', status: 'DELIVERED', color: 'bg-green-600 hover:bg-green-700' });
+    actions.push({ label: t('farmer.mark_delivered'), status: 'DELIVERED', color: 'bg-green-600 hover:bg-green-700' });
   }
 
   return (
@@ -76,7 +97,7 @@ export default function FarmerOrderDetail() {
           <Link to="/farmer/orders" className="p-2 hover:bg-gray-100 rounded-full transition">
             <ArrowLeft size={20} className="text-gray-600" />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-800">Order Details</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{orderNumber(order.id)}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,10 +113,10 @@ export default function FarmerOrderDetail() {
                     <h2 className="text-xl font-bold text-gray-900">{orderNumber(order.id)}</h2>
                     <OrderStatusBadge status={order.status} />
                   </div>
-                  <p className="text-sm text-gray-500">Placed on {formatDateTime(order.createdAt)}</p>
+                  <p className="text-sm text-gray-500">{t('orders.order_date', { date: formatDateTime(order.createdAt) })}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                  <p className="text-sm text-gray-500 mb-1">{t('orders.total_amount')}</p>
                   <p className="text-2xl font-bold text-green-700">{formatINR(order.totalAmount)}</p>
                 </div>
               </div>
@@ -104,7 +125,7 @@ export default function FarmerOrderDetail() {
               {actions.length > 0 && (
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 flex items-center gap-2 mb-3">
-                    <Info size={18} /> Action Required
+                    <Info size={18} /> {t('farmer.action_required')}
                   </h3>
                   
                   {actions.some(a => a.status === 'REJECTED') && (
@@ -113,7 +134,7 @@ export default function FarmerOrderDetail() {
                         type="text" 
                         value={updateNote}
                         onChange={e => setUpdateNote(e.target.value)}
-                        placeholder="Add a note (Required if rejecting)"
+                        placeholder={t('farmer.rejection_note_placeholder')}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
                     </div>
@@ -140,7 +161,7 @@ export default function FarmerOrderDetail() {
               
               {!isActiveStatus(order.status) && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-600 font-medium">
-                  This order is {order.status.toLowerCase()} and cannot be modified.
+                  {t('farmer.cannot_modify_order')}
                 </div>
               )}
             </div>
@@ -148,23 +169,23 @@ export default function FarmerOrderDetail() {
             {/* Order Items */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Receipt size={20} className="text-green-600" /> Items to Fulfill
+                <Receipt size={20} className="text-green-600" /> {t('farmer.items_to_fulfill')}
               </h3>
               
               <div className="divide-y border rounded-lg">
                 {order.items.map(item => (
                   <div key={item.id} className="flex gap-4 p-4">
                     <div className="w-16 h-16 bg-gray-100 rounded border shrink-0">
-                      {item.imageUrl && <img src={item.imageUrl} className="w-full h-full object-cover rounded" />}
+                      {item.imageUrl && <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover rounded" />}
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-gray-900">{item.productName}</p>
                       <p className="text-sm text-gray-500 mt-1">
-                        Price: {formatINR(item.priceAtOrder)} / {unitLabel(item.unit)}
+                        {t('common.price')}: {formatINR(item.priceAtOrder)} / {unitLabel(item.unit, t)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-500 mb-1">Qty: <span className="font-bold text-gray-900">{item.quantity}</span></p>
+                      <p className="text-sm text-gray-500 mb-1">{t('common.quantity_label')}: <span className="font-bold text-gray-900">{item.quantity}</span></p>
                       <p className="font-bold text-green-700">{formatINR(item.lineTotal)}</p>
                     </div>
                   </div>
@@ -180,7 +201,7 @@ export default function FarmerOrderDetail() {
             {/* Customer Details */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <User size={18} className="text-blue-600" /> Customer Details
+                <User size={18} className="text-blue-600" /> {t('orders.customer_contact')}
               </h3>
               <div className="space-y-3 text-sm">
                 <p className="font-medium text-gray-900">{order.customerName}</p>
@@ -193,7 +214,7 @@ export default function FarmerOrderDetail() {
             {/* Delivery Address */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <MapPin size={18} className="text-orange-600" /> Delivery Address
+                <MapPin size={18} className="text-orange-600" /> {t('orders.delivery_to')}
               </h3>
               <div className="space-y-1 text-sm text-gray-600">
                 <p className="font-medium text-gray-900 mb-1">{order.shipName}</p>
@@ -208,12 +229,12 @@ export default function FarmerOrderDetail() {
             
             {/* History Log */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-900 mb-4">Status History</h3>
+              <h3 className="font-bold text-gray-900 mb-4">{t('farmer.status_history')}</h3>
               <div className="space-y-4 border-l-2 border-gray-100 ml-2 pl-4">
                 {(order.history || []).map((h, i) => (
                   <div key={i} className="relative">
                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
-                    <p className="text-sm font-medium text-gray-900">{h.status}</p>
+                    <p className="text-sm font-medium text-gray-900">{t(`status.${h.status}`) !== `status.${h.status}` ? t(`status.${h.status}`) : h.status}</p>
                     <p className="text-xs text-gray-500">{formatDateTime(h.changedAt)}</p>
                     {h.note && <p className="text-xs text-gray-600 mt-1 bg-gray-50 p-1.5 rounded">{h.note}</p>}
                   </div>

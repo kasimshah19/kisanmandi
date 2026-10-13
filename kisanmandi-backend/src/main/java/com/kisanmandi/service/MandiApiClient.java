@@ -65,7 +65,7 @@ public class MandiApiClient {
         }
     }
 
-    private String sanitize(String message) {
+    String sanitize(String message) {
         if (message == null) return "Unknown error";
         if (apiKey != null && !apiKey.isEmpty()) {
             return message.replace(apiKey, "***");

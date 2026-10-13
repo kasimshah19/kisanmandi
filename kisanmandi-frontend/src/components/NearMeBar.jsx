@@ -1,9 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Navigation, X } from 'lucide-react';
 import { getCurrentPosition } from '../utils/geo';
 import toast from 'react-hot-toast';
 
 export default function NearMeBar({ onLocationChange, onRadiusChange, isActive, currentRadius }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleUseLocation = async () => {
@@ -11,9 +13,9 @@ export default function NearMeBar({ onLocationChange, onRadiusChange, isActive, 
     try {
       const pos = await getCurrentPosition();
       onLocationChange(pos);
-      toast.success('Location found');
+      toast.success(t('products.location_detected'));
     } catch (err) {
-      toast.error(err.message || 'Failed to get location');
+      toast.error(err.message || t('products.location_denied'));
     } finally {
       setLoading(false);
     }
@@ -27,8 +29,8 @@ export default function NearMeBar({ onLocationChange, onRadiusChange, isActive, 
             <MapPin size={20} />
           </div>
           <div>
-            <h3 className="font-medium text-green-900">Nearby Farmers</h3>
-            <p className="text-sm text-green-700">Find fresh produce near you. Only farmers with location enabled are shown.</p>
+            <h3 className="font-medium text-green-900">{t('products.nearby_farmers_title')}</h3>
+            <p className="text-sm text-green-700">{t('products.nearby_farmers_desc')}</p>
           </div>
         </div>
         
@@ -40,15 +42,16 @@ export default function NearMeBar({ onLocationChange, onRadiusChange, isActive, 
               className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-green-700 disabled:opacity-50 transition-colors"
             >
               <Navigation size={16} />
-              {loading ? 'Locating...' : 'Use my current location'}
+              {loading ? t('products.location_detecting') : t('products.use_current_location')}
             </button>
           ) : (
             <>
               <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-md border border-green-200 shadow-sm">
-                <span className="text-sm font-medium text-gray-700">Within</span>
+                <span className="text-sm font-medium text-gray-700">{t('products.within_radius')}</span>
                 <select
                   value={currentRadius}
                   onChange={(e) => onRadiusChange(Number(e.target.value))}
+                  aria-label={t('products.radius_km')}
                   className="bg-transparent border-none text-sm font-bold text-green-700 focus:ring-0 cursor-pointer"
                 >
                   <option value={5}>5 km</option>
@@ -63,7 +66,7 @@ export default function NearMeBar({ onLocationChange, onRadiusChange, isActive, 
                 className="flex items-center gap-2 bg-white text-gray-600 border border-gray-300 px-4 py-2 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors"
               >
                 <X size={16} />
-                Turn off
+                {t('products.turn_off')}
               </button>
             </>
           )}

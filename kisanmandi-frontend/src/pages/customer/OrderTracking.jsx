@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Package, MapPin, Receipt, Phone, AlertCircle } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import OrderTimeline from '../../components/OrderTimeline';
@@ -8,28 +9,38 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import ReviewForm from '../../components/ReviewForm';
 import StarRating from '../../components/StarRating';
 import { SkeletonCard } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 import { formatINR, formatDateTime, orderNumber, unitLabel } from '../../utils/format';
 import { isActiveStatus } from '../../utils/orderStatus';
 import toast from 'react-hot-toast';
 
 export default function OrderTracking() {
   const { id } = useParams();
+  const { t } = useTranslation();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
+  useDocumentTitle(order ? `${orderNumber(order.id)} | KisanMandi` : `${t('orders.track_order')} | KisanMandi`);
 
   useEffect(() => {
     loadOrder();
   }, [id]);
 
   const loadOrder = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await orderService.get(id);
       setOrder(res.data);
-    } catch (error) {
-      toast.error('Failed to load order details');
+    } catch (err) {
+      const msg = err.friendlyMessage || err.response?.data?.message || t('errors.generic_retry');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -39,18 +50,33 @@ export default function OrderTracking() {
     setCancelling(true);
     try {
       await orderService.cancel(id, reason);
-      toast.success('Order cancelled successfully');
+      toast.success(t('orders.timeline_cancelled'));
       setCancelModalOpen(false);
       loadOrder(); // Refresh status
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to cancel order');
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('errors.generic_retry'));
     } finally {
       setCancelling(false);
     }
   };
 
   if (loading) return <div className="max-w-4xl mx-auto"><SkeletonCard /></div>;
-  if (!order) return <div className="text-center py-10">Order not found</div>;
+  if (!order) {
+    return (
+      <div className="max-w-4xl mx-auto py-8">
+        <ErrorState
+          title={t('common.not_found_title')}
+          message={error || t('common.not_found_desc')}
+          onRetry={loadOrder}
+        />
+        <div className="text-center mt-4">
+          <Link to="/customer/orders" className="text-green-700 font-medium hover:underline text-sm">
+            &larr; {t('orders.back_to_orders')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const canCancel = isActiveStatus(order.status) && order.status !== 'OUT_FOR_DELIVERY';
 
@@ -58,7 +84,7 @@ export default function OrderTracking() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <Link to="/customer/orders" className="flex items-center gap-1 text-gray-600 hover:text-green-700 text-sm font-medium">
-          <ArrowLeft size={16} /> Back to Orders
+          <ArrowLeft size={16} /> {t('orders.back_to_orders')}
         </Link>
         <div className="flex gap-2">
           {order?.canReview && (
@@ -66,7 +92,7 @@ export default function OrderTracking() {
               onClick={() => setReviewModalOpen(true)}
               className="text-white hover:bg-green-700 text-sm font-medium px-3 py-1.5 rounded bg-green-600 transition"
             >
-              Rate this farmer
+              {t('reviews.rate_this_farmer')}
             </button>
           )}
           {canCancel && (
@@ -74,7 +100,7 @@ export default function OrderTracking() {
             onClick={() => setCancelModalOpen(true)}
             className="text-red-600 hover:text-red-700 text-sm font-medium px-3 py-1.5 rounded bg-red-50 hover:bg-red-100 transition"
           >
-            Cancel Order
+            {t('orders.cancel_order')}
           </button>
         )}
         </div>
@@ -85,7 +111,7 @@ export default function OrderTracking() {
         <div className="bg-gray-50 border-b p-6 flex flex-wrap gap-4 items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{orderNumber(order.id)}</h1>
-            <p className="text-sm text-gray-500 mt-1">Placed on {formatDateTime(order.createdAt)}</p>
+            <p className="text-sm text-gray-500 mt-1">{t('orders.order_date', { date: formatDateTime(order.createdAt) })}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <OrderStatusBadge status={order.status} />
@@ -100,7 +126,7 @@ export default function OrderTracking() {
           <div>
             <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
               <Package size={20} className="text-green-600" />
-              Tracking History
+              {t('orders.tracking_history')}
             </h2>
             <OrderTimeline history={order.history} currentStatus={order.status} />
           </div>
@@ -110,7 +136,7 @@ export default function OrderTracking() {
             {/* Delivery Info */}
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <MapPin size={18} className="text-gray-500" /> Delivery Address
+                <MapPin size={18} className="text-gray-500" /> {t('orders.delivery_to')}
               </h3>
               <p className="text-sm font-medium text-gray-900">{order.shipName}</p>
               <p className="text-sm text-gray-600 mt-1">{order.shipLine1}</p>
@@ -123,13 +149,13 @@ export default function OrderTracking() {
             {/* Farmer Info */}
             {order.myReview && (
               <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100 mb-4">
-                <h3 className="font-semibold text-yellow-900 mb-2 text-sm uppercase tracking-wide">Your Review</h3>
+                <h3 className="font-semibold text-yellow-900 mb-2 text-sm uppercase tracking-wide">{t('reviews.your_review')}</h3>
                 <div className="mb-2"><StarRating value={order.myReview.rating} size={16} /></div>
                 {order.myReview.comment && <p className="text-sm text-yellow-800 whitespace-pre-wrap">{order.myReview.comment}</p>}
               </div>
             )}
             <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-              <h3 className="font-semibold text-green-900 mb-2 text-sm uppercase tracking-wide">Sold By</h3>
+              <h3 className="font-semibold text-green-900 mb-2 text-sm uppercase tracking-wide">{t('orders.sold_by_label')}</h3>
               <p className="font-medium text-green-800">{order.farmerName}</p>
               <p className="text-sm text-green-700">{order.farmName}</p>
               <p className="text-sm text-green-700 flex items-center gap-1 mt-1">
@@ -140,18 +166,18 @@ export default function OrderTracking() {
             {/* Order Items */}
             <div>
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <Receipt size={18} className="text-gray-500" /> Order Summary
+                <Receipt size={18} className="text-gray-500" /> {t('orders.order_summary')}
               </h3>
               <div className="border border-gray-100 rounded-lg overflow-hidden">
                 {order.items.map(item => (
                   <div key={item.id} className="flex gap-3 p-3 border-b last:border-0 bg-white items-center">
                     <div className="w-12 h-12 bg-gray-100 rounded shrink-0">
-                      {item.imageUrl && <img src={item.imageUrl} className="w-full h-full object-cover rounded" />}
+                      {item.imageUrl && <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover rounded" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{item.productName}</p>
                       <p className="text-xs text-gray-500">
-                        {item.quantity} {unitLabel(item.unit)} × {formatINR(item.priceAtOrder)}
+                        {item.quantity} {unitLabel(item.unit, t)} × {formatINR(item.priceAtOrder)}
                       </p>
                     </div>
                     <div className="font-semibold text-sm text-gray-900 text-right shrink-0">
@@ -160,7 +186,7 @@ export default function OrderTracking() {
                   </div>
                 ))}
                 <div className="bg-gray-50 p-3 flex justify-between items-center font-bold text-gray-900">
-                  <span>Total Amount</span>
+                  <span>{t('orders.total_amount')}</span>
                   <span className="text-lg text-green-700">{formatINR(order.totalAmount)}</span>
                 </div>
               </div>
@@ -171,7 +197,7 @@ export default function OrderTracking() {
 
       {reviewModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
             <ReviewForm 
               orderId={id}
               onSuccess={() => { setReviewModalOpen(false); loadOrder(); }}
@@ -182,12 +208,12 @@ export default function OrderTracking() {
       )}
       <ConfirmDialog
         isOpen={cancelModalOpen}
-        title="Cancel Order"
-        message="Are you sure you want to cancel this order? This action cannot be undone."
-        confirmText={cancelling ? "Cancelling..." : "Yes, Cancel Order"}
+        title={t('orders.cancel_confirm_title')}
+        message={t('orders.cancel_confirm_msg')}
+        confirmText={cancelling ? t('common.loading') : t('orders.confirm_cancel_btn')}
         confirmStyle="danger"
         showReasonInput={true}
-        reasonLabel="Reason for cancellation"
+        reasonLabel={t('orders.cancel_reason_label')}
         onConfirm={handleCancel}
         onCancel={() => setCancelModalOpen(false)}
       />

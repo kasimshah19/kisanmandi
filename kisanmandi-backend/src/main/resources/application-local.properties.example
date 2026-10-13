@@ -1,6 +1,10 @@
 # ─── Database ───────────────────────────────────────────
 DB_USERNAME=root
 DB_PASSWORD=YOUR_DB_PASSWORD
+# Optional override: DB_URL=jdbc:mysql://127.0.0.1:3306/kisanmandi_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata
+
+# ─── Server Port ──
+PORT=8080
 
 # ─── JWT (MUST be at least 32 characters long) ─────────
 JWT_SECRET=your_random_jwt_secret_at_least_32_characters_long
@@ -18,7 +22,14 @@ CLOUDINARY_API_SECRET=YOUR_API_SECRET
 MANDI_API_KEY=YOUR_DATA_GOV_IN_KEY
 mandi.demo-seed.enabled=false
 
-# ─── Internal ──
-MANDI_CRON_TOKEN=YOUR_CRON_TOKEN
+# ─── Optional Demo Accounts Seeder ──
+APP_DEMO_ENABLED=false
+APP_DEMO_CUSTOMER_EMAIL=customer@demo.com
+APP_DEMO_CUSTOMER_PASSWORD=DemoCust@123
+APP_DEMO_FARMER_EMAIL=farmer@demo.com
+APP_DEMO_FARMER_PASSWORD=DemoFarm@123
+
+# ─── CORS & Swagger & Cron ──
 APP_CORS_ALLOWED_ORIGINS=http://localhost:5173
+MANDI_CRON_TOKEN=YOUR_CRON_TOKEN
 SWAGGER_ENABLED=true

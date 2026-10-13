@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import DashboardLayout from '../../components/DashboardLayout';
 import MandiDashboard from '../public/MandiDashboard';
 import { farmerService } from '../../services/farmerService';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 
 export default function MandiRates() {
+  const { t } = useTranslation();
+  useDocumentTitle(`${t('nav.mandi_rates')} | KisanMandi`);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,7 +40,7 @@ export default function MandiRates() {
   return (
     <DashboardLayout role="FARMER">
       {/* MandiDashboard is layout agnostic, we just embed it */}
-      {isReady ? <MandiDashboard /> : <div className="p-8 text-center text-gray-500">Loading your mandi preferences...</div>}
+      {isReady ? <MandiDashboard /> : <div className="p-8 text-center text-gray-500">{t('farmer.loading_mandi_pref')}</div>}
     </DashboardLayout>
   );
 }

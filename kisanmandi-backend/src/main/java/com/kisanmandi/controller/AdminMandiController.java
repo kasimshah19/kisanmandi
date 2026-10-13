@@ -6,12 +6,15 @@ import com.kisanmandi.dto.mandi.SyncLogResponse;
 import com.kisanmandi.entity.SyncTrigger;
 import com.kisanmandi.service.MandiQueryService;
 import com.kisanmandi.service.MandiSyncService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "Admin Mandi", description = "Admin APMC Mandi sync administration and execution logs")
 @RestController
 @RequestMapping("/api/admin/mandi")
 public class AdminMandiController {
@@ -24,11 +27,13 @@ public class AdminMandiController {
         this.syncService = syncService;
     }
 
+    @Operation(summary = "Get Mandi sync health and last execution status")
     @GetMapping("/status")
     public ResponseEntity<MandiStatusResponse> getStatus() {
         return ResponseEntity.ok(queryService.getStatus());
     }
 
+    @Operation(summary = "Get paginated history of Mandi synchronization logs")
     @GetMapping("/sync-logs")
     public ResponseEntity<PageResponse<SyncLogResponse>> getSyncLogs(
             @RequestParam(defaultValue = "0") int page,
@@ -36,6 +41,7 @@ public class AdminMandiController {
         return ResponseEntity.ok(queryService.getSyncLogs(page, size));
     }
 
+    @Operation(summary = "Trigger manual Mandi data sync immediately")
     @PostMapping("/sync")
     public ResponseEntity<Map<String, String>> triggerSync() {
         syncService.triggerAsync(SyncTrigger.MANUAL);

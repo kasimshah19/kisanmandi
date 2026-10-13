@@ -1,9 +1,11 @@
 import { Check, Circle, X } from 'lucide-react';
-import { STATUS_META, HAPPY_PATH } from '../utils/orderStatus';
+import { useTranslation } from 'react-i18next';
+import { STATUS_META, HAPPY_PATH, getOrderStatusLabel } from '../utils/orderStatus';
 import { formatDateTime } from '../utils/format';
 
 // Vertical timeline showing order progress through statuses
 export default function OrderTimeline({ history, currentStatus }) {
+  const { t } = useTranslation();
   // Build a map of completed statuses from history
   const historyMap = {};
   (history || []).forEach(h => { historyMap[h.status] = h; });
@@ -25,7 +27,7 @@ export default function OrderTimeline({ history, currentStatus }) {
 
     steps.push({
       status,
-      label: STATUS_META[status]?.label || status,
+      label: getOrderStatusLabel(status, t),
       time: h?.changedAt,
       note: h?.note,
       completed: !!h,
@@ -37,7 +39,7 @@ export default function OrderTimeline({ history, currentStatus }) {
   if (isRejected && historyMap.REJECTED) {
     steps.push({
       status: 'REJECTED',
-      label: 'Rejected',
+      label: getOrderStatusLabel('REJECTED', t),
       time: historyMap.REJECTED.changedAt,
       note: historyMap.REJECTED.note,
       completed: true,
@@ -48,7 +50,7 @@ export default function OrderTimeline({ history, currentStatus }) {
   if (isCancelled && historyMap.CANCELLED) {
     steps.push({
       status: 'CANCELLED',
-      label: 'Cancelled',
+      label: getOrderStatusLabel('CANCELLED', t),
       time: historyMap.CANCELLED.changedAt,
       note: historyMap.CANCELLED.note,
       completed: true,

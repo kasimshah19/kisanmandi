@@ -19,7 +19,10 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(allowedOrigins);
+        List<String> origins = (allowedOrigins == null || allowedOrigins.isEmpty())
+                ? List.of("http://localhost:5173")
+                : allowedOrigins.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setExposedHeaders(List.of("Authorization"));

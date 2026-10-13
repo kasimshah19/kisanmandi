@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ImageUpload = ({ onFileSelect, initialPreview = null, hint, accept = "image/jpeg,image/png,image/webp" }) => {
+  const { t } = useTranslation();
   const [preview, setPreview] = useState(initialPreview);
   const fileInputRef = useRef(null);
 
@@ -59,7 +61,7 @@ const ImageUpload = ({ onFileSelect, initialPreview = null, hint, accept = "imag
         ) : (
           <div className="text-center">
             <Upload className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-600 font-medium">Click to upload image</p>
+            <p className="mt-2 text-sm text-gray-600 font-medium">{t('farmer.upload_image')}</p>
             <p className="mt-1 text-xs text-gray-500">JPG, PNG, WEBP (Max 5MB)</p>
           </div>
         )}

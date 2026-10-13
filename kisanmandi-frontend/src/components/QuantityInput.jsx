@@ -1,8 +1,10 @@
 import { Minus, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { quantityStep, minQuantity, unitLabel } from '../utils/format';
 
 // Quantity input with +/- buttons, step/min based on product unit
 export default function QuantityInput({ value, unit, maxStock, onChange, disabled }) {
+  const { t } = useTranslation();
   const step = quantityStep(unit);
   const min = minQuantity(unit);
   const max = Number(maxStock) || 9999;
@@ -41,14 +43,16 @@ export default function QuantityInput({ value, unit, maxStock, onChange, disable
       <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden w-fit">
         <button
           type="button"
+          aria-label={t('common.decrease_quantity')}
           onClick={handleDecrease}
           disabled={disabled || Number(value) <= min}
-          className="px-3 py-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 transition"
+          className="px-3 py-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
         >
           <Minus size={16} />
         </button>
         <input
           type="number"
+          aria-label={t('common.quantity_label')}
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -56,20 +60,21 @@ export default function QuantityInput({ value, unit, maxStock, onChange, disable
           min={min}
           max={max}
           disabled={disabled}
-          className="w-16 text-center border-x border-gray-300 py-2 text-sm focus:outline-none disabled:bg-gray-100
+          className="w-16 text-center border-x border-gray-300 py-2 text-sm focus:outline-none disabled:bg-gray-100 min-h-[44px]
                      [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button
           type="button"
+          aria-label={t('common.increase_quantity')}
           onClick={handleIncrease}
           disabled={disabled || Number(value) >= max}
-          className="px-3 py-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 transition"
+          className="px-3 py-2 bg-gray-50 hover:bg-gray-100 disabled:opacity-40 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
         >
           <Plus size={16} />
         </button>
       </div>
       <p className="text-xs text-gray-500 mt-1">
-        Max available: {Number(maxStock)} {unitLabel(unit)}
+        {t('farmer.stock_label', { qty: Number(maxStock), unit: unitLabel(unit, t) })}
       </p>
     </div>
   );

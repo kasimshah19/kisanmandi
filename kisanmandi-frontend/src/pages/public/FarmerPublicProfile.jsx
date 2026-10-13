@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MapPin, Map } from 'lucide-react';
 import { publicFarmerService, reviewService } from '../../services/phase5Services';
 import RatingSummary from '../../components/RatingSummary';
 import ReviewList from '../../components/ReviewList';
 import { SkeletonCard } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 
 export default function FarmerPublicProfile() {
   const { id } = useParams();
+  const { t } = useTranslation();
   const [farmer, setFarmer] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useDocumentTitle(farmer ? `${farmer.farmName || farmer.fullName || farmer.name} | KisanMandi` : `Farmer Profile | KisanMandi`);
 
   useEffect(() => {
     loadFarmer();
@@ -24,11 +31,15 @@ export default function FarmerPublicProfile() {
   }, [id, page]);
 
   const loadFarmer = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await publicFarmerService.getFarmer(id);
       setFarmer(res);
-    } catch (error) {
-      toast.error('Failed to load farmer profile');
+    } catch (err) {
+      const msg = err.friendlyMessage || err.response?.data?.message || t('errors.generic_retry');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -39,7 +50,7 @@ export default function FarmerPublicProfile() {
       const res = await reviewService.getPublicReviews(id, page, 10);
       setReviews(res.content);
       setTotalPages(res.totalPages);
-    } catch (error) {
+    } catch {
       // It's ok if this fails or is empty
     }
   };
@@ -54,13 +65,26 @@ export default function FarmerPublicProfile() {
   }
 
   if (!farmer) {
-    return <div className="text-center py-20">Farmer not found</div>;
+    return (
+      <div className="max-w-4xl mx-auto py-8">
+        <ErrorState
+          title={t('common.not_found_title')}
+          message={error || t('common.not_found_desc')}
+          onRetry={loadFarmer}
+        />
+        <div className="text-center mt-4">
+          <Link to="/products" className="text-green-700 font-medium hover:underline text-sm">
+            &larr; {t('nav.browse')}
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="max-w-4xl mx-auto">
       <Link to={-1} className="flex items-center gap-1 text-gray-600 hover:text-green-700 mb-6 text-sm w-fit">
-        <ArrowLeft size={16} /> Back
+        <ArrowLeft size={16} /> {t('common.back')}
       </Link>
 
       {/* Profile Header */}
@@ -92,7 +116,7 @@ export default function FarmerPublicProfile() {
 
       {/* Ratings and Reviews */}
       <div className="space-y-6">
-        <h2 className="text-xl font-bold text-gray-900">Reviews & Ratings</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('reviews.reviews_and_ratings')}</h2>
         {farmer.reviewCount > 0 ? (
           <RatingSummary 
             average={farmer.rating} 
@@ -101,7 +125,7 @@ export default function FarmerPublicProfile() {
           />
         ) : (
           <div className="bg-gray-50 text-gray-500 p-4 rounded-lg border border-gray-100 text-center">
-            No ratings yet for this farmer.
+            {t('reviews.no_ratings_yet')}
           </div>
         )}
 

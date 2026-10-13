@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminMandiService } from '../../services/adminMandiService';
 import { formatDateTime } from '../../utils/format';
-import StatusBadge from '../../components/StatusBadge';
 import Pagination from '../../components/Pagination';
 import EmptyState from '../../components/EmptyState';
+import ErrorState from '../../components/ErrorState';
 import { RefreshCw, Play, Clock, Database, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 
 export default function MandiSyncLogs() {
+  useDocumentTitle('Mandi Sync Logs | KisanMandi');
+
   const [status, setStatus] = useState(null);
   const [logs, setLogs] = useState(null);
   const [page, setPage] = useState(0);
@@ -42,18 +45,23 @@ export default function MandiSyncLogs() {
         setIsSyncing(false);
         toast.success("Sync completed");
       }
-    } catch (err) {
-      console.error("Failed to fetch sync status", err);
+    } catch {
+      // Tolerate background status polling error silently
     }
   };
 
+  const [errorLogs, setErrorLogs] = useState(null);
+
   const fetchLogs = async () => {
     setIsLoadingLogs(true);
+    setErrorLogs(null);
     try {
       const res = await adminMandiService.getSyncLogs(page, 20);
       setLogs(res.data);
     } catch (err) {
-      toast.error('Failed to load sync logs');
+      const msg = err.friendlyMessage || err.response?.data?.message || 'Failed to load sync logs';
+      setErrorLogs(msg);
+      toast.error(msg);
     } finally {
       setIsLoadingLogs(false);
     }
@@ -174,7 +182,27 @@ export default function MandiSyncLogs() {
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {isLoadingLogs ? (
-                  <tr><td colSpan="7" className="p-8 text-center text-gray-500">Loading logs...</td></tr>
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-28"></div></td>
+                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
+                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-16"></div></td>
+                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-12 ml-auto"></div></td>
+                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-12 ml-auto"></div></td>
+                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-12 ml-auto"></div></td>
+                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-16 ml-auto"></div></td>
+                    </tr>
+                  ))
+                ) : errorLogs ? (
+                  <tr>
+                    <td colSpan="7" className="p-6">
+                      <ErrorState
+                        title="Could not load sync logs"
+                        message={errorLogs}
+                        onRetry={fetchLogs}
+                      />
+                    </td>
+                  </tr>
                 ) : !logs || logs.content.length === 0 ? (
                   <tr><td colSpan="7"><div className="p-8"><EmptyState message="No sync logs found." /></div></td></tr>
                 ) : (

@@ -208,7 +208,7 @@ public class MandiSyncService {
         }
     }
 
-    private MandiPrice parseRecord(MandiApiRecord r) {
+    MandiPrice parseRecord(MandiApiRecord r) {
         try {
             LocalDate date;
             try {

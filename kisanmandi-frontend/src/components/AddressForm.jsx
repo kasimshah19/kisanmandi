@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getCurrentPosition } from '../utils/geo';
 import { Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // Reusable address form used in Addresses page and Checkout
 export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     fullName: initial?.fullName || '',
     phone: initial?.phone || '',
@@ -24,9 +26,9 @@ export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
     try {
       const pos = await getCurrentPosition();
       setForm(prev => ({ ...prev, latitude: pos.lat, longitude: pos.lng }));
-      toast.success('Location saved');
+      toast.success(t('addresses.location_saved'));
     } catch (err) {
-      toast.error(err.message || 'Failed to get location');
+      toast.error(err.message || t('errors.generic_retry'));
     } finally {
       setLocating(false);
     }
@@ -34,12 +36,12 @@ export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
 
   const validate = () => {
     const e = {};
-    if (!form.fullName.trim()) e.fullName = 'Full name is required';
-    if (!/^\d{10}$/.test(form.phone)) e.phone = 'Enter a valid 10-digit phone number';
-    if (!form.line1.trim()) e.line1 = 'Address is required';
-    if (!form.city.trim()) e.city = 'City is required';
-    if (!form.state.trim()) e.state = 'State is required';
-    if (!/^\d{6}$/.test(form.pincode)) e.pincode = 'Enter a valid 6-digit pincode';
+    if (!form.fullName.trim()) e.fullName = t('errors.field_required');
+    if (!/^\d{10}$/.test(form.phone)) e.phone = t('errors.enter_valid_phone');
+    if (!form.line1.trim()) e.line1 = t('errors.field_required');
+    if (!form.city.trim()) e.city = t('errors.field_required');
+    if (!form.state.trim()) e.state = t('errors.field_required');
+    if (!/^\d{6}$/.test(form.pincode)) e.pincode = t('errors.field_required');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -61,78 +63,148 @@ export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
     <form onSubmit={handleSubmit} className="space-y-3">
       {/* Full Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-        <input value={form.fullName} onChange={e => handleChange('fullName', e.target.value)}
-          className={inputCls('fullName')} placeholder="Full name" />
+        <label htmlFor="addr-fullName" className="block text-sm font-medium text-gray-700 mb-1">
+          {t('addresses.full_name')} <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="addr-fullName"
+          value={form.fullName}
+          onChange={e => handleChange('fullName', e.target.value)}
+          autoComplete="name"
+          className={inputCls('fullName')}
+          placeholder={t('addresses.full_name')}
+        />
         {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
       </div>
 
       {/* Phone */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-        <input value={form.phone} onChange={e => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
-          className={inputCls('phone')} placeholder="10-digit phone number" />
+        <label htmlFor="addr-phone" className="block text-sm font-medium text-gray-700 mb-1">
+          {t('addresses.phone')} <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="addr-phone"
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel"
+          maxLength={10}
+          value={form.phone}
+          onChange={e => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+          className={inputCls('phone')}
+          placeholder="10-digit number"
+        />
         {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
       </div>
 
       {/* Address line */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-        <input value={form.line1} onChange={e => handleChange('line1', e.target.value)}
-          className={inputCls('line1')} placeholder="House/flat, street, area" />
+        <label htmlFor="addr-line1" className="block text-sm font-medium text-gray-700 mb-1">
+          {t('addresses.address_line')} <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="addr-line1"
+          value={form.line1}
+          onChange={e => handleChange('line1', e.target.value)}
+          autoComplete="street-address"
+          className={inputCls('line1')}
+          placeholder={t('addresses.address_line')}
+        />
         {errors.line1 && <p className="text-xs text-red-500 mt-1">{errors.line1}</p>}
       </div>
 
       {/* City + State row */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-          <input value={form.city} onChange={e => handleChange('city', e.target.value)}
-            className={inputCls('city')} placeholder="City" />
+          <label htmlFor="addr-city" className="block text-sm font-medium text-gray-700 mb-1">
+            {t('addresses.city')} <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="addr-city"
+            value={form.city}
+            onChange={e => handleChange('city', e.target.value)}
+            autoComplete="address-level2"
+            className={inputCls('city')}
+            placeholder={t('addresses.city')}
+          />
           {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-          <input value={form.state} onChange={e => handleChange('state', e.target.value)}
-            className={inputCls('state')} placeholder="State" />
+          <label htmlFor="addr-state" className="block text-sm font-medium text-gray-700 mb-1">
+            {t('addresses.state')} <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="addr-state"
+            value={form.state}
+            onChange={e => handleChange('state', e.target.value)}
+            autoComplete="address-level1"
+            className={inputCls('state')}
+            placeholder={t('addresses.state')}
+          />
           {errors.state && <p className="text-xs text-red-500 mt-1">{errors.state}</p>}
         </div>
       </div>
 
       {/* Pincode */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
-        <input value={form.pincode} onChange={e => handleChange('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-          className={inputCls('pincode')} placeholder="6-digit pincode" />
+        <label htmlFor="addr-pincode" className="block text-sm font-medium text-gray-700 mb-1">
+          {t('addresses.pincode')} <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="addr-pincode"
+          type="text"
+          inputMode="numeric"
+          autoComplete="postal-code"
+          maxLength={6}
+          value={form.pincode}
+          onChange={e => handleChange('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
+          className={inputCls('pincode')}
+          placeholder="6-digit pincode"
+        />
         {errors.pincode && <p className="text-xs text-red-500 mt-1">{errors.pincode}</p>}
       </div>
 
       {/* Default checkbox */}
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" checked={form.defaultAddress}
+      <label className="flex items-center gap-2 cursor-pointer py-1">
+        <input
+          type="checkbox"
+          checked={form.defaultAddress}
           onChange={e => handleChange('defaultAddress', e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-        <span className="text-sm text-gray-700">Make this my default address</span>
+          className="w-4 h-4 rounded border-gray-300 text-green-700 focus:ring-green-600"
+        />
+        <span className="text-sm text-gray-700">{t('addresses.make_default')}</span>
       </label>
 
       {/* Location */}
-      <div className="py-2 border-t mt-2">
-        <button type="button" onClick={handleUseLocation} disabled={locating} className="flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-700 disabled:opacity-50">
-          <Navigation size={16} /> {locating ? 'Locating...' : 'Use my current location'}
+      <div className="py-2 border-t mt-2 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={handleUseLocation}
+          disabled={locating}
+          className="flex items-center gap-2 text-sm font-medium text-green-700 hover:text-green-800 disabled:opacity-50 min-h-[44px]"
+        >
+          <Navigation size={16} /> {locating ? t('addresses.locating') : t('addresses.use_location')}
         </button>
-        {(form.latitude && form.longitude) && <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded ml-2">Location saved</span>}
+        {form.latitude && form.longitude && (
+          <span className="text-xs text-green-800 bg-green-50 px-2 py-1 rounded">{t('addresses.location_saved')}</span>
+        )}
       </div>
 
       {/* Buttons */}
       <div className="flex gap-3 pt-2">
-        <button type="submit" disabled={loading}
-          className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50">
-          {loading ? 'Saving...' : (initial ? 'Update' : 'Save Address')}
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex-1 bg-green-700 text-white py-2.5 rounded-lg font-medium hover:bg-green-800 transition disabled:opacity-50 min-h-[44px]"
+        >
+          {loading ? t('common.loading') : initial ? t('common.save') : t('addresses.add_address')}
         </button>
         {onCancel && (
-          <button type="button" onClick={onCancel}
-            className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition">
-            Cancel
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition min-h-[44px]"
+          >
+            {t('common.cancel')}
           </button>
         )}
       </div>

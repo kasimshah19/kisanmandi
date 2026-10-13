@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { mandiService } from '../../services/mandiService';
 import { formatPrice, perKg, formatDate } from '../../utils/format';
 import { Info } from 'lucide-react';
 import useDebounce from '../../hooks/useDebounce';
 
 export default function MandiPriceHint({ productName, unit, district, state }) {
+  const { t } = useTranslation();
   const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -44,7 +46,7 @@ export default function MandiPriceHint({ productName, unit, district, state }) {
   }, [debouncedName, state, district]);
 
   if (!debouncedName || debouncedName.length < 3) return null;
-  if (isLoading) return <div className="text-xs text-gray-500 mt-1 animate-pulse">Checking mandi rates...</div>;
+  if (isLoading) return <div className="text-xs text-gray-500 mt-1 animate-pulse">{t('mandi.fetching_data')}...</div>;
   if (!summary) return null; // No error shown if not found
 
   const isKgUnit = unit === 'KG';
@@ -55,22 +57,22 @@ export default function MandiPriceHint({ productName, unit, district, state }) {
       <Info className="h-5 w-5 text-green-600 flex-shrink-0" />
       <div>
         <p>
-          <strong>Today's mandi rate for {summary.commodity}:</strong> ₹{formatPrice(summary.avgMinPrice)} - ₹{formatPrice(summary.avgMaxPrice)} per quintal 
-          (average ₹{formatPrice(summary.avgModalPrice)}, about ₹{perKg(summary.avgModalPrice)} per kg) 
-          in {district || state || 'All Markets'}, data of {formatDate(summary.latestPriceDate)}.
+          <strong>{t('mandi.live_rates')} ({summary.commodity}):</strong> ₹{formatPrice(summary.avgMinPrice)} - ₹{formatPrice(summary.avgMaxPrice)} {t('mandi.per_quintal')} 
+          ({t('mandi.modal_price')}: ₹{formatPrice(summary.avgModalPrice)}, ~₹{perKg(summary.avgModalPrice)} {t('mandi.per_kg')}) 
+          in {district || state || t('mandi.all_markets')}, {t('mandi.data_as_of', { date: formatDate(summary.latestPriceDate) })}.
         </p>
         
         {isKgUnit && (
           <p className="mt-1 font-medium text-green-900">
-            Suggested range per kg: ₹{perKg(summary.avgMinPrice)} - ₹{perKg(summary.avgMaxPrice)}
+            ₹{perKg(summary.avgMinPrice)} - ₹{perKg(summary.avgMaxPrice)} {t('mandi.per_kg')}
           </p>
         )}
         
         {notQuintalSuitable && (
-          <p className="mt-1 text-xs text-green-700">Note: Mandi rates are per quintal.</p>
+          <p className="mt-1 text-xs text-green-700">{t('mandi.data_source_note')}</p>
         )}
         
-        <p className="mt-1 text-xs text-green-600/80 italic">Wholesale mandi rate. Retail prices are usually higher.</p>
+        <p className="mt-1 text-xs text-green-600/80 italic">{t('mandi.source_credit')}</p>
       </div>
     </div>
   );

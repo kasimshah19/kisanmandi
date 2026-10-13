@@ -60,13 +60,13 @@ Show-Result "GET /me with token" $res 200
 $res = Invoke-MyWebRequest -Uri "$baseUrl/auth/me" -Method Get -Headers $headers
 Show-Result "GET /me without token" $res 401
 
-# 10. No token on /api/farmer/ping -> 401
-$res = Invoke-MyWebRequest -Uri "$baseUrl/farmer/ping" -Method Get -Headers $headers
-Show-Result "No token on /farmer/ping" $res 401
+# 10. No token on /api/farmer/orders/summary -> 401
+$res = Invoke-MyWebRequest -Uri "$baseUrl/farmer/orders/summary" -Method Get -Headers $headers
+Show-Result "No token on /farmer/orders/summary" $res 401
 
-# 11. FARMER token on /api/farmer/ping -> 200;
-$res = Invoke-MyWebRequest -Uri "$baseUrl/farmer/ping" -Method Get -Headers $authHeaders
-Show-Result "FARMER on /farmer/ping" $res 200
+# 11. FARMER token on /api/farmer/orders/summary -> 200;
+$res = Invoke-MyWebRequest -Uri "$baseUrl/farmer/orders/summary" -Method Get -Headers $authHeaders
+Show-Result "FARMER on /farmer/orders/summary" $res 200
 
 # 13. /health -> CONNECTED
 $res = Invoke-MyWebRequest -Uri "$baseUrl/health" -Method Get -Headers $headers

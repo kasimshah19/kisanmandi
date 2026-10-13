@@ -1,7 +1,9 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Pagination with Prev/Next and page numbers, hides when only 1 page
 export default function Pagination({ page, totalPages, onPageChange }) {
+  const { t } = useTranslation();
   if (totalPages <= 1) return null;
 
   // Show at most 5 page numbers centered around current
@@ -19,6 +21,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 0}
+        aria-label={t('common.previous')}
         className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
       >
         <ChevronLeft size={18} />
@@ -38,6 +41,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages - 1}
+        aria-label={t('common.next')}
         className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
       >
         <ChevronRight size={18} />

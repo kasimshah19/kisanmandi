@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Plus, Trash2, Edit2, Star } from 'lucide-react';
 import { addressService } from '../../services/addressService';
 import AddressForm from '../../components/AddressForm';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { SkeletonRow } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 
 export default function Addresses() {
+  const { t } = useTranslation();
+  useDocumentTitle(`${t('addresses.title')} | KisanMandi`);
+
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -21,11 +28,15 @@ export default function Addresses() {
   }, []);
 
   const loadAddresses = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await addressService.getAll();
       setAddresses(res.data);
-    } catch (error) {
-      toast.error('Failed to load addresses');
+    } catch (err) {
+      const msg = err.friendlyMessage || err.response?.data?.message || t('errors.generic_retry');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -36,16 +47,16 @@ export default function Addresses() {
     try {
       if (editingId) {
         await addressService.update(editingId, data);
-        toast.success('Address updated');
+        toast.success(t('addresses.saved_success'));
       } else {
         await addressService.create(data);
-        toast.success('Address added');
+        toast.success(t('addresses.saved_success'));
       }
       setShowForm(false);
       setEditingId(null);
       loadAddresses();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save address');
+      toast.error(error.response?.data?.message || t('errors.generic_retry'));
     } finally {
       setSaving(false);
     }
@@ -54,10 +65,10 @@ export default function Addresses() {
   const handleDelete = async () => {
     try {
       await addressService.remove(deleteId);
-      toast.success('Address removed');
+      toast.success(t('addresses.deleted_success'));
       loadAddresses();
     } catch (error) {
-      toast.error('Failed to remove address');
+      toast.error(t('errors.generic_retry'));
     } finally {
       setDeleteId(null);
     }
@@ -66,10 +77,10 @@ export default function Addresses() {
   const handleSetDefault = async (id) => {
     try {
       await addressService.setDefault(id);
-      toast.success('Default address updated');
+      toast.success(t('addresses.saved_success'));
       loadAddresses();
     } catch (error) {
-      toast.error('Failed to set default address');
+      toast.error(t('errors.generic_retry'));
     }
   };
 
@@ -88,13 +99,13 @@ export default function Addresses() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">My Addresses</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t('addresses.title')}</h1>
         {!showForm && (
           <button 
             onClick={() => setShowForm(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium"
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium min-h-[44px]"
           >
-            <Plus size={16} /> Add Address
+            <Plus size={16} /> {t('addresses.add_address')}
           </button>
         )}
       </div>
@@ -102,7 +113,7 @@ export default function Addresses() {
       {showForm && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">
-            {editingId ? 'Edit Address' : 'Add New Address'}
+            {editingId ? t('addresses.edit_address') : t('addresses.add_new_address')}
           </h2>
           <div className="max-w-2xl">
             <AddressForm 
@@ -117,11 +128,17 @@ export default function Addresses() {
 
       {loading ? (
         <div className="space-y-4"><SkeletonRow /><SkeletonRow /></div>
+      ) : error ? (
+        <ErrorState
+          title={t('addresses.title')}
+          message={error}
+          onRetry={loadAddresses}
+        />
       ) : addresses.length === 0 && !showForm ? (
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
           <MapPin size={40} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No addresses saved</h3>
-          <p className="text-gray-500 text-sm">Add a delivery address to checkout quickly.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">{t('addresses.no_addresses')}</h3>
+          <p className="text-gray-500 text-sm">{t('addresses.no_addresses_desc')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -129,7 +146,7 @@ export default function Addresses() {
             <div key={addr.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 relative">
               {addr.defaultAddress && (
                 <span className="absolute top-0 right-0 bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl flex items-center gap-1">
-                  <Star size={12} className="fill-green-600" /> Default
+                  <Star size={12} className="fill-green-600" /> {t('addresses.default')}
                 </span>
               )}
               
@@ -141,25 +158,25 @@ export default function Addresses() {
                 <p className="text-sm font-medium text-gray-900 mt-1">{addr.pincode}</p>
               </div>
 
-              <div className="mt-4 pt-4 border-t flex gap-4 text-sm">
+              <div className="mt-4 pt-4 border-t flex gap-4 text-sm items-center">
                 <button 
                   onClick={() => openEdit(addr)}
-                  className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                  className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 min-h-[44px]"
                 >
-                  <Edit2 size={14} /> Edit
+                  <Edit2 size={14} /> {t('common.edit')}
                 </button>
                 <button 
                   onClick={() => setDeleteId(addr.id)}
-                  className="text-red-600 hover:text-red-800 font-medium flex items-center gap-1"
+                  className="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 min-h-[44px]"
                 >
-                  <Trash2 size={14} /> Delete
+                  <Trash2 size={14} /> {t('common.delete')}
                 </button>
                 {!addr.defaultAddress && (
                   <button 
                     onClick={() => handleSetDefault(addr.id)}
-                    className="text-gray-600 hover:text-gray-900 font-medium ml-auto"
+                    className="text-gray-600 hover:text-gray-900 font-medium ml-auto min-h-[44px]"
                   >
-                    Set as Default
+                    {t('addresses.set_as_default')}
                   </button>
                 )}
               </div>
@@ -170,9 +187,9 @@ export default function Addresses() {
 
       <ConfirmDialog
         isOpen={!!deleteId}
-        title="Delete Address"
-        message="Are you sure you want to delete this address?"
-        confirmText="Delete"
+        title={t('addresses.delete_title')}
+        message={t('addresses.delete_confirm')}
+        confirmText={t('common.delete')}
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
       />

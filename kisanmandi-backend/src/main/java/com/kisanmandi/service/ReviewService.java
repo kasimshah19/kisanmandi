@@ -87,7 +87,8 @@ public class ReviewService {
         farmerProfileRepository.save(profile);
     }
 
-    private String maskName(String fullName) {
+    // Masks customer name for privacy (e.g., "Kasim Shah" -> "Kasim S.")
+    String maskName(String fullName) {
         if (fullName == null || fullName.trim().isEmpty()) return "Anonymous";
         String[] parts = fullName.trim().split("\\s+");
         if (parts.length == 1) return parts[0];

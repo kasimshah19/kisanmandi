@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 // Metadata for every order status: label, Tailwind color classes, icon name
 export const STATUS_META = {
   PLACED:           { label: 'Placed',           bg: 'bg-blue-100',   text: 'text-blue-800',   border: 'border-blue-200',   dot: 'bg-blue-500'   },
@@ -17,6 +19,19 @@ export function isActiveStatus(s) {
 // Check if order has reached a final state
 export function isTerminalStatus(s) {
   return ['DELIVERED', 'REJECTED', 'CANCELLED'].includes(s);
+}
+
+// Get translated label for order status
+export function getOrderStatusLabel(status, t) {
+  if (t) {
+    const translated = t(`status.${status}`);
+    if (translated && !translated.startsWith('status.')) return translated;
+  }
+  if (i18n && typeof i18n.t === 'function') {
+    const translated = i18n.t(`status.${status}`);
+    if (translated && !translated.startsWith('status.')) return translated;
+  }
+  return STATUS_META[status]?.label || status;
 }
 
 // The happy-path sequence of statuses

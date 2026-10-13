@@ -1,15 +1,26 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { Tractor, ShoppingBag, Loader2, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function Register() {
+  const { t } = useTranslation();
+  useDocumentTitle('Register | KisanMandi');
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', password: '', confirmPassword: '', role: ''
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    role: '',
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +29,6 @@ export default function Register() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    // Clear the error for this field when user starts typing
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: '' });
     }
@@ -29,18 +39,17 @@ export default function Register() {
     if (errors.role) setErrors({ ...errors, role: '' });
   };
 
-  // Client-side validation before sending to backend
   const validate = () => {
     const e = {};
-    if (!form.name.trim()) e.name = 'Name is required';
-    if (!form.email.trim()) e.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email format';
-    if (!form.phone.trim()) e.phone = 'Phone is required';
-    else if (!/^[0-9]{10}$/.test(form.phone)) e.phone = 'Phone must be exactly 10 digits';
-    if (!form.password) e.password = 'Password is required';
+    if (!form.name.trim()) e.name = t('errors.field_required');
+    if (!form.email.trim()) e.email = t('errors.field_required');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('auth.email_invalid');
+    if (!form.phone.trim()) e.phone = t('errors.field_required');
+    else if (!/^[0-9]{10}$/.test(form.phone)) e.phone = t('auth.phone_invalid');
+    if (!form.password) e.password = t('errors.field_required');
     else if (form.password.length < 6) e.password = 'Password must be at least 6 characters';
-    if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
-    if (!form.role) e.role = 'Please select a role';
+    if (form.password !== form.confirmPassword) e.confirmPassword = t('auth.password_mismatch');
+    if (!form.role) e.role = t('errors.field_required');
     return e;
   };
 
@@ -54,18 +63,23 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      // Send only what the backend needs (no confirmPassword)
       await register({
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone,
         password: form.password,
-        role: form.role
+        role: form.role,
       });
-      toast.success('Registration successful! Please login.');
+      toast.success(t('auth.register_subtitle'));
       navigate('/login');
     } catch (error) {
-      const msg = error.response?.data?.message || 'Registration failed';
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      }
+      const msg =
+        error.friendlyMessage ||
+        error.response?.data?.message ||
+        t('errors.server_timeout');
       toast.error(msg);
     } finally {
       setIsLoading(false);
@@ -73,71 +87,145 @@ export default function Register() {
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-8">
-      <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-        <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Create your Account</h2>
+    <div className="max-w-lg mx-auto mt-6 sm:mt-10 px-4">
+      <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">{t('auth.register_title')}</h1>
+          <LanguageSwitcher />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Role Selector Cards */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">I am a...</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('auth.select_role')} <span className="text-red-500">*</span>
+            </label>
             <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => selectRole('FARMER')}
-                className={`p-4 rounded-xl border-2 transition flex flex-col items-center space-y-2
-                  ${form.role === 'FARMER'
-                    ? 'border-green-600 bg-green-50 text-green-700'
-                    : 'border-gray-200 hover:border-green-300 text-gray-600'}`}>
-                <Tractor className="h-8 w-8" />
-                <span className="font-semibold">Kisan (Farmer)</span>
+              <button
+                type="button"
+                onClick={() => selectRole('FARMER')}
+                className={`p-4 rounded-xl border-2 transition flex flex-col items-center justify-center space-y-2 min-h-[96px] ${
+                  form.role === 'FARMER'
+                    ? 'border-green-600 bg-green-50 text-green-700 font-semibold'
+                    : 'border-gray-200 hover:border-green-300 text-gray-600'
+                }`}
+              >
+                <Tractor className="h-8 w-8 text-green-700" />
+                <span className="text-center">{t('auth.role_farmer_title')}</span>
               </button>
-              <button type="button" onClick={() => selectRole('CUSTOMER')}
-                className={`p-4 rounded-xl border-2 transition flex flex-col items-center space-y-2
-                  ${form.role === 'CUSTOMER'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-blue-300 text-gray-600'}`}>
-                <ShoppingBag className="h-8 w-8" />
-                <span className="font-semibold">Customer</span>
+              <button
+                type="button"
+                onClick={() => selectRole('CUSTOMER')}
+                className={`p-4 rounded-xl border-2 transition flex flex-col items-center justify-center space-y-2 min-h-[96px] ${
+                  form.role === 'CUSTOMER'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700 font-semibold'
+                    : 'border-gray-200 hover:border-blue-300 text-gray-600'
+                }`}
+              >
+                <ShoppingBag className="h-8 w-8 text-blue-600" />
+                <span className="text-center">{t('auth.role_customer_title')}</span>
               </button>
             </div>
-            {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
+            {errors.role && <p className="text-red-500 text-xs mt-1.5">{errors.role}</p>}
           </div>
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input type="text" name="name" value={form.name} onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-              placeholder="Your full name" />
+            <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('auth.full_name_label')} <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="reg-name"
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              autoComplete="name"
+              maxLength={100}
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition text-base ${
+                errors.name ? 'border-red-400' : 'border-gray-300'
+              }`}
+              placeholder="e.g. Ramesh Patel"
+              required
+            />
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" name="email" value={form.email} onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-              placeholder="you@example.com" />
+            <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('auth.email_label')} <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="reg-email"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              autoComplete="email"
+              maxLength={150}
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition text-base ${
+                errors.email ? 'border-red-400' : 'border-gray-300'
+              }`}
+              placeholder="you@example.com"
+              required
+            />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
 
           {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input type="text" name="phone" value={form.phone} onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-              placeholder="10 digit number" maxLength={10} />
+            <label htmlFor="reg-phone" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('auth.phone_label')} <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="reg-phone"
+              type="tel"
+              inputMode="numeric"
+              name="phone"
+              value={form.phone}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                setForm({ ...form, phone: val });
+                if (errors.phone) setErrors({ ...errors, phone: '' });
+              }}
+              autoComplete="tel"
+              maxLength={10}
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition text-base ${
+                errors.phone ? 'border-red-400' : 'border-gray-300'
+              }`}
+              placeholder="10 digit mobile number"
+              required
+            />
             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('auth.password_label')} <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none pr-10"
-                placeholder="At least 6 characters" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <input
+                id="reg-password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+                maxLength={60}
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition pr-12 text-base ${
+                  errors.password ? 'border-red-400' : 'border-gray-300'
+                }`}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600 rounded-md min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
@@ -146,31 +234,61 @@ export default function Register() {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+            <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+              {t('auth.confirm_password_label')} <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none pr-10"
-                placeholder="Re-enter your password" />
-              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <input
+                id="reg-confirm-password"
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                autoComplete="new-password"
+                maxLength={60}
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition pr-12 text-base ${
+                  errors.confirmPassword ? 'border-red-400' : 'border-gray-300'
+                }`}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600 rounded-md min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
                 {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
             {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
           </div>
 
-          {/* Submit */}
-          <button type="submit" disabled={isLoading}
-            className="w-full bg-green-600 text-white py-2.5 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center">
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Create Account'}
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-green-700 text-white py-3 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50 flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.99] mt-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>{t('auth.registering')}</span>
+              </>
+            ) : (
+              t('auth.sign_up_btn')
+            )}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Already have an account?{' '}
-          <a href="/login" className="text-green-600 font-medium hover:underline">Login here</a>
+        <p className="text-center text-sm text-gray-600 mt-6">
+          {t('auth.already_have_account')}{' '}
+          <Link to="/login" className="text-green-700 font-semibold hover:underline">
+            {t('nav.login')}
+          </Link>
         </p>
       </div>
     </div>
   );
 }
+

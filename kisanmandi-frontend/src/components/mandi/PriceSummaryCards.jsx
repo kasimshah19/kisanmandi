@@ -1,8 +1,11 @@
-import { formatPrice } from '../../utils/format';
+import { useTranslation } from 'react-i18next';
+import { formatPrice, formatDate } from '../../utils/format';
 import { MapPin, TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react';
 import Skeleton from '../Skeleton';
 
 export default function PriceSummaryCards({ summary, status, isLoading }) {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -26,9 +29,9 @@ export default function PriceSummaryCards({ summary, status, isLoading }) {
           <Activity className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm text-gray-500 font-medium">Latest Data Date</p>
+          <p className="text-sm text-gray-500 font-medium">{t('mandi.latest_data_date')}</p>
           <p className="text-xl font-bold text-gray-800">
-            {status?.latestPriceDate ? new Date(status.latestPriceDate).toLocaleDateString('en-IN') : 'N/A'}
+            {status?.latestPriceDate ? formatDate(status.latestPriceDate) : 'N/A'}
           </p>
         </div>
       </div>
@@ -38,7 +41,7 @@ export default function PriceSummaryCards({ summary, status, isLoading }) {
           <MapPin className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm text-gray-500 font-medium">Markets Covered</p>
+          <p className="text-sm text-gray-500 font-medium">{t('mandi.markets_covered')}</p>
           <p className="text-xl font-bold text-gray-800">{summary.marketCount || 0}</p>
         </div>
       </div>
@@ -50,7 +53,7 @@ export default function PriceSummaryCards({ summary, status, isLoading }) {
               <DollarSign className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Avg Modal Price</p>
+              <p className="text-sm text-gray-500 font-medium">{t('mandi.avg_modal_price')}</p>
               <div className="flex items-center gap-2">
                 <p className="text-xl font-bold text-gray-800">
                   {summary.avgModal ? `₹${formatPrice(summary.avgModal)}` : '—'}
@@ -66,7 +69,7 @@ export default function PriceSummaryCards({ summary, status, isLoading }) {
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-3 text-right">
-          Range: {summary.minPrice ? `₹${formatPrice(summary.minPrice)}` : '—'} - {summary.maxPrice ? `₹${formatPrice(summary.maxPrice)}` : '—'} / quintal
+          {summary.minPrice ? `₹${formatPrice(summary.minPrice)}` : '—'} - {summary.maxPrice ? `₹${formatPrice(summary.maxPrice)}` : '—'} / {t('mandi.quintal_unit')}
         </p>
       </div>
     </div>

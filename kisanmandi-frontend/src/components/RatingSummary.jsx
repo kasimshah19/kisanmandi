@@ -1,14 +1,16 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import StarRating from './StarRating';
 
 export default function RatingSummary({ average = 0, count = 0, distribution = {} }) {
+  const { t } = useTranslation();
   const avg = Number(average) || 0;
   return (
     <div className="flex flex-col md:flex-row gap-6 items-center p-6 bg-white rounded-lg shadow-sm border border-gray-100">
       <div className="flex flex-col items-center text-center">
         <span className="text-4xl font-bold text-gray-900">{avg.toFixed(1)}</span>
         <StarRating value={avg} size={24} />
-        <span className="text-sm text-gray-500 mt-2">{count} {count === 1 ? 'review' : 'reviews'}</span>
+        <span className="text-sm text-gray-500 mt-2">{t('reviews.based_on_reviews', { count })}</span>
       </div>
       <div className="flex-1 w-full space-y-2">
         {[5, 4, 3, 2, 1].map(star => {

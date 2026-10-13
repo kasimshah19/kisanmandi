@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next';
+
 const StatusBadge = ({ status }) => {
+  const { t } = useTranslation();
   const styles = {
     PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     APPROVED: 'bg-green-100 text-green-800 border-green-200',
@@ -7,7 +10,7 @@ const StatusBadge = ({ status }) => {
   };
 
   const style = styles[status] || styles.NOT_SUBMITTED;
-  const label = status?.replace('_', ' ') || 'NOT SUBMITTED';
+  const label = status && t(`status.${status}`) !== `status.${status}` ? t(`status.${status}`) : (status?.replace('_', ' ') || 'NOT SUBMITTED');
 
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${style}`}>

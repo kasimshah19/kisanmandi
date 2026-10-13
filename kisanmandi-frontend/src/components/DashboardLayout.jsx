@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, UserCircle, Package, PlusCircle, 
@@ -8,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { farmerOrderService } from '../services/farmerOrderService';
 
 const DashboardLayout = ({ children, role }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -23,14 +25,14 @@ const DashboardLayout = ({ children, role }) => {
   }, [role, location.pathname]); // refresh on route change
 
   const farmerLinks = [
-    { name: 'Dashboard', path: '/farmer/dashboard', icon: LayoutDashboard },
-    { name: 'My Profile', path: '/farmer/profile', icon: UserCircle },
-    { name: 'My Products', path: '/farmer/products', icon: Package },
-    { name: 'Add Product', path: '/farmer/products/add', icon: PlusCircle },
-    { name: 'Orders', path: '/farmer/orders', icon: ClipboardList, badge: placedCount },
-    { name: 'Earnings', path: '/farmer/earnings', icon: DollarSign },
-    { name: 'Reviews', path: '/farmer/reviews', icon: Star },
-    { name: 'Mandi Rates', path: '/farmer/mandi', icon: Tractor },
+    { name: t('nav.dashboard'), path: '/farmer/dashboard', icon: LayoutDashboard },
+    { name: t('farmer.my_profile'), path: '/farmer/profile', icon: UserCircle },
+    { name: t('farmer.manage_products'), path: '/farmer/products', icon: Package },
+    { name: t('farmer.add_new_product'), path: '/farmer/products/add', icon: PlusCircle },
+    { name: t('farmer.manage_orders'), path: '/farmer/orders', icon: ClipboardList, badge: placedCount },
+    { name: t('nav.earnings'), path: '/farmer/earnings', icon: DollarSign },
+    { name: t('nav.reviews'), path: '/farmer/reviews', icon: Star },
+    { name: t('nav.mandi_rates'), path: '/farmer/mandi', icon: Tractor },
   ];
 
   const adminLinks = [
@@ -50,7 +52,7 @@ const DashboardLayout = ({ children, role }) => {
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 border-t border-gray-200">
       {/* Mobile Menu Button */}
       <div className="md:hidden bg-green-700 text-white p-4 flex justify-between items-center">
-        <span className="font-semibold">{role === 'ADMIN' ? 'Admin Panel' : 'Farmer Dashboard'}</span>
+        <span className="font-semibold">{role === 'ADMIN' ? 'Admin Panel' : t('farmer.dashboard_title')}</span>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -63,9 +65,11 @@ const DashboardLayout = ({ children, role }) => {
       `}>
         <div className="p-6 hidden md:block">
           <h2 className="text-xl font-bold text-green-800">
-            {role === 'ADMIN' ? 'Admin Panel' : 'Farmer Dashboard'}
+            {role === 'ADMIN' ? 'Admin Panel' : t('farmer.dashboard_title')}
           </h2>
-          <p className="text-sm text-gray-500 mt-1">Welcome, {user?.name}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {role === 'ADMIN' ? `Welcome, ${user?.name}` : t('common.welcome_user', { name: user?.name })}
+          </p>
         </div>
         
         <nav className="p-4 space-y-1">

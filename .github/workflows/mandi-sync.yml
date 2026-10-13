@@ -1,0 +1,62 @@
+name: Mandi Daily Sync
+
+# ==============================================================================
+# Scheduled APMC Mandi Price Synchronization Pipeline
+#
+# REQUIRED REPOSITORY SECRETS:
+# 1. MANDI_CRON_TOKEN: Secret token matching the backend's MANDI_CRON_TOKEN env var.
+# 2. BACKEND_URL: Base URL of the deployed backend (e.g. https://kisanmandi-api.onrender.com).
+#
+# IMPORTANT NOTICE:
+# GitHub automatically disables scheduled cron workflows in public and private
+# repositories that have seen no commit activity for 60 consecutive days.
+# If scheduled runs halt unexpectedly, visit the Actions tab and click "Enable workflow".
+# ==============================================================================
+
+on:
+  schedule:
+    # 02:30 UTC = 08:00 IST (Morning Mandi arrival rates)
+    - cron: '30 2 * * *'
+    # 13:30 UTC = 19:00 IST (Evening Mandi closing rates)
+    - cron: '30 13 * * *'
+  workflow_dispatch:
+    # Allows manual execution on demand via the GitHub Actions dashboard
+
+jobs:
+  sync:
+    name: Trigger APMC Mandi Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Mandi Sync Webhook
+        env:
+          CRON_TOKEN: ${{ secrets.MANDI_CRON_TOKEN }}
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          if [ -z "$CRON_TOKEN" ] || [ -z "$BACKEND_URL" ]; then
+            echo "::error::Required secrets MANDI_CRON_TOKEN or BACKEND_URL are not configured in repository settings."
+            exit 1
+          fi
+
+          echo "Triggering Mandi sync at backend endpoint..."
+          
+          # Perform POST request, capturing HTTP response status code
+          # Never echo or log the secret token
+          HTTP_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
+            -H "X-Cron-Token: $CRON_TOKEN" \
+            "$BACKEND_URL/api/internal/mandi/sync" \
+            --max-time 120 \
+            --retry 3 \
+            --retry-delay 30 \
+            --retry-all-errors)
+
+          echo "Mandi sync endpoint responded with HTTP status: $HTTP_STATUS"
+
+          # 202: Successfully triggered asynchronous sync
+          # 409: Sync is already actively running from another recent trigger (acceptable state)
+          if [ "$HTTP_STATUS" -eq 202 ] || [ "$HTTP_STATUS" -eq 409 ]; then
+            echo "Mandi sync successfully initiated or already in progress."
+            exit 0
+          else
+            echo "::error::Mandi sync failed. Expected HTTP 202 or 409, received: $HTTP_STATUS"
+            exit 1
+          fi

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { formatPrice, perKg, formatDate } from '../../utils/format';
 import PriceUnitToggle from './PriceUnitToggle';
 import Pagination from '../Pagination';
@@ -7,6 +8,7 @@ import EmptyState from '../EmptyState';
 import { ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 
 export default function PriceTable({ data, isLoading, pagination, onPageChange }) {
+  const { t } = useTranslation();
   const [isKg, setIsKg] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'modalPrice', direction: 'desc' });
 
@@ -22,7 +24,7 @@ export default function PriceTable({ data, isLoading, pagination, onPageChange }
   if (!data || data.length === 0) {
     return (
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
-        <EmptyState message="No mandi prices found for the selected filters." />
+        <EmptyState message={t('mandi.no_prices_found')} />
       </div>
     );
   }
@@ -62,8 +64,8 @@ export default function PriceTable({ data, isLoading, pagination, onPageChange }
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 mt-6 overflow-hidden">
       <div className="p-4 md:p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-800">Detailed Prices</h3>
-          {latestDate && <p className="text-sm text-gray-500">Data as of {latestDate}</p>}
+          <h3 className="text-lg font-bold text-gray-800">{t('mandi.detailed_prices')}</h3>
+          {latestDate && <p className="text-sm text-gray-500">{t('mandi.data_as_of', { date: latestDate })}</p>}
         </div>
         <PriceUnitToggle isKg={isKg} onChange={setIsKg} />
       </div>
@@ -73,25 +75,25 @@ export default function PriceTable({ data, isLoading, pagination, onPageChange }
           <thead>
             <tr className="bg-gray-50 text-gray-600 text-sm font-medium border-b border-gray-200">
               <th className="p-4 sticky left-0 bg-gray-50 z-10 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('market')}>
-                <div className="flex items-center">Market {getSortIcon('market')}</div>
+                <div className="flex items-center">{t('mandi.market_col')} {getSortIcon('market')}</div>
               </th>
               <th className="p-4 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('district')}>
-                <div className="flex items-center">District {getSortIcon('district')}</div>
+                <div className="flex items-center">{t('mandi.district_col')} {getSortIcon('district')}</div>
               </th>
               <th className="p-4 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('commodity')}>
-                <div className="flex items-center">Commodity {getSortIcon('commodity')}</div>
+                <div className="flex items-center">{t('mandi.commodity_col')} {getSortIcon('commodity')}</div>
               </th>
               <th className="p-4 whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('variety')}>
-                <div className="flex items-center">Variety {getSortIcon('variety')}</div>
+                <div className="flex items-center">{t('mandi.variety_col')} {getSortIcon('variety')}</div>
               </th>
               <th className="p-4 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('minPrice')}>
-                <div className="flex items-center justify-end">Min {getSortIcon('minPrice')}</div>
+                <div className="flex items-center justify-end">{t('mandi.min_col')} {getSortIcon('minPrice')}</div>
               </th>
               <th className="p-4 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('maxPrice')}>
-                <div className="flex items-center justify-end">Max {getSortIcon('maxPrice')}</div>
+                <div className="flex items-center justify-end">{t('mandi.max_col')} {getSortIcon('maxPrice')}</div>
               </th>
               <th className="p-4 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('modalPrice')}>
-                <div className="flex items-center justify-end">Modal {getSortIcon('modalPrice')}</div>
+                <div className="flex items-center justify-end">{t('mandi.modal_col')} {getSortIcon('modalPrice')}</div>
               </th>
             </tr>
           </thead>

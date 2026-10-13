@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { adminService } from '../../services/adminService';
+import ErrorState from '../../components/ErrorState';
+import { SkeletonRow } from '../../components/Skeleton';
+import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 import { PlusCircle, Edit2, Check, X } from 'lucide-react';
 
 const ManageCategories = () => {
+  useDocumentTitle('Manage Categories | KisanMandi');
+
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [newCatName, setNewCatName] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -16,11 +22,15 @@ const ManageCategories = () => {
   }, []);
 
   const loadCategories = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const res = await adminService.getAllCategories();
       setCategories(res.data);
-    } catch (error) {
-      toast.error('Failed to load categories');
+    } catch (err) {
+      const msg = err.friendlyMessage || err.response?.data?.message || 'Failed to load categories';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +94,16 @@ const ManageCategories = () => {
         </form>
 
         {isLoading ? (
-          <div className="p-8 text-center">Loading...</div>
+          <div className="space-y-4">
+            <SkeletonRow />
+            <SkeletonRow />
+          </div>
+        ) : error ? (
+          <ErrorState
+            title="Could not load categories"
+            message={error}
+            onRetry={loadCategories}
+          />
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <ul className="divide-y divide-gray-100">
