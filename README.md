@@ -2,7 +2,13 @@
 
 # 🌾 KisanMandi
 
-**Direct-from-farm marketplace connecting local farmers and consumers with real-time APMC Mandi price discovery.**
+### Next-Generation Agri-Commerce & APMC Market Intelligence Platform
+
+<p align="center">
+  <strong>Empowering Indian farmers through direct farm-to-doorstep digital trade and real-time wholesale price discovery.</strong>
+  <br /><br />
+  KisanMandi is an enterprise-grade, full-stack agri-tech platform designed to eliminate exploitative intermediary monopolies in traditional agricultural supply chains. By unifying a <strong>direct farmer-to-consumer marketplace</strong> with <strong>live APMC wholesale price intelligence</strong> sourced from government mandis (Agmarknet), KisanMandi guarantees transparent crop valuation for rural growers, fresher produce at fair prices for consumers, and seamless hyperlocal discovery powered by geospatial matching.
+</p>
 
 <p align="center">
   <a href="https://www.oracle.com/java/"><img src="https://img.shields.io/badge/Java-17-orange.svg" alt="Java 17" /></a>
