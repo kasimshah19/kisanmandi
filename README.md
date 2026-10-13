@@ -548,8 +548,18 @@ While KisanMandi delivers a complete farm-to-table workflow, several enterprise 
 
 ## Author & License
 
-- **Author**: [YOUR_NAME_HERE](https://github.com/YOUR_GITHUB_HERE)
-- **LinkedIn**: [YOUR_LINKEDIN_URL_HERE](https://linkedin.com/in/YOUR_LINKEDIN_HERE)
-- **GitHub**: [kasimshah19](https://github.com/kasimshah19)
+**Author**: Kasim Shah
+
+### Connect with me:
+- **Portfolio**: [kasim-portfolio-umber.vercel.app](https://kasim-portfolio-umber.vercel.app/)
+- **LinkedIn**: [Kasim Shah](https://www.linkedin.com/in/kasim-shah-176175340/)
+- **GitHub**: [@kasimshah19](https://github.com/kasimshah19)
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for complete details.
+
+---
+
+<p align="center">
+  © 2026 Al-Hayat Diagnostic Lab — All rights reserved
+</p>
+
