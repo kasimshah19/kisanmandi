@@ -1,27 +1,38 @@
 <div align="center">
 
 # 🌾 KisanMandi
-
-### Next-Generation Agri-Commerce & APMC Market Intelligence Platform
+### Production-Grade Agri-Commerce & Real-Time APMC Market Intelligence Platform
 
 <p align="center">
-  <strong>Empowering Indian farmers through direct farm-to-doorstep digital trade and real-time wholesale price discovery.</strong>
-  <br /><br />
-  KisanMandi is an enterprise-grade, full-stack agri-tech platform designed to eliminate exploitative intermediary monopolies in traditional agricultural supply chains. By unifying a <strong>direct farmer-to-consumer marketplace</strong> with <strong>live APMC wholesale price intelligence</strong> sourced from government mandis (Agmarknet), KisanMandi guarantees transparent crop valuation for rural growers, fresher produce at fair prices for consumers, and seamless hyperlocal discovery powered by geospatial matching.
+  <strong>Bridging Bharat's agricultural divide by connecting rural farmers directly to local consumers while democratizing daily wholesale price transparency.</strong>
 </p>
 
 <p align="center">
-  <a href="https://www.oracle.com/java/"><img src="https://img.shields.io/badge/Java-17-orange.svg" alt="Java 17" /></a>
-  <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring%20Boot-3.4.0-brightgreen.svg" alt="Spring Boot" /></a>
-  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-blue.svg" alt="React" /></a>
-  <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8-blue.svg" alt="MySQL" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License" /></a>
+  KisanMandi is an open-source, full-stack enterprise ecosystem engineered to dismantle multi-tiered intermediary exploitation across India’s agricultural supply chain. Built on a high-throughput <strong>Spring Boot 3 (Java 17)</strong> backend and a modern <strong>React 19 (Tailwind v4)</strong> frontend, the platform pairs an autonomous <strong>farm-to-doorstep marketplace</strong> with a live <strong>APMC wholesale price analytics engine</strong> powered by official Government of India Open Data (Agmarknet).
 </p>
 
 <p align="center">
-  <a href="LIVE_URL_HERE"><strong>Live Demo</strong></a> &nbsp;•&nbsp;
-  <a href="API_URL_HERE"><strong>API Documentation (Swagger)</strong></a> &nbsp;•&nbsp;
-  <a href="DEMO_VIDEO_URL_HERE"><strong>Video Walkthrough</strong></a>
+  🚜 <strong>Zero Middlemen</strong> &nbsp;•&nbsp;
+  📊 <strong>Live Mandi Rates</strong> &nbsp;•&nbsp;
+  📍 <strong>Hyperlocal Geo-Matching</strong> &nbsp;•&nbsp;
+  📦 <strong>Atomic Stock & COD</strong> &nbsp;•&nbsp;
+  🌐 <strong>English • हिंदी • मराठी</strong>
+</p>
+
+<br />
+
+<p align="center">
+  <a href="https://www.oracle.com/java/"><img src="https://img.shields.io/badge/Java-17_LTS-orange.svg?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 17" /></a>
+  <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring_Boot-3.4.0-6DB33F.svg?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
+  <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8.0-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License" /></a>
+</p>
+
+<p align="center">
+  <a href="LIVE_URL_HERE"><strong>🚀 Explore Live Demo</strong></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="API_URL_HERE"><strong>📑 Interactive Swagger API</strong></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="DEMO_VIDEO_URL_HERE"><strong>🎬 Watch Video Walkthrough</strong></a>
 </p>
 
 </div>
