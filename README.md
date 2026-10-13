@@ -1,14 +1,24 @@
-# KisanMandi
+<div align="center">
 
-> Direct-from-farm marketplace connecting local farmers and consumers with real-time APMC Mandi price discovery.
+# 🌾 KisanMandi
 
-[![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
-[![MySQL](https://img.shields.io/badge/MySQL-8-blue.svg)](https://www.mysql.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+**Direct-from-farm marketplace connecting local farmers and consumers with real-time APMC Mandi price discovery.**
 
-[**Live Demo**](LIVE_URL_HERE) | [**API Documentation (Swagger)**](API_URL_HERE) | [**Video Walkthrough**](DEMO_VIDEO_URL_HERE)
+<p align="center">
+  <a href="https://www.oracle.com/java/"><img src="https://img.shields.io/badge/Java-17-orange.svg" alt="Java 17" /></a>
+  <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring%20Boot-3.4.0-brightgreen.svg" alt="Spring Boot" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-blue.svg" alt="React" /></a>
+  <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8-blue.svg" alt="MySQL" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License" /></a>
+</p>
+
+<p align="center">
+  <a href="LIVE_URL_HERE"><strong>Live Demo</strong></a> &nbsp;•&nbsp;
+  <a href="API_URL_HERE"><strong>API Documentation (Swagger)</strong></a> &nbsp;•&nbsp;
+  <a href="DEMO_VIDEO_URL_HERE"><strong>Video Walkthrough</strong></a>
+</p>
+
+</div>
 
 ---
 
