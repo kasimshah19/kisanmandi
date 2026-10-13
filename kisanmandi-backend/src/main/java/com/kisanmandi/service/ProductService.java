@@ -1,6 +1,10 @@
 package com.kisanmandi.service;
 
-import com.kisanmandi.dto.*;
+import com.kisanmandi.dto.PageResponse;
+import com.kisanmandi.dto.ProductRequest;
+import com.kisanmandi.dto.ProductResponse;
+import com.kisanmandi.dto.ProductStatusRequest;
+import com.kisanmandi.dto.StockUpdateRequest;
 import com.kisanmandi.entity.ApprovalStatus;
 import com.kisanmandi.entity.Category;
 import com.kisanmandi.entity.Product;
