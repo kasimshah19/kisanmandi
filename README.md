@@ -452,7 +452,7 @@ KisanMandi/
 │   ├── environment-variables.md      # Master environment variables reference
 │   ├── api-keys-setup.md             # Guide to obtain Cloudinary and data.gov.in keys
 │   ├── er-diagram.md                 # Comprehensive ER diagram and schema design
-│   ├── testing.md                    # Test suite breakdown and execution commands
+│   ├── test-cases.md                 # Test suite breakdown, matrix, and granular test cases
 │   ├── screenshots/
 │   │   └── README.md                 # Exact checklist of the 18 screenshots to capture
 │   └── postman/
@@ -659,7 +659,7 @@ Both backend and frontend contain extensive automated test suites with **100% pa
 
 > [!TIP]
 > For the complete granular test case specification (with individual test case IDs `TC-BE-ORD-01` through `TC-FE-UTL-03`, input preconditions, expected assertions, and Postman E2E test flows), see:
-> [**docs/testing.md**](docs/testing.md)
+> [**docs/test-cases.md**](docs/test-cases.md)
 
 ---
 
