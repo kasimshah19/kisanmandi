@@ -22,11 +22,47 @@
 <br />
 
 <p align="center">
-  <a href="https://www.oracle.com/java/"><img src="https://img.shields.io/badge/Java-17_LTS-orange.svg?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 17" /></a>
-  <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring_Boot-3.4.0-6DB33F.svg?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot" /></a>
-  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black" alt="React" /></a>
-  <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8.0-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License" /></a>
+  <!-- Backend & Core Architecture -->
+  <a href="https://www.oracle.com/java/"><img src="https://img.shields.io/badge/Java_17_LTS-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 17" /></a>
+  <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring_Boot_3.4.0-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot" /></a>
+  <a href="https://spring.io/projects/spring-security"><img src="https://img.shields.io/badge/Spring_Security_6-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white" alt="Spring Security" /></a>
+  <a href="https://spring.io/projects/spring-data-jpa"><img src="https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring Data JPA" /></a>
+  <a href="https://hibernate.org/"><img src="https://img.shields.io/badge/Hibernate_ORM-59666C?style=for-the-badge&logo=hibernate&logoColor=white" alt="Hibernate" /></a>
+  <a href="https://maven.apache.org/"><img src="https://img.shields.io/badge/Apache_Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white" alt="Maven" /></a>
+</p>
+
+<p align="center">
+  <!-- Frontend & UI Engineering -->
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" /></a>
+  <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite_6-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
+  <a href="https://www.javascript.com/"><img src="https://img.shields.io/badge/JavaScript_ES2023-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript" /></a>
+  <a href="https://recharts.org/"><img src="https://img.shields.io/badge/Recharts-22B5BF?style=for-the-badge&logo=chartdotjs&logoColor=white" alt="Recharts" /></a>
+  <a href="https://www.i18next.com/"><img src="https://img.shields.io/badge/i18next_Localization-26A69A?style=for-the-badge&logo=i18next&logoColor=white" alt="i18next" /></a>
+  <a href="https://axios-http.com/"><img src="https://img.shields.io/badge/Axios_HTTP-5A29E4?style=for-the-badge&logo=axios&logoColor=white" alt="Axios" /></a>
+  <a href="https://lucide.dev/"><img src="https://img.shields.io/badge/Lucide_Icons-F56565?style=for-the-badge&logo=feather&logoColor=white" alt="Lucide Icons" /></a>
+</p>
+
+<p align="center">
+  <!-- Database, Cloud & Integrations -->
+  <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL_8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" /></a>
+  <a href="https://aiven.io/mysql"><img src="https://img.shields.io/badge/Aiven_Cloud_DB-FF3554?style=for-the-badge&logo=aiven&logoColor=white" alt="Aiven" /></a>
+  <a href="https://cloudinary.com/"><img src="https://img.shields.io/badge/Cloudinary_CDN-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white" alt="Cloudinary" /></a>
+  <a href="https://data.gov.in/"><img src="https://img.shields.io/badge/data.gov.in_Agmarknet-FF9933?style=for-the-badge&logo=datagov&logoColor=white" alt="data.gov.in" /></a>
+  <a href="https://jwt.io/"><img src="https://img.shields.io/badge/JWT_Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT" /></a>
+  <a href="https://swagger.io/"><img src="https://img.shields.io/badge/OpenAPI_3_/_Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger" /></a>
+</p>
+
+<p align="center">
+  <!-- DevOps, Testing & Deployment -->
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker_Container-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" /></a>
+  <a href="https://github.com/features/actions"><img src="https://img.shields.io/badge/GitHub_Actions_CI-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions" /></a>
+  <a href="https://render.com/"><img src="https://img.shields.io/badge/Render_Web_Service-46E3B7?style=for-the-badge&logo=render&logoColor=black" alt="Render" /></a>
+  <a href="https://vercel.com/"><img src="https://img.shields.io/badge/Vercel_Edge_SPA-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" /></a>
+  <a href="https://junit.org/junit5/"><img src="https://img.shields.io/badge/JUnit_5_Tests-25A162?style=for-the-badge&logo=junit5&logoColor=white" alt="JUnit 5" /></a>
+  <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white" alt="Vitest" /></a>
+  <a href="https://www.postman.com/"><img src="https://img.shields.io/badge/Postman_v2.1-FF6C37?style=for-the-badge&logo=postman&logoColor=white" alt="Postman" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" /></a>
 </p>
 
 <p align="center">
