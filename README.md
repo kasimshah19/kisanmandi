@@ -560,6 +560,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ---
 
 <p align="center">
-  © 2026 Al-Hayat Diagnostic Lab — All rights reserved
+  © 2026 <strong>KisanMandi</strong> — Empowering Farmers, Connecting Communities. All rights reserved.
 </p>
 
