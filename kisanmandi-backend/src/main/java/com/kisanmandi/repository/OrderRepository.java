@@ -24,7 +24,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Override
     @EntityGraph(attributePaths = {"customer", "customer.profile", "farmer", "farmer.profile"})
-    Page<Order> findAll(Pageable pageable);
+    @org.springframework.lang.NonNull
+    Page<Order> findAll(@org.springframework.lang.NonNull Pageable pageable);
 
     @org.springframework.data.jpa.repository.Query(value = "SELECT o FROM Order o JOIN FETCH o.customer c LEFT JOIN FETCH c.profile cp JOIN FETCH o.farmer f LEFT JOIN FETCH f.profile fp ORDER BY o.createdAt DESC",
            countQuery = "SELECT COUNT(o) FROM Order o")

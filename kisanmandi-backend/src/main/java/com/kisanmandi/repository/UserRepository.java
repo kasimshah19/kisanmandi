@@ -11,7 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Override
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"profile"})
-    org.springframework.data.domain.Page<User> findAll(org.springframework.data.domain.Pageable pageable);
+    @org.springframework.lang.NonNull
+    org.springframework.data.domain.Page<User> findAll(@org.springframework.lang.NonNull org.springframework.data.domain.Pageable pageable);
 
     // Find a user by their email (used for login and loading user details)
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"profile"})
