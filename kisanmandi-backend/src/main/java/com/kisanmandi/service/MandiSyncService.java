@@ -99,7 +99,6 @@ public class MandiSyncService {
         runSyncInternal(trigger);
     }
 
-    @SuppressWarnings("null")
     private void runSyncInternal(SyncTrigger trigger) {
         long startTime = System.currentTimeMillis();
         MandiSyncLog syncLog = MandiSyncLog.builder()

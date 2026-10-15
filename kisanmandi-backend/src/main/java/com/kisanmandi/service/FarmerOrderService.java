@@ -102,6 +102,15 @@ public class FarmerOrderService {
             if (request.getNote() == null || request.getNote().trim().isEmpty()) {
                 throw new IllegalArgumentException("Rejection reason is required");
             }
+        }
+
+        // Atomic status transition
+        int updated = orderRepository.updateStatusIfCurrentStatus(orderId, current, target);
+        if (updated == 0) {
+            throw new InvalidStatusTransitionException("Order status has been updated concurrently");
+        }
+
+        if (target == OrderStatus.REJECTED) {
             // Restore stock
             for (OrderItem item : order.getItems()) {
                 if (item.getProduct() != null) {

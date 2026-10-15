@@ -2,6 +2,7 @@ import axiosInstance from './axiosInstance';
 
 export const productService = {
   getMyProducts: () => axiosInstance.get('/farmer/products'),
+  getMyProduct: (id) => axiosInstance.get(`/farmer/products/${id}`),
   createProduct: (formData) => axiosInstance.post('/farmer/products', formData),
   updateProduct: (id, formData) => axiosInstance.put(`/farmer/products/${id}`, formData),
   updateStock: (id, quantityAvailable) => axiosInstance.patch(`/farmer/products/${id}/stock`, { quantityAvailable }),

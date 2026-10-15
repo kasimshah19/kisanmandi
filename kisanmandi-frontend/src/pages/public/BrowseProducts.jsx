@@ -39,7 +39,7 @@ export default function BrowseProducts() {
   const sort = searchParams.get('sort') || '';
   const latitude = searchParams.get('latitude') || '';
   const longitude = searchParams.get('longitude') || '';
-  const radius = searchParams.get('radius') || '10';
+  const radius = searchParams.get('radius') || '25';
   const page = parseInt(searchParams.get('page') || '0', 10);
 
   // Local search input (debounced)

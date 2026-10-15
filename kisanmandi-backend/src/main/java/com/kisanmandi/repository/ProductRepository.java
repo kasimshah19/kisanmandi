@@ -15,14 +15,18 @@ import org.springframework.data.jpa.repository.Modifying;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    @Query("SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c WHERE p.farmer.id = :farmerId AND p.deleted = false ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c LEFT JOIN FETCH f.profile fp WHERE p.farmer.id = :farmerId AND p.deleted = false ORDER BY p.createdAt DESC")
     List<Product> findByFarmerIdAndDeletedFalse(@Param("farmerId") Long farmerId);
+
+    @Query(value = "SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c LEFT JOIN FETCH f.profile fp WHERE p.deleted = false ORDER BY p.createdAt DESC",
+           countQuery = "SELECT COUNT(p) FROM Product p WHERE p.deleted = false")
+    Page<Product> findAllForAdmin(Pageable pageable);
 
     String PUBLIC_CONDITION = "p.active = true AND p.deleted = false AND p.adminHidden = false " +
             "AND p.category.active = true AND fp.approvalStatus = 'APPROVED' AND p.farmer.status = 'ACTIVE'";
 
     @Query(value = "SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c " +
-            "JOIN FarmerProfile fp ON fp.user.id = f.id " +
+            "JOIN FETCH f.profile fp " +
             "WHERE " + PUBLIC_CONDITION + " " +
             "AND (:categoryId IS NULL OR c.id = :categoryId) " +
             "AND (:farmerId IS NULL OR f.id = :farmerId) " +
@@ -30,7 +34,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "AND (:district IS NULL OR LOWER(fp.district) = LOWER(:district)) " +
             "AND (:pincode IS NULL OR fp.pincode = :pincode)",
            countQuery = "SELECT COUNT(p) FROM Product p " +
-            "JOIN FarmerProfile fp ON fp.user.id = p.farmer.id " +
+            "JOIN p.farmer f JOIN f.profile fp " +
             "WHERE " + PUBLIC_CONDITION + " " +
             "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
             "AND (:farmerId IS NULL OR p.farmer.id = :farmerId) " +
@@ -38,11 +42,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "AND (:district IS NULL OR LOWER(fp.district) = LOWER(:district)) " +
             "AND (:pincode IS NULL OR fp.pincode = :pincode)")
     Page<Product> searchPublicProducts(@Param("categoryId") Long categoryId, @Param("farmerId") Long farmerId, @Param("q") String q, 
-                                       @Param("district") String district, @Param("pincode") String pincode, 
-                                       Pageable pageable);
+                                        @Param("district") String district, @Param("pincode") String pincode, 
+                                        Pageable pageable);
 
     @Query("SELECT p FROM Product p JOIN FETCH p.farmer f JOIN FETCH p.category c " +
-            "JOIN FarmerProfile fp ON fp.user.id = f.id " +
+            "JOIN FETCH f.profile fp " +
             "WHERE p.id = :id AND " + PUBLIC_CONDITION)
     Optional<Product> findPublicById(@Param("id") Long id);
 
@@ -53,4 +57,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Modifying
     @Query("UPDATE Product p SET p.quantityAvailable = p.quantityAvailable + :qty WHERE p.id = :id")
     void increaseStock(@Param("id") Long id, @Param("qty") BigDecimal qty);
+
+    long countByActiveTrueAndDeletedFalseAndAdminHiddenFalse();
+
+    long countByActiveFalseAndDeletedFalse();
+
+    long countByAdminHiddenTrueAndDeletedFalse();
+
+    long countByDeletedTrue();
 }

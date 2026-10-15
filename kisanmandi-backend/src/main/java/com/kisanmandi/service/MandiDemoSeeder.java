@@ -36,8 +36,8 @@ public class MandiDemoSeeder {
     @Transactional
     public void seedDemoData() {
         if (!demoSeedEnabled) {
-            log.info("Demo seeder disabled. Clearing existing mock data...");
-            repository.deleteAll();
+            log.info("Demo seeder disabled. Clearing existing mock demo data...");
+            repository.deleteBySource(PriceSource.DEMO);
             return;
         }
 

@@ -23,7 +23,7 @@ const EditProduct = () => {
 
   const loadProduct = async () => {
     try {
-      const res = await productService.getPublicProduct(id);
+      const res = await productService.getMyProduct(id);
       setProduct(res.data);
     } catch (error) {
       toast.error(t('errors.generic_retry'));

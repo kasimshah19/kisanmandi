@@ -11,4 +11,5 @@ public interface FarmerProfileRepository extends JpaRepository<FarmerProfile, Lo
     Optional<FarmerProfile> findByUserId(Long userId);
     List<FarmerProfile> findByApprovalStatusOrderBySubmittedAtAsc(ApprovalStatus approvalStatus);
     boolean existsByUserIdAndApprovalStatus(Long userId, ApprovalStatus approvalStatus);
+    long countByApprovalStatus(ApprovalStatus approvalStatus);
 }

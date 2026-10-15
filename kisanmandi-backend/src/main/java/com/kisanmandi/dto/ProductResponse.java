@@ -38,4 +38,7 @@ public class ProductResponse {
     // Admin
     private boolean adminHidden;
     private String adminHiddenReason;
+
+    // Nearby distance (km) when search includes location coordinates
+    private Double distanceKm;
 }

@@ -3,7 +3,8 @@ import { formatINR } from '../utils/format';
 
 export default function StatCard({ icon: Icon, label, title, value, hint, type }) {
   const displayLabel = label || title;
-  const displayValue = type === 'currency' ? formatINR(value) : value;
+  const isMissing = value === null || value === undefined || value === '';
+  const displayValue = isMissing ? '—' : (type === 'currency' ? formatINR(value) : value);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-start gap-4">

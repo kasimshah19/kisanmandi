@@ -22,7 +22,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -35,7 +37,10 @@ public class SecurityConfig {
     private final RateLimitFilter rateLimitFilter;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
-    private List<String> allowedOrigins;
+    private String allowedOrigins;
+
+    @Value("${app.cors.allow-lan:false}")
+    private boolean allowLan;
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter,
                           JwtAuthEntryPoint jwtAuthEntryPoint,
@@ -50,12 +55,26 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        List<String> origins = (allowedOrigins == null || allowedOrigins.isEmpty())
+        List<String> origins = (allowedOrigins == null || allowedOrigins.isBlank())
                 ? List.of("http://localhost:5173")
-                : allowedOrigins.stream().map(String::trim).filter(s -> !s.isEmpty()).toList();
+                : Arrays.stream(allowedOrigins.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
         config.setAllowedOrigins(origins);
+
+        if (allowLan) {
+            config.setAllowedOriginPatterns(List.of(
+                "http://192.168.*:[*]",
+                "http://10.*:[*]",
+                "http://172.1[6-9].*:[*]",
+                "http://172.2[0-9].*:[*]",
+                "http://172.3[0-1].*:[*]"
+            ));
+        }
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
 
@@ -93,11 +112,12 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/v3/api-docs/**"
                 ).permitAll()
-                // Public product, category and mandi browsing
+                // Public product, category, mandi and nearby browsing
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/mandi/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/farmers/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/nearby/**").permitAll()
                 // Role-restricted routes
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/farmer/**").hasRole("FARMER")

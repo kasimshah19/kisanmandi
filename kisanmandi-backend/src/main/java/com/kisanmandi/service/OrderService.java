@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -177,6 +176,12 @@ public class OrderService {
 
         if (order.getStatus() != OrderStatus.PLACED) {
             throw new InvalidStatusTransitionException("You can only cancel an order that is PLACED.");
+        }
+
+        // Atomic check-and-update
+        int updated = orderRepository.updateStatusIfCurrentStatus(orderId, OrderStatus.PLACED, OrderStatus.CANCELLED);
+        if (updated == 0) {
+            throw new InvalidStatusTransitionException("Order is no longer in PLACED state");
         }
 
         order.setStatus(OrderStatus.CANCELLED);

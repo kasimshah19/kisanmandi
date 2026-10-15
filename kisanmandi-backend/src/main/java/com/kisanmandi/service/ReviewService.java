@@ -23,7 +23,6 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
@@ -111,7 +110,8 @@ public class ReviewService {
         User farmer = userRepository.findById(farmerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Farmer not found"));
 
-        if (farmer.getStatus() != UserStatus.ACTIVE || farmer.getProfile() == null || farmer.getProfile().getApprovalStatus() != ApprovalStatus.APPROVED) {
+        FarmerProfile profile = farmerProfileRepository.findByUserId(farmerId).orElse(null);
+        if (farmer.getStatus() != UserStatus.ACTIVE || profile == null || profile.getApprovalStatus() != ApprovalStatus.APPROVED) {
             throw new ResourceNotFoundException("Farmer not found");
         }
 

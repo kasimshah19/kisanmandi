@@ -33,6 +33,13 @@ public class FarmerProductController {
         return ResponseEntity.ok(productService.getMyProducts(farmerId));
     }
 
+    @Operation(summary = "Get a single product listed by the logged-in farmer (even if inactive)")
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponse> getMyProduct(@PathVariable Long id) {
+        Long farmerId = authService.getCurrentUser().getId();
+        return ResponseEntity.ok(productService.getMyProduct(farmerId, id));
+    }
+
     @Operation(summary = "Create a new product listing with optional image")
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(

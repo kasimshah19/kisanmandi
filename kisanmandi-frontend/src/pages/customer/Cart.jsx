@@ -24,10 +24,6 @@ export default function Cart() {
   const [error, setError] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
 
-  useEffect(() => {
-    loadCart();
-  }, []);
-
   const loadCart = async () => {
     setLoading(true);
     setError(null);
@@ -42,6 +38,10 @@ export default function Cart() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadCart();
+  }, []);
 
   const handleUpdate = async (itemId, quantity) => {
     setUpdatingId(itemId);

@@ -8,7 +8,16 @@ import java.util.List;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class AdminStatsResponse {
+    // Top-level fields for AdminDashboard.jsx
+    private long totalUsers;
+    private BigDecimal totalSales;
+    private long totalOrders;
+    private long totalProducts;
+    private List<Map<String, Object>> salesByMonth;
+
     private UsersStats users;
     private FarmersStats farmers;
     private ProductsStats products;

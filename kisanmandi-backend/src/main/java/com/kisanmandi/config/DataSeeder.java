@@ -31,7 +31,6 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     @Override
-    @SuppressWarnings("null")
     public void run(String... args) {
         // If admin email or password is not set, print a warning and skip
         if (adminEmail == null || adminEmail.isBlank() || adminPassword == null || adminPassword.isBlank()) {

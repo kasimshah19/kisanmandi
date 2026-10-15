@@ -15,6 +15,14 @@ public class ReviewResponse {
     private Integer rating;
     private String comment;
     private String reviewerName;
+    private String customerName;
+    private String productName;
     private LocalDateTime createdAt;
     private String orderNumber;
+    private boolean hidden;
+    private String hiddenReason;
+
+    public String getCustomerName() {
+        return customerName != null ? customerName : reviewerName;
+    }
 }

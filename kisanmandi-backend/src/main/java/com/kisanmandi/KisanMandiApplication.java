@@ -8,6 +8,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class KisanMandiApplication {
 
+	@jakarta.annotation.PostConstruct
+	public void init() {
+		java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+	}
+
 	public static void main(String[] args) {
 		SpringApplication.run(KisanMandiApplication.class, args);
 	}

@@ -19,10 +19,23 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Safe target route resolver to prevent cross-role unauthorized loops
+  const resolveTarget = (role) => {
+    const rawFrom = location.state?.from;
+    const defaultPath = getDashboardPath(role);
+    if (!rawFrom) return defaultPath;
+    const fromPath = typeof rawFrom === 'string' ? rawFrom : rawFrom.pathname || defaultPath;
+    
+    // Check if target requires a role different from current user's role
+    if (fromPath.startsWith('/farmer') && role !== 'ROLE_FARMER' && role !== 'FARMER') return defaultPath;
+    if (fromPath.startsWith('/customer') && role !== 'ROLE_CUSTOMER' && role !== 'CUSTOMER') return defaultPath;
+    if (fromPath.startsWith('/admin') && role !== 'ROLE_ADMIN' && role !== 'ADMIN') return defaultPath;
+    return fromPath;
+  };
+
   // If already logged in, redirect to previous page or role dashboard
   if (isAuthenticated && user) {
-    const from = location.state?.from || getDashboardPath(user.role);
-    return <Navigate to={from} replace />;
+    return <Navigate to={resolveTarget(user.role)} replace />;
   }
 
   const handleChange = (e) => {
@@ -41,8 +54,7 @@ export default function Login() {
     try {
       const data = await login(form);
       toast.success(`${t('common.continue')}, ${data.name}!`);
-      const from = location.state?.from || getDashboardPath(data.role);
-      navigate(from, { replace: true });
+      navigate(resolveTarget(data.role), { replace: true });
     } catch (error) {
       const msg =
         error.friendlyMessage ||

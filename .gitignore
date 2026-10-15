@@ -30,6 +30,7 @@ logs/
 temp/
 tmp/
 *.tmp
+qa-temp/
 
 # ─── Backend (Java / Maven) ─────────────────────────────────
 kisanmandi-backend/target/

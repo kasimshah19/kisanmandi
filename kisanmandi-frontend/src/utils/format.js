@@ -32,18 +32,29 @@ export function getDateLocale() {
   return 'en-IN';
 }
 
+export function parseDateSafe(iso) {
+  if (!iso) return null;
+  if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso.trim())) {
+    const [y, m, d] = iso.trim().split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(iso);
+}
+
 // Format ISO date string to readable date (e.g., "08 Oct 2026")
 export function formatDate(iso) {
   if (!iso) return '';
-  const date = new Date(iso);
-  if (isNaN(date.getTime())) return '';
+  const date = parseDateSafe(iso);
+  if (!date || isNaN(date.getTime())) return '';
   return date.toLocaleDateString(getDateLocale(), { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 // Format ISO date string to short date (e.g., "12 Oct")
 export function formatShortDate(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString(getDateLocale(), { day: '2-digit', month: 'short' });
+  const date = parseDateSafe(iso);
+  if (!date || isNaN(date.getTime())) return '';
+  return date.toLocaleDateString(getDateLocale(), { day: '2-digit', month: 'short' });
 }
 
 // Format ISO date string to date + time (e.g., "08 Oct 2026, 2:30 PM")

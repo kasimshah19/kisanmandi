@@ -104,7 +104,9 @@ axiosInstance.interceptors.response.use(
         if (!isAuthRequest) {
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem('kisanmandi_user');
-          window.location.href = '/login';
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
       } else if (status === 403) {
         toast.error('You do not have permission to perform this action.');

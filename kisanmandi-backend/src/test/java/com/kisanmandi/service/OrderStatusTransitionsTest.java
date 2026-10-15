@@ -60,6 +60,8 @@ class OrderStatusTransitionsTest {
                 .items(new ArrayList<>(List.of(item)))
                 .history(new ArrayList<>())
                 .build();
+
+        lenient().when(orderRepository.updateStatusIfCurrentStatus(anyLong(), any(), any())).thenReturn(1);
     }
 
     @Test

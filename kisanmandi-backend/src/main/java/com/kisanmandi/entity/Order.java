@@ -14,7 +14,9 @@ import java.util.List;
 @Table(name = "orders", indexes = {
         @Index(name = "idx_order_customer", columnList = "customer_id"),
         @Index(name = "idx_order_farmer", columnList = "farmer_id"),
-        @Index(name = "idx_order_status", columnList = "status")
+        @Index(name = "idx_order_status", columnList = "status"),
+        @Index(name = "idx_order_farmer_status", columnList = "farmer_id, status"),
+        @Index(name = "idx_order_customer_created", columnList = "customer_id, created_at")
 })
 @Getter
 @Setter
@@ -79,10 +81,12 @@ public class Order {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 25)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 25)
     @Builder.Default
     private List<OrderStatusHistory> history = new ArrayList<>();
 

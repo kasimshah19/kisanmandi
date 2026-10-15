@@ -129,7 +129,7 @@ export default function Home() {
                 className="min-w-[170px] bg-green-50/80 border border-green-100 rounded-2xl p-4 flex flex-col justify-center items-center text-center shadow-xs"
               >
                 <span className="font-semibold text-gray-900 mb-1">{rate.commodity}</span>
-                <span className="text-green-800 font-extrabold text-xl">₹{formatPrice(rate.avgModalPrice)}</span>
+                <span className="text-green-800 font-extrabold text-xl">₹{formatPrice(rate.avgModal)}</span>
                 <span className="text-xs text-gray-500 mt-1">/ {t('units.QUINTAL')}</span>
               </div>
             ))}

@@ -108,6 +108,10 @@ public interface MandiPriceRepository extends JpaRepository<MandiPrice, Long> {
 
     long countBySource(PriceSource source);
 
+    @Modifying
+    @Query("DELETE FROM MandiPrice m WHERE m.source = :source")
+    int deleteBySource(@Param("source") PriceSource source);
+
     @Query("SELECT COUNT(DISTINCT m.priceDate) FROM MandiPrice m WHERE m.source = :source")
     long countDistinctDatesBySource(@Param("source") PriceSource source);
 

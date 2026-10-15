@@ -122,10 +122,10 @@ public class MandiController {
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus() {
         MandiStatusResponse fullStatus = queryService.getStatus();
-        return ResponseEntity.ok(Map.of(
-                "latestPriceDate", fullStatus.getLatestPriceDate() != null ? fullStatus.getLatestPriceDate().toString() : null,
-                "lastSyncTime", fullStatus.getLastSync() != null ? fullStatus.getLastSync().getStartedAt() : null,
-                "running", fullStatus.isRunning()
-        ));
+        Map<String, Object> statusMap = new java.util.LinkedHashMap<>();
+        statusMap.put("latestPriceDate", fullStatus.getLatestPriceDate() != null ? fullStatus.getLatestPriceDate().toString() : null);
+        statusMap.put("lastSyncTime", fullStatus.getLastSync() != null ? fullStatus.getLastSync().getStartedAt() : null);
+        statusMap.put("running", fullStatus.isRunning());
+        return ResponseEntity.ok(statusMap);
     }
 }

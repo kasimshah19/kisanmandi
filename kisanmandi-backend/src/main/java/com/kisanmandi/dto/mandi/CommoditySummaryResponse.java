@@ -22,4 +22,5 @@ public class CommoditySummaryResponse {
     private BigDecimal previousAvgModal;
     private BigDecimal changePercent;
     private String scopeUsed; // "DISTRICT", "STATE", "ALL"
+
 }

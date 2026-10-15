@@ -7,6 +7,7 @@ import com.kisanmandi.dto.ProductStatusRequest;
 import com.kisanmandi.dto.StockUpdateRequest;
 import com.kisanmandi.entity.ApprovalStatus;
 import com.kisanmandi.entity.Category;
+import com.kisanmandi.entity.FarmerProfile;
 import com.kisanmandi.entity.Product;
 import com.kisanmandi.entity.User;
 import com.kisanmandi.exception.FarmerNotApprovedException;
@@ -31,7 +32,6 @@ import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -39,6 +39,13 @@ public class ProductService {
     private final UserRepository userRepository;
     private final FarmerProfileRepository farmerProfileRepository;
     private final CloudinaryService cloudinaryService;
+    private final NearbyService nearbyService;
+
+    @Transactional(readOnly = true)
+    public ProductResponse getMyProduct(Long farmerId, Long productId) {
+        Product product = getFarmerProduct(farmerId, productId);
+        return mapToResponse(product);
+    }
 
     @Transactional
     public ProductResponse createProduct(Long farmerId, ProductRequest request, MultipartFile image) {
@@ -143,7 +150,36 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public PageResponse<ProductResponse> searchPublicProducts(Long categoryId, Long farmerId, String q, String district, String pincode, String sort, int page, int size) {
+        return searchPublicProducts(categoryId, farmerId, q, district, pincode, sort, null, null, null, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ProductResponse> searchPublicProducts(Long categoryId, Long farmerId, String q, String district, String pincode, String sort, Double latitude, Double longitude, Double radius, int page, int size) {
         if (size > 50) size = 50;
+
+        Map<Long, Double> farmerDistanceMap = new java.util.HashMap<>();
+        if (latitude != null && longitude != null) {
+            try {
+                double rad = (radius != null && radius > 0) ? Math.min(radius, 100.0) : 25.0;
+                var nearbyFarmers = nearbyService.findNearbyFarmers(latitude, longitude, rad);
+                for (var nf : nearbyFarmers) {
+                    if (nf.getFarmer() != null && nf.getFarmer().getId() != null) {
+                        farmerDistanceMap.put(nf.getFarmer().getId(), nf.getDistanceKm());
+                    }
+                }
+                if (farmerDistanceMap.isEmpty()) {
+                    return PageResponse.<ProductResponse>builder()
+                            .content(java.util.Collections.emptyList())
+                            .page(page)
+                            .size(size)
+                            .totalElements(0)
+                            .totalPages(0)
+                            .build();
+                }
+            } catch (Exception e) {
+                // Fallback to standard search if location error
+            }
+        }
 
         Sort finalSort;
         if ("priceAsc".equalsIgnoreCase(sort)) {
@@ -161,15 +197,25 @@ public class ProductService {
         Page<Product> productPage = productRepository.searchPublicProducts(categoryId, farmerId, q, district, pincode, pageable);
         
         List<ProductResponse> content = productPage.getContent().stream()
+                .filter(p -> farmerDistanceMap.isEmpty() || farmerDistanceMap.containsKey(p.getFarmer().getId()))
                 .map(this::mapToResponse)
+                .peek(pr -> {
+                    if (farmerDistanceMap.containsKey(pr.getFarmerId())) {
+                        pr.setDistanceKm(farmerDistanceMap.get(pr.getFarmerId()));
+                    }
+                })
                 .collect(Collectors.toList());
+
+        if ("distanceAsc".equalsIgnoreCase(sort)) {
+            content.sort(java.util.Comparator.comparing(p -> p.getDistanceKm() != null ? p.getDistanceKm() : Double.MAX_VALUE));
+        }
                 
         return PageResponse.<ProductResponse>builder()
                 .content(content)
                 .page(productPage.getNumber())
                 .size(productPage.getSize())
-                .totalElements(productPage.getTotalElements())
-                .totalPages(productPage.getTotalPages())
+                .totalElements(farmerDistanceMap.isEmpty() ? productPage.getTotalElements() : content.size())
+                .totalPages(farmerDistanceMap.isEmpty() ? productPage.getTotalPages() : (content.isEmpty() ? 0 : 1))
                 .build();
     }
 
@@ -200,8 +246,13 @@ public class ProductService {
     }
 
     private ProductResponse mapToResponse(Product product) {
-        // Needs a fetch join or lazy loading within transaction. Here we rely on Hibernate loading the lazy fields.
-        var profileOpt = farmerProfileRepository.findByUserId(product.getFarmer().getId());
+        FarmerProfile profile = null;
+        if (product.getFarmer() != null) {
+            profile = product.getFarmer().getProfile();
+            if (profile == null) {
+                profile = farmerProfileRepository.findByUserId(product.getFarmer().getId()).orElse(null);
+            }
+        }
         
         return ProductResponse.builder()
                 .id(product.getId())
@@ -217,11 +268,11 @@ public class ProductService {
                 .createdAt(product.getCreatedAt())
                 .farmerId(product.getFarmer().getId())
                 .farmerName(product.getFarmer().getName())
-                .farmName(profileOpt.map(p -> p.getFarmName()).orElse(null))
-                .village(profileOpt.map(p -> p.getVillage()).orElse(null))
-                .district(profileOpt.map(p -> p.getDistrict()).orElse(null))
-                .farmerRatingAvg(profileOpt.map(p -> p.getRatingAvg()).orElse(BigDecimal.ZERO))
-                .farmerRatingCount(profileOpt.map(p -> p.getRatingCount()).orElse(0))
+                .farmName(profile != null ? profile.getFarmName() : null)
+                .village(profile != null ? profile.getVillage() : null)
+                .district(profile != null ? profile.getDistrict() : null)
+                .farmerRatingAvg(profile != null && profile.getRatingAvg() != null ? profile.getRatingAvg() : BigDecimal.ZERO)
+                .farmerRatingCount(profile != null ? profile.getRatingCount() : 0)
                 .adminHidden(product.isAdminHidden())
                 .adminHiddenReason(product.getAdminHiddenReason())
                 .build();

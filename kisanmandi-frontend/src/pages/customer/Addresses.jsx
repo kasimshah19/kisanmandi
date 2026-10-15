@@ -23,10 +23,6 @@ export default function Addresses() {
   
   const [deleteId, setDeleteId] = useState(null);
 
-  useEffect(() => {
-    loadAddresses();
-  }, []);
-
   const loadAddresses = async () => {
     setLoading(true);
     setError(null);
@@ -41,6 +37,10 @@ export default function Addresses() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadAddresses();
+  }, []);
 
   const handleSave = async (data) => {
     setSaving(true);

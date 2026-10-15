@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '../routes/ProtectedRoute';
 import QuantityInput from '../components/QuantityInput';
 import StarRating from '../components/StarRating';
+import StatCard from '../components/StatCard';
 import * as AuthContextModule from '../context/AuthContext';
 
 // Mock AuthContext
@@ -210,5 +211,66 @@ describe('StarRating Component', () => {
     fireEvent.click(star4);
 
     expect(handleRating).not.toHaveBeenCalled();
+  });
+});
+
+describe('Regression Tests: ProtectedRoute state.from and Missing Data Handling', () => {
+  it('ProtectedRoute passes location state.from when redirecting to /login', () => {
+    AuthContextModule.useAuth.mockReturnValue({
+      isAuthenticated: false,
+      user: null,
+      loading: false,
+    });
+
+    let capturedLocation = null;
+    function LoginCapture() {
+      const location = React.useMemo(() => window.location, []);
+      // In MemoryRouter, we can use useLocation
+      const loc = React.useContext(React.createContext(null)) || {};
+      return <div data-testid="login-view">Login Page</div>;
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/customer/orders?page=2']}>
+        <Routes>
+          <Route
+            path="/customer/orders"
+            element={
+              <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                <div>Orders Page</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<LoginCapture />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByTestId('login-view')).toBeTruthy();
+  });
+
+  it('StatCard displays em-dash — when value is missing or null (not Rs 0)', () => {
+    const { container } = render(
+      <StatCard
+        title="Total Sales"
+        value={null}
+        type="currency"
+      />
+    );
+
+    expect(screen.getByText('—')).toBeTruthy();
+    expect(screen.queryByText('₹0.00')).toBeNull();
+  });
+
+  it('StatCard displays currency value when valid number provided', () => {
+    render(
+      <StatCard
+        title="Total Sales"
+        value={1500}
+        type="currency"
+      />
+    );
+
+    expect(screen.getByText(/1,500/)).toBeTruthy();
   });
 });

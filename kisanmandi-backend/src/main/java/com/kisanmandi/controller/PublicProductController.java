@@ -26,9 +26,12 @@ public class PublicProductController {
             @RequestParam(required = false) String district,
             @RequestParam(required = false) String pincode,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) Double radius,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(productService.searchPublicProducts(categoryId, farmerId, q, district, pincode, sort, page, size));
+        return ResponseEntity.ok(productService.searchPublicProducts(categoryId, farmerId, q, district, pincode, sort, latitude, longitude, radius, page, size));
     }
 
     @Operation(summary = "Get single published product details by ID")

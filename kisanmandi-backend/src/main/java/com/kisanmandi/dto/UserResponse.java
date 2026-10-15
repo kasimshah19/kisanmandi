@@ -11,4 +11,8 @@ public class UserResponse {
     private String phone;
     private String role;
     private String status;
+
+    public boolean isActive() {
+        return "ACTIVE".equalsIgnoreCase(status);
+    }
 }

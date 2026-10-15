@@ -1,10 +1,11 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 // Protects routes — only allows access to users with the correct role
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
   // Show loading spinner while checking auth status
   if (loading) {
@@ -17,7 +18,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   // Not logged in → go to login page
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
   }
 
   // Logged in but wrong role → go to unauthorized page

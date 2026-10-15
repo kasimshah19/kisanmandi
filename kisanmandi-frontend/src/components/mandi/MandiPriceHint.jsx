@@ -52,19 +52,24 @@ export default function MandiPriceHint({ productName, unit, district, state }) {
   const isKgUnit = unit === 'KG';
   const notQuintalSuitable = unit === 'DOZEN' || unit === 'PIECE' || unit === 'LITRE';
 
+  const avgModal = summary.avgModal;
+  const avgMin = summary.minPrice;
+  const avgMax = summary.maxPrice;
+  const priceDate = summary.priceDate;
+
   return (
     <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3 flex gap-2 text-sm text-green-800">
       <Info className="h-5 w-5 text-green-600 flex-shrink-0" />
       <div>
         <p>
-          <strong>{t('mandi.live_rates')} ({summary.commodity}):</strong> ₹{formatPrice(summary.avgMinPrice)} - ₹{formatPrice(summary.avgMaxPrice)} {t('mandi.per_quintal')} 
-          ({t('mandi.modal_price')}: ₹{formatPrice(summary.avgModalPrice)}, ~₹{perKg(summary.avgModalPrice)} {t('mandi.per_kg')}) 
-          in {district || state || t('mandi.all_markets')}, {t('mandi.data_as_of', { date: formatDate(summary.latestPriceDate) })}.
+          <strong>{t('mandi.live_rates')} ({summary.commodity}):</strong> ₹{formatPrice(avgMin)} - ₹{formatPrice(avgMax)} {t('mandi.per_quintal')} 
+          ({t('mandi.modal_price')}: ₹{formatPrice(avgModal)}, ~₹{perKg(avgModal)} {t('mandi.per_kg')}) 
+          in {district || state || t('mandi.all_markets')}, {t('mandi.data_as_of', { date: formatDate(priceDate) })}.
         </p>
         
         {isKgUnit && (
           <p className="mt-1 font-medium text-green-900">
-            ₹{perKg(summary.avgMinPrice)} - ₹{perKg(summary.avgMaxPrice)} {t('mandi.per_kg')}
+            ₹{perKg(avgMin)} - ₹{perKg(avgMax)} {t('mandi.per_kg')}
           </p>
         )}
         

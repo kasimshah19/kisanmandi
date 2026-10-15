@@ -27,8 +27,20 @@ export function AuthProvider({ children }) {
     const savedUser  = localStorage.getItem(USER_KEY);
 
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && typeof parsed === 'object') {
+          setToken(savedToken);
+          setUser(parsed);
+        } else {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+        }
+      } catch (e) {
+        console.warn('Corrupted session data in localStorage, clearing auth state.', e);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+      }
     }
     setLoading(false);
   }, []);

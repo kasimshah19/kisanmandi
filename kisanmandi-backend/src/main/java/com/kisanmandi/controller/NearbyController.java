@@ -23,7 +23,7 @@ public class NearbyController {
     public ResponseEntity<List<NearbyFarmerResponse>> findNearbyFarmers(
             @RequestParam double lat,
             @RequestParam double lng,
-            @RequestParam(defaultValue = "50") double radiusKm) {
+            @RequestParam(defaultValue = "25") double radiusKm) {
         return ResponseEntity.ok(nearbyService.findNearbyFarmers(lat, lng, radiusKm));
     }
 }

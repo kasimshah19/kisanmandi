@@ -52,12 +52,23 @@ public class MandiQueryService {
         return priceRepository.findLatestPriceDate().orElse(LocalDate.now());
     }
 
+    public String resolveCommodity(String input) {
+        if (input == null || input.isBlank()) return null;
+        String trimmed = input.trim();
+        List<String> exactMatch = priceRepository.findCommodityExact(trimmed);
+        if (!exactMatch.isEmpty()) {
+            return exactMatch.get(0);
+        }
+        return priceRepository.searchCommoditiesFuzzy(trimmed).stream().findFirst().orElse(trimmed);
+    }
+
     public PageResponse<MandiPriceResponse> getPrices(String state, String district, String market, String commodity, LocalDate date, int page, int size) {
         if (date == null) date = getLatestDate();
         if (size > 100) size = 100;
+        String resolvedCommodity = resolveCommodity(commodity);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<MandiPrice> prices = priceRepository.findPrices(state, district, market, commodity, date, pageable);
+        Page<MandiPrice> prices = priceRepository.findPrices(state, district, market, resolvedCommodity, date, pageable);
 
         return new PageResponse<>(
                 prices.getContent().stream().map(this::mapToResponse).toList(),
@@ -71,17 +82,19 @@ public class MandiQueryService {
     public TrendResponse getTrend(String commodity, String state, String district, String market, int days) {
         if (days < 1) days = 7;
         if (days > 90) days = 90;
+        String resolvedCommodity = resolveCommodity(commodity);
+        if (resolvedCommodity == null) resolvedCommodity = commodity;
 
-        LocalDate endDate = priceRepository.findLatestPriceDateByCommodity(commodity).orElse(LocalDate.now());
+        LocalDate endDate = priceRepository.findLatestPriceDateByCommodity(resolvedCommodity).orElse(LocalDate.now());
         LocalDate startDate = endDate.minusDays(days - 1);
 
-        List<TrendPoint> points = priceRepository.getTrend(commodity, state, district, market, startDate, endDate);
+        List<TrendPoint> points = priceRepository.getTrend(resolvedCommodity, state, district, market, startDate, endDate);
         
         // Demo flag logic
         boolean hasDemoData = priceRepository.countBySource(PriceSource.DEMO) > 0;
 
         return TrendResponse.builder()
-                .commodity(commodity)
+                .commodity(resolvedCommodity)
                 .days(days)
                 .points(points)
                 .hasDemoData(hasDemoData)
@@ -89,25 +102,23 @@ public class MandiQueryService {
     }
 
     public CompareResponse getCompare(String commodity, String state, String district, LocalDate date, int limit) {
-        if (date == null) date = priceRepository.findLatestPriceDateByCommodity(commodity).orElse(LocalDate.now());
+        String resolvedCommodity = resolveCommodity(commodity);
+        if (resolvedCommodity == null) resolvedCommodity = commodity;
+        if (date == null) date = priceRepository.findLatestPriceDateByCommodity(resolvedCommodity).orElse(LocalDate.now());
         if (limit > 20) limit = 20;
 
         Pageable pageable = PageRequest.of(0, limit);
-        List<ComparePoint> points = priceRepository.getCompare(commodity, state, district, date, pageable);
+        List<ComparePoint> points = priceRepository.getCompare(resolvedCommodity, state, district, date, pageable);
 
         return CompareResponse.builder()
-                .commodity(commodity)
+                .commodity(resolvedCommodity)
                 .date(date)
                 .points(points)
                 .build();
     }
 
     public CommoditySummaryResponse getSummary(String commodityName, String state, String district) {
-        List<String> exactMatch = priceRepository.findCommodityExact(commodityName);
-        String commodity = exactMatch.isEmpty() ? 
-            priceRepository.searchCommoditiesFuzzy(commodityName).stream().findFirst().orElse(null) : 
-            exactMatch.get(0);
-
+        String commodity = resolveCommodity(commodityName);
         if (commodity == null) {
             return null; // Signals empty/204
         }

@@ -10,7 +10,7 @@ import java.util.List;
 public interface NearbyFarmerRepository extends JpaRepository<FarmerProfile, Long> {
 
     @Query(value = "SELECT p.id, " +
-            "(6371 * acos(cos(radians(:lat)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(p.latitude)))) AS distance " +
+            "(6371 * acos(LEAST(1.0, GREATEST(-1.0, cos(radians(:lat)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(p.latitude)))))) AS distance " +
             "FROM farmer_profiles p " +
             "JOIN users u ON p.user_id = u.id " +
             "WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL " +

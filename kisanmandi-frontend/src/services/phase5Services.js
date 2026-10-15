@@ -1,6 +1,9 @@
 import axiosInstance from './axiosInstance';
 
 const cleanParams = (params) => {
+  if (typeof params === 'number') {
+    return { page: params };
+  }
   const cleaned = {};
   for (const key in params) {
     if (params[key] !== '' && params[key] !== null && params[key] !== undefined) {
@@ -19,7 +22,6 @@ export const reviewService = {
 
 export const nearbyService = {
   getNearbyFarmers: (params) => axiosInstance.get('/nearby/farmers', { params: cleanParams(params) }).then(res => res.data),
-  getNearbyProducts: (params) => axiosInstance.get('/nearby/products', { params: cleanParams(params) }).then(res => res.data),
 };
 
 export const farmerStatsService = {
@@ -34,22 +36,27 @@ export const adminUserService = {
   getUsers: (params) => axiosInstance.get('/admin/users', { params: cleanParams(params) }).then(res => res.data),
   getUser: (id) => axiosInstance.get(`/admin/users/${id}`).then(res => res.data),
   updateStatus: (id, data) => axiosInstance.patch(`/admin/users/${id}/status`, data).then(res => res.data),
+  toggleUserStatus: (id, active) => axiosInstance.patch(`/admin/users/${id}/status`, { active }).then(res => res.data),
 };
 
 export const adminProductService = {
   getProducts: (params) => axiosInstance.get('/admin/products', { params: cleanParams(params) }).then(res => res.data),
   updateModeration: (id, data) => axiosInstance.patch(`/admin/products/${id}/moderation`, data).then(res => res.data),
+  deleteProduct: (id) => axiosInstance.post(`/admin/products/${id}/hide`, { reason: 'Deleted by admin' }).then(res => res.data),
 };
 
 export const adminOrderService = {
   getOrders: (params) => axiosInstance.get('/admin/orders', { params: cleanParams(params) }).then(res => res.data),
+  getAllOrders: (params) => adminOrderService.getOrders(params),
   getOrder: (id) => axiosInstance.get(`/admin/orders/${id}`).then(res => res.data),
-  cancelOrder: (id, data) => axiosInstance.patch(`/admin/orders/${id}/cancel`, data).then(res => res.data),
+  cancelOrder: (id, data) => axiosInstance.post(`/admin/orders/${id}/cancel`, data).then(res => res.data),
 };
 
 export const adminReviewService = {
   getReviews: (params) => axiosInstance.get('/admin/reviews', { params: cleanParams(params) }).then(res => res.data),
+  getAllReviews: (params) => adminReviewService.getReviews(params),
   updateVisibility: (id, data) => axiosInstance.patch(`/admin/reviews/${id}/visibility`, data).then(res => res.data),
+  deleteReview: (id) => axiosInstance.post(`/admin/reviews/${id}/hide`, { reason: 'Deleted by admin' }).then(res => res.data),
 };
 
 export const publicFarmerService = {

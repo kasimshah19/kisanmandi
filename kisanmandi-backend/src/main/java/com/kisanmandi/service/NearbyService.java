@@ -30,8 +30,8 @@ public class NearbyService {
         if (lng < -180.0 || lng > 180.0) {
             throw new IllegalArgumentException("Longitude must be between -180 and 180");
         }
-        if (radiusKm <= 0 || radiusKm > 1000.0) {
-            throw new IllegalArgumentException("Radius must be greater than 0 and up to 1000 km");
+        if (radiusKm <= 0 || radiusKm > 100.0) {
+            throw new IllegalArgumentException("Radius must be greater than 0 and up to 100 km");
         }
 
         // Earth radius ~6371 km -> 1 deg lat ~ 111.19 km
@@ -62,8 +62,8 @@ public class NearbyService {
         if (lng < -180.0 || lng > 180.0) {
             throw new IllegalArgumentException("Longitude must be between -180 and 180");
         }
-        if (radiusKm <= 0 || radiusKm > 1000.0) {
-            throw new IllegalArgumentException("Radius must be greater than 0 and up to 1000 km");
+        if (radiusKm <= 0 || radiusKm > 100.0) {
+            throw new IllegalArgumentException("Radius must be greater than 0 and up to 100 km");
         }
 
         List<Object[]> results = nearbyFarmerRepository.findNearbyFarmerIdsNative(lat, lng, radiusKm);
@@ -76,22 +76,24 @@ public class NearbyService {
             Optional<FarmerProfile> profileOpt = farmerProfileRepository.findById(profileId);
             if (profileOpt.isPresent()) {
                 FarmerProfile profile = profileOpt.get();
-                PublicFarmerResponse pfr = PublicFarmerResponse.builder()
-                        .id(profile.getUser().getId())
-                        .name(profile.getUser().getName())
-                        .farmName(profile.getFarmName())
-                        .village(profile.getVillage())
-                        .district(profile.getDistrict())
-                        .state(profile.getState())
-                        .ratingAvg(profile.getRatingAvg())
-                        .ratingCount(profile.getRatingCount())
-                        .joinedAt(profile.getUser().getCreatedAt())
-                        .build();
+                if (profile.getUser() != null) {
+                    PublicFarmerResponse pfr = PublicFarmerResponse.builder()
+                            .id(profile.getUser().getId())
+                            .name(profile.getUser().getName())
+                            .farmName(profile.getFarmName())
+                            .village(profile.getVillage())
+                            .district(profile.getDistrict())
+                            .state(profile.getState())
+                            .ratingAvg(profile.getRatingAvg())
+                            .ratingCount(profile.getRatingCount())
+                            .joinedAt(profile.getUser().getCreatedAt())
+                            .build();
 
-                responseList.add(NearbyFarmerResponse.builder()
-                        .farmer(pfr)
-                        .distanceKm(Math.round(distance * 10.0) / 10.0) // Round to 1 decimal place
-                        .build());
+                    responseList.add(NearbyFarmerResponse.builder()
+                            .farmer(pfr)
+                            .distanceKm(Math.round(distance * 10.0) / 10.0) // Round to 1 decimal place
+                            .build());
+                }
             }
         }
         return responseList;

@@ -34,7 +34,6 @@ public class AuthService {
     }
 
     // ─── Register a new user ───
-    @SuppressWarnings("null")
     public String register(RegisterRequest request) {
         // Only FARMER and CUSTOMER can register themselves
         if (request.getRole() == Role.ADMIN) {
