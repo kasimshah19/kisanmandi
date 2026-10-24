@@ -22,10 +22,11 @@ import {
   MoreHorizontal,
   Sprout,
   Shield,
-  ChevronLeft
+  HelpCircle
 } from 'lucide-react';
 import { farmerOrderService } from '../services/farmerOrderService';
 import LanguageSwitcher from './LanguageSwitcher';
+import TextSizeControl from './ui/TextSizeControl';
 import Badge from './ui/Badge';
 
 export default function DashboardLayout({ children, role }) {
@@ -68,7 +69,7 @@ export default function DashboardLayout({ children, role }) {
     if (role === 'FARMER') {
       farmerOrderService
         .summary()
-        .then((res) => setPlacedCount(res.data.placed || 0))
+        .then((res) => setPlacedCount(res.data?.placed || 0))
         .catch(() => {});
     }
   }, [role, location.pathname]);
@@ -97,7 +98,7 @@ export default function DashboardLayout({ children, role }) {
 
   const links = role === 'ADMIN' ? adminLinks : farmerLinks;
 
-  // Farmers bottom navigation shortcuts
+  // Farmers bottom navigation shortcuts: 4 big items
   const farmerBottomNav = [
     { name: t('nav.dashboard'), path: '/farmer/dashboard', icon: LayoutDashboard },
     { name: t('farmer.manage_orders'), path: '/farmer/orders', icon: ClipboardList, badge: placedCount },
@@ -238,10 +239,13 @@ export default function DashboardLayout({ children, role }) {
             </div>
           </div>
 
-          {/* Right: Language switcher for farmer, User profile button */}
-          <div className="flex items-center gap-2.5">
+          {/* Right: Language switcher & TextSizeControl & User avatar */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {role === 'FARMER' && (
-              <LanguageSwitcher variant="dropdown" />
+              <>
+                <LanguageSwitcher variant="dropdown" />
+                <TextSizeControl variant="compact" />
+              </>
             )}
 
             <div className="flex items-center gap-2 pl-2 border-l border-neutral-200">
@@ -256,7 +260,7 @@ export default function DashboardLayout({ children, role }) {
         </header>
 
         {/* Page Children Container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-12 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-12 max-w-7xl w-full mx-auto">
           {children}
         </main>
       </div>
@@ -272,7 +276,7 @@ export default function DashboardLayout({ children, role }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-72 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col justify-between overflow-hidden animate-in slide-in-from-left duration-200"
+            className="w-80 max-w-[85vw] h-full bg-white shadow-2xl flex flex-col justify-between overflow-hidden animate-in slide-in-from-left duration-200"
           >
             {/* Drawer Header */}
             <div className="h-16 px-5 border-b border-neutral-100 flex items-center justify-between">
@@ -286,20 +290,66 @@ export default function DashboardLayout({ children, role }) {
               </div>
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition"
+                className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label={t('common.close')}
               >
                 <X size={19} />
               </button>
             </div>
 
-            {/* Drawer Nav links */}
-            <div className="flex-1 overflow-y-auto py-2">
-              {renderNavLinks(() => setIsDrawerOpen(false))}
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto py-2 divide-y divide-neutral-100">
+              {/* Primary links */}
+              <div>
+                {renderNavLinks(() => setIsDrawerOpen(false))}
+              </div>
+
+              {/* Farmer Extra quick links (Profile, Earnings, Reviews, Help) */}
+              {role === 'FARMER' && (
+                <div className="p-3 space-y-1">
+                  <Link
+                    to="/help"
+                    onClick={() => setIsDrawerOpen(false)}
+                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/70 transition min-h-[44px]"
+                  >
+                    <HelpCircle size={19} className="text-neutral-400" />
+                    <span>{t('nav.help', 'Help & Support')}</span>
+                  </Link>
+
+                  {/* Settings section: Language & Text Size */}
+                  <div className="pt-3 px-2 space-y-3">
+                    <div>
+                      <p className="text-2xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+                        {t('common.language', 'Language')}
+                      </p>
+                      <LanguageSwitcher variant="buttons" />
+                    </div>
+
+                    <div>
+                      <p className="text-2xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+                        {t('text_size.label', 'Text Size')}
+                      </p>
+                      <TextSizeControl variant="full" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Drawer Footer */}
-            <div className="p-4 border-t border-neutral-100 bg-neutral-50/80">
+            {/* Drawer Footer with User & Logout */}
+            <div className="p-4 border-t border-neutral-100 bg-neutral-50/80 space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-800 font-bold text-xs flex items-center justify-center shrink-0 border border-brand-200">
+                  {userInitial}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-neutral-900 truncate">
+                    {user?.name || (role === 'ADMIN' ? 'Administrator' : 'Farmer')}
+                  </p>
+                  <p className="text-2xs text-neutral-500 truncate">{user?.phone || user?.email}</p>
+                </div>
+              </div>
+
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition min-h-[44px]"
@@ -316,7 +366,7 @@ export default function DashboardLayout({ children, role }) {
       {role === 'FARMER' && (
         <nav
           aria-label="Mobile Navigation"
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 py-1.5 px-2 flex items-center justify-around shadow-lg"
+          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom))] px-2 flex items-center justify-around shadow-lg"
         >
           {farmerBottomNav.map((item) => {
             const Icon = item.icon;
@@ -327,19 +377,19 @@ export default function DashboardLayout({ children, role }) {
                 key={item.path}
                 to={item.path}
                 className={`
-                  relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all min-h-[48px] min-w-[54px]
+                  relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all min-h-[50px] min-w-[56px]
                   ${isActive ? 'text-brand-800 font-bold' : 'text-neutral-500 hover:text-neutral-800'}
                 `}
               >
                 <div className="relative">
-                  <Icon size={20} className={isActive ? 'text-brand-700' : 'text-neutral-500'} />
+                  <Icon size={22} className={isActive ? 'text-brand-700 stroke-[2.2]' : 'text-neutral-500'} />
                   {item.badge > 0 && (
                     <span className="absolute -top-1 -right-2 px-1.5 py-0.2 rounded-full bg-red-600 text-white text-2xs font-extrabold animate-pulse">
                       {item.badge}
                     </span>
                   )}
                 </div>
-                <span className="text-2xs font-medium mt-1 truncate max-w-[64px]">
+                <span className="text-2xs font-semibold mt-1 truncate max-w-[68px]">
                   {item.name}
                 </span>
               </Link>
@@ -349,11 +399,11 @@ export default function DashboardLayout({ children, role }) {
           {/* More action button opening drawer */}
           <button
             onClick={() => setIsDrawerOpen(true)}
-            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-neutral-500 hover:text-neutral-800 transition-all min-h-[48px] min-w-[54px]"
-            aria-label="More options"
+            className="flex flex-col items-center justify-center py-1 px-2 rounded-xl text-neutral-500 hover:text-neutral-800 transition-all min-h-[50px] min-w-[56px]"
+            aria-label={t('common.more', 'More options')}
           >
-            <MoreHorizontal size={20} />
-            <span className="text-2xs font-medium mt-1">More</span>
+            <MoreHorizontal size={22} />
+            <span className="text-2xs font-semibold mt-1">{t('common.more', 'More')}</span>
           </button>
         </nav>
       )}

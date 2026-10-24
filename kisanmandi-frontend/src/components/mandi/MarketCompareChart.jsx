@@ -75,7 +75,7 @@ export default function MarketCompareChart({ data, isLoading, commodity }) {
             {t('mandi.top_markets_for', { commodity })}
           </h3>
           <p className="text-xs text-neutral-500 mt-0.5">
-            Modal price comparison across leading APMC yards (₹ / quintal)
+            Market price comparison across leading mandi yards (₹ / quintal)
           </p>
         </div>
       </div>

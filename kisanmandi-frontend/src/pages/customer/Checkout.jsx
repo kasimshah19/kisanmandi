@@ -9,9 +9,8 @@ import {
   Banknote,
   Plus,
   ShieldCheck,
-  ChevronDown,
-  ChevronUp,
-  PackageCheck
+  PackageCheck,
+  Phone
 } from 'lucide-react';
 import { addressService } from '../../services/addressService';
 import { cartService } from '../../services/cartService';
@@ -65,10 +64,10 @@ export default function Checkout() {
       }
 
       setCart(cartData);
-      setAddresses(addrRes.data);
+      setAddresses(addrRes.data || []);
 
       // Auto-select default or first address
-      if (addrRes.data.length > 0) {
+      if (addrRes.data && addrRes.data.length > 0) {
         const def = addrRes.data.find((a) => a.defaultAddress);
         setSelectedAddressId(def ? def.id : addrRes.data[0].id);
       } else {
@@ -101,10 +100,11 @@ export default function Checkout() {
     }
     setPlacingOrder(true);
     try {
-      await orderService.checkout(selectedAddressId, 'COD');
+      const res = await orderService.checkout(selectedAddressId, 'COD');
       toast.success(t('checkout.order_success_title'));
       refreshCart();
-      navigate('/customer/orders');
+      const placed = Array.isArray(res.data) ? res.data[0] : res.data;
+      navigate('/customer/orders', { state: { justPlacedOrder: placed || { id: Date.now() } } });
     } catch (error) {
       if (error.response?.status === 409) {
         toast.error(error.response?.data?.message || 'Price or stock changed. Please review your cart.');
@@ -127,14 +127,14 @@ export default function Checkout() {
   }
 
   const steps = [
-    { label: t('checkout.step_address'), active: true, completed: !!selectedAddressId },
-    { label: t('checkout.step_payment'), active: true, completed: true },
-    { label: t('checkout.step_review'), active: true, completed: false }
+    { num: 1, label: t('checkout.step_address'), active: true, completed: !!selectedAddressId },
+    { num: 2, label: t('checkout.step_payment'), active: true, completed: true },
+    { num: 3, label: t('checkout.step_review'), active: true, completed: false }
   ];
 
   return (
     <div className="min-h-screen bg-[#fafaf7] py-6 sm:py-8 lg:py-10 pb-28 sm:pb-12">
-      <div className="page-container max-w-5xl">
+      <div className="page-container max-w-5xl space-y-6">
         <PageHeader
           breadcrumbs={[
             { label: t('nav.home'), to: '/' },
@@ -145,28 +145,30 @@ export default function Checkout() {
           subtitle={t('checkout.order_summary')}
         />
 
-        {/* Visual 3-Step Orientation Indicator */}
-        <div className="my-6 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-xs">
-          <div className="flex items-center justify-between max-w-md mx-auto">
-            {steps.map((st, sIdx) => (
-              <div key={sIdx} className="flex items-center gap-2">
+        {/* 3-Step Visual Stepper for low-literacy users */}
+        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-neutral-200/90 shadow-xs">
+          <div className="flex items-center justify-between max-w-lg mx-auto">
+            {steps.map((st, idx) => (
+              <div key={st.num} className="flex items-center gap-2 sm:gap-3">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition ${
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-sm transition ${
                     st.completed
-                      ? 'bg-brand-700 text-white shadow-xs'
-                      : 'bg-brand-50 text-brand-800 ring-2 ring-brand-300'
+                      ? 'bg-green-700 text-white shadow-xs'
+                      : 'bg-green-50 text-green-800 ring-2 ring-green-300'
                   }`}
                 >
-                  {st.completed ? <CheckCircle2 size={16} /> : sIdx + 1}
+                  {st.completed ? <CheckCircle2 size={18} /> : st.num}
                 </div>
-                <span
-                  className={`text-xs font-bold ${
-                    st.completed ? 'text-neutral-900' : 'text-neutral-600'
-                  }`}
-                >
-                  {st.label}
-                </span>
-                {sIdx < steps.length - 1 && (
+                <div>
+                  <span
+                    className={`text-xs sm:text-sm font-bold block ${
+                      st.completed ? 'text-neutral-900' : 'text-neutral-600'
+                    }`}
+                  >
+                    {st.label}
+                  </span>
+                </div>
+                {idx < steps.length - 1 && (
                   <div className="w-8 sm:w-16 h-0.5 bg-neutral-200 mx-1 sm:mx-2" />
                 )}
               </div>
@@ -174,20 +176,20 @@ export default function Checkout() {
           </div>
         </div>
 
-        {/* Checkout Main Grid */}
+        {/* Checkout Main 2-Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Left Column: Address Selection & Payment Method */}
+          {/* Left 2 Cols: Delivery Address & Payment Method */}
           <div className="lg:col-span-2 space-y-6">
             {/* Step 1: Delivery Address */}
             <div className="bg-white rounded-3xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
-                    <MapPin size={17} />
+                  <div className="w-9 h-9 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                    <MapPin size={18} />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-neutral-900">
-                      {t('checkout.delivery_address')}
+                    <h2 className="text-base sm:text-lg font-black text-neutral-900">
+                      1. {t('checkout.delivery_address')}
                     </h2>
                     <p className="text-xs text-neutral-500">
                       {t('checkout.select_address')}
@@ -200,7 +202,7 @@ export default function Checkout() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowAddForm(true)}
-                    className="text-xs"
+                    className="text-xs font-bold"
                   >
                     <Plus size={14} className="mr-1" />
                     {t('checkout.add_new_address')}
@@ -216,6 +218,7 @@ export default function Checkout() {
                     </h3>
                     {addresses.length > 0 && (
                       <button
+                        type="button"
                         onClick={() => setShowAddForm(false)}
                         className="text-xs font-semibold text-neutral-500 hover:text-neutral-800"
                       >
@@ -235,26 +238,27 @@ export default function Checkout() {
                     return (
                       <label
                         key={addr.id}
-                        className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition ${
+                        className={`flex items-start gap-4 p-4 sm:p-5 rounded-2xl border-2 cursor-pointer transition ${
                           isSelected
-                            ? 'border-brand-600 bg-brand-50/40 ring-1 ring-brand-500 shadow-xs'
-                            : 'border-neutral-200 hover:bg-neutral-50/60'
+                            ? 'border-green-600 bg-green-50/50 shadow-sm ring-2 ring-green-500/20'
+                            : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/60'
                         }`}
                       >
                         <input
                           type="radio"
-                          name="address"
+                          name="delivery_address"
                           value={addr.id}
                           checked={isSelected}
                           onChange={() => setSelectedAddressId(addr.id)}
-                          className="mt-1 w-4 h-4 text-brand-600 focus:ring-brand-500"
+                          className="mt-1 w-5 h-5 text-green-600 focus:ring-green-500"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-bold text-neutral-900 text-sm">
+                            <span className="font-black text-neutral-900 text-base">
                               {addr.fullName}
                             </span>
-                            <span className="text-xs font-medium text-neutral-500 tabular-nums">
+                            <span className="text-xs font-semibold text-neutral-500 tabular-nums flex items-center gap-1">
+                              <Phone size={12} className="text-neutral-400" />
                               {addr.phone}
                             </span>
                             {addr.defaultAddress && (
@@ -262,14 +266,31 @@ export default function Checkout() {
                                 {t('checkout.default_badge')}
                               </Badge>
                             )}
+                            {isSelected && (
+                              <span className="inline-flex items-center gap-1 bg-green-700 text-white text-xs font-bold px-2.5 py-0.5 rounded-full ml-auto">
+                                <CheckCircle2 size={13} />
+                                {t('checkout.selected')}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs sm:text-sm text-neutral-600 mt-1 leading-relaxed">
-                            {addr.line1}, {addr.city}, {addr.state} - {addr.pincode}
+                          <p className="text-xs sm:text-sm text-neutral-700 mt-1.5 leading-relaxed">
+                            {addr.line1}, {addr.city}, {addr.state} -{' '}
+                            <span className="font-bold text-neutral-900">{addr.pincode}</span>
                           </p>
                         </div>
                       </label>
                     );
                   })}
+
+                  {/* Add New Address big dashed card */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(true)}
+                    className="w-full border-2 border-dashed border-neutral-300 hover:border-green-600 hover:bg-green-50/20 p-4 sm:p-5 rounded-2xl flex items-center justify-center gap-2.5 text-neutral-700 hover:text-green-800 font-bold transition min-h-[64px]"
+                  >
+                    <Plus size={18} className="text-green-600" />
+                    <span>{t('checkout.add_new_address')}</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -277,12 +298,12 @@ export default function Checkout() {
             {/* Step 2: Payment Method */}
             <div className="bg-white rounded-3xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2.5 pb-3 border-b border-neutral-100">
-                <div className="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
-                  <Banknote size={17} />
+                <div className="w-9 h-9 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                  <Banknote size={18} />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-neutral-900">
-                    {t('checkout.payment_method')}
+                  <h2 className="text-base sm:text-lg font-black text-neutral-900">
+                    2. {t('checkout.payment_method')}
                   </h2>
                   <p className="text-xs text-neutral-500">
                     {t('checkout.pay_on_delivery')}
@@ -290,43 +311,49 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Single COD Card */}
-              <div className="p-4 rounded-2xl border-2 border-brand-600 bg-brand-50/50 flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-1 rounded-full text-brand-700 bg-white border border-brand-200 mt-0.5">
+              {/* One Big Selected Card: Pay Cash When You Receive */}
+              <div className="p-5 rounded-2xl border-2 border-green-600 bg-green-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-7 h-7 rounded-full bg-green-700 text-white flex items-center justify-center mt-0.5 shrink-0 shadow-xs">
                     <CheckCircle2 size={18} />
                   </div>
                   <div>
-                    <span className="font-bold text-neutral-900 text-sm block">
+                    <span className="font-black text-neutral-900 text-base block">
                       {t('checkout.cash_on_delivery')}
                     </span>
-                    <p className="text-xs text-neutral-600 mt-0.5 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-neutral-600 mt-0.5 leading-relaxed">
                       {t('checkout.cod_explanation')}
                     </p>
                   </div>
                 </div>
-                <Badge variant="brand" size="sm">
-                  {t('checkout.cod_badge')}
-                </Badge>
+                <span className="inline-flex items-center gap-1 bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full shrink-0 self-start sm:self-center">
+                  <CheckCircle2 size={13} />
+                  {t('checkout.selected')}
+                </span>
               </div>
 
-              {/* Notice regarding separate farm shipments */}
-              <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-2.5 text-xs text-amber-900">
-                <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              {/* Multi-Farmer Notice */}
+              <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-start gap-3 text-xs sm:text-sm text-amber-900">
+                <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
                 <p className="leading-snug">{t('checkout.split_warning')}</p>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Sticky Order Summary */}
+          {/* Right Column: Sticky Step 3 Confirm & Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl p-6 border border-neutral-200/90 shadow-sm sticky top-24 space-y-5">
-              <h2 className="text-lg font-black text-neutral-900 tracking-tight flex items-center gap-2">
-                <PackageCheck size={19} className="text-brand-700" />
-                {t('checkout.order_summary')}
-              </h2>
+            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-neutral-200/90 shadow-sm sticky top-24 space-y-5">
+              <div className="flex items-center gap-2 pb-3 border-b border-neutral-100">
+                <PackageCheck size={20} className="text-green-700" />
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
+                    3. {t('checkout.step_review')}
+                  </h2>
+                  <p className="text-xs text-neutral-500">{t('checkout.order_summary')}</p>
+                </div>
+              </div>
 
-              {/* Scrollable list of items */}
+              {/* Scrollable Items */}
               <div className="space-y-3 max-h-56 overflow-y-auto pr-1 divide-y divide-neutral-100">
                 {cart.items.map((item) => (
                   <div key={item.id} className="pt-2 first:pt-0 flex items-center gap-3">
@@ -339,12 +366,12 @@ export default function Checkout() {
                       />
                     </div>
                     <div className="flex-1 min-w-0 text-xs">
-                      <p className="font-semibold text-neutral-900 truncate">{item.name}</p>
+                      <p className="font-bold text-neutral-900 truncate">{item.name}</p>
                       <p className="text-neutral-500">
                         {item.quantity} × {formatINR(item.pricePerUnit)}
                       </p>
                     </div>
-                    <span className="font-bold text-neutral-900 text-xs tabular-nums">
+                    <span className="font-extrabold text-neutral-900 text-xs tabular-nums">
                       {formatINR(item.lineTotal)}
                     </span>
                   </div>
@@ -355,33 +382,33 @@ export default function Checkout() {
               <div className="border-t border-neutral-200 pt-3 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-neutral-600">
                   <span>{t('cart.item_count', { count: cart.itemCount })}</span>
-                  <span className="font-semibold text-neutral-900 tabular-nums">
+                  <span className="font-bold text-neutral-900 tabular-nums">
                     {formatINR(cart.totalAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between text-neutral-600">
                   <span>{t('checkout.delivery_charges')}</span>
-                  <span className="text-brand-700 font-bold">{t('checkout.free_delivery')}</span>
+                  <span className="text-green-700 font-bold">{t('checkout.free_delivery')}</span>
                 </div>
                 <div className="border-t border-neutral-200 pt-3 flex justify-between items-baseline font-black text-lg text-neutral-900">
                   <span>{t('checkout.grand_total')}</span>
-                  <span className="text-2xl text-brand-800 tabular-nums">
+                  <span className="text-2xl text-green-800 tabular-nums">
                     {formatINR(cart.totalAmount)}
                   </span>
                 </div>
               </div>
 
-              {/* Place Order CTA */}
+              {/* Huge Place Order CTA with Double-Click Protection */}
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full text-base font-bold shadow-md"
+                className="w-full min-h-[56px] text-base sm:text-lg font-black shadow-lg rounded-2xl"
                 disabled={placingOrder || !selectedAddressId || showAddForm}
                 loading={placingOrder}
                 onClick={handleCheckout}
               >
-                <span>{t('checkout.place_order_btn')}</span>
-                <ArrowRight size={18} className="ml-1.5" />
+                <span>{placingOrder ? t('checkout.placing_order') : t('checkout.place_order_btn')}</span>
+                {!placingOrder && <ArrowRight size={19} className="ml-2" />}
               </Button>
             </div>
           </div>

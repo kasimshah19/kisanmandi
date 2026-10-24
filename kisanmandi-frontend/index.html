@@ -21,7 +21,21 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Pre-paint restore for text size & language to avoid layout shift -->
+    <script>
+      try {
+        var size = localStorage.getItem('kisanmandi_text_size');
+        if (size && (size === 'large' || size === 'xlarge' || size === 'normal')) {
+          document.documentElement.setAttribute('data-text-size', size);
+        }
+        var lang = localStorage.getItem('kisanmandi_lang');
+        if (lang) {
+          document.documentElement.lang = lang;
+        }
+      } catch (e) {}
+    </script>
 
     <title>KisanMandi - Farm to Market Direct</title>
   </head>

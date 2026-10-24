@@ -45,10 +45,10 @@ export default function AddProduct() {
       }
 
       await productService.createProduct(data);
-      toast.success(t('common.save'));
-      navigate('/farmer/products');
+      toast.success(t('farmer.publish_success_title', 'Your product is live!'));
     } catch (error) {
       toast.error(error.response?.data?.message || t('errors.generic_retry'));
+      throw error;
     } finally {
       setIsSubmitting(false);
     }

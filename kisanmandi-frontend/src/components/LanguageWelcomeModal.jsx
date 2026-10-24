@@ -2,19 +2,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Check, Globe } from 'lucide-react';
 
-const WELCOMED_STORAGE_KEY = 'kisanmandi_welcomed';
+const WELCOMED_STORAGE_KEY = 'kisanmandi_welcome_seen';
+const LEGACY_STORAGE_KEY = 'kisanmandi_welcomed';
 
-export default function LanguageWelcomeModal() {
+export default function LanguageWelcomeModal({ force = false }) {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const modalRef = useRef(null);
 
   useEffect(() => {
-    // Check if user has already made a selection or been welcomed
+    // Skip during automated tests unless explicitly forced via prop or window flag
+    if (
+      !force &&
+      typeof window !== 'undefined' &&
+      process.env.NODE_ENV === 'test' &&
+      !window.__FORCE_LANGUAGE_WELCOME__
+    ) {
+      return;
+    }
+
+    // Check if user has already made a selection or been welcomed or is logged in
     try {
-      const alreadyWelcomed = localStorage.getItem(WELCOMED_STORAGE_KEY);
+      const alreadyWelcomed = localStorage.getItem(WELCOMED_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       const savedLang = localStorage.getItem('kisanmandi_lang');
-      if (!alreadyWelcomed && !savedLang) {
+      const token = localStorage.getItem('kisanmandi_token');
+
+      // Never show to logged in users or users who have already selected language/welcomed
+      if (!alreadyWelcomed && !savedLang && !token) {
         setIsOpen(true);
       }
     } catch {
@@ -40,7 +54,8 @@ export default function LanguageWelcomeModal() {
     try {
       i18n.changeLanguage(langCode);
       localStorage.setItem('kisanmandi_lang', langCode);
-      localStorage.setItem(WELCOMED_STORAGE_KEY, 'true');
+      localStorage.setItem(WELCOMED_STORAGE_KEY, '1');
+      localStorage.setItem(LEGACY_STORAGE_KEY, 'true');
       if (typeof document !== 'undefined') {
         document.documentElement.lang = langCode;
       }
@@ -52,7 +67,8 @@ export default function LanguageWelcomeModal() {
 
   const handleDismiss = (defaultLang = 'en') => {
     try {
-      localStorage.setItem(WELCOMED_STORAGE_KEY, 'true');
+      localStorage.setItem(WELCOMED_STORAGE_KEY, '1');
+      localStorage.setItem(LEGACY_STORAGE_KEY, 'true');
       if (!localStorage.getItem('kisanmandi_lang')) {
         localStorage.setItem('kisanmandi_lang', defaultLang);
       }

@@ -57,8 +57,8 @@ export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
   };
 
   const inputCls = (field) =>
-    `w-full px-3.5 py-2.5 bg-neutral-50 border rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition ${
-      errors[field] ? 'border-red-400 bg-red-50/20' : 'border-neutral-200'
+    `w-full px-4 py-3.5 bg-stone-50 border-2 rounded-2xl focus:bg-white focus:ring-3 focus:ring-green-600 focus:border-green-600 outline-none text-base font-medium transition min-h-[56px] ${
+      errors[field] ? 'border-rose-400 bg-rose-50/20' : 'border-stone-200'
     }`;
 
   return (
@@ -178,23 +178,28 @@ export default function AddressForm({ initial, onSubmit, onCancel, loading }) {
         </span>
       </label>
 
-      {/* Location Button */}
-      <div className="py-2.5 border-t border-neutral-100 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleUseLocation}
-          disabled={locating}
-          className="flex items-center gap-2 text-xs font-bold text-brand-700 hover:text-brand-900 disabled:opacity-50 min-h-[40px]"
-        >
-          <Navigation size={14} className={locating ? 'animate-spin' : ''} />
-          {locating ? t('addresses.locating') : t('addresses.use_location')}
-        </button>
-        {form.latitude && form.longitude && (
-          <span className="text-[11px] font-bold text-brand-800 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-            <MapPin size={10} />
-            {t('addresses.location_saved')}
-          </span>
-        )}
+      {/* Location Button with Plain Explanation */}
+      <div className="py-2.5 border-t border-neutral-100 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleUseLocation}
+            disabled={locating}
+            className="flex items-center gap-2 text-xs font-bold text-green-700 hover:text-green-900 disabled:opacity-50 min-h-[40px] cursor-pointer"
+          >
+            <Navigation size={14} className={locating ? 'animate-spin' : ''} />
+            {locating ? t('addresses.locating') : t('addresses.use_location')}
+          </button>
+          {form.latitude && form.longitude && (
+            <span className="text-[11px] font-bold text-green-800 bg-green-50 border border-green-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <MapPin size={10} />
+              {t('addresses.location_saved')}
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-neutral-500 leading-snug">
+          Saving GPS location helps local growers calculate accurate road distance for prompt delivery.
+        </p>
       </div>
 
       {/* Action Buttons */}

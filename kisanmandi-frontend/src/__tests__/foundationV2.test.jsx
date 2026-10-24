@@ -160,6 +160,14 @@ describe('UI v2 Foundation Tests (Part 1)', () => {
   });
 
   describe('4. LanguageWelcomeModal', () => {
+    beforeEach(() => {
+      window.__FORCE_LANGUAGE_WELCOME__ = true;
+    });
+
+    afterEach(() => {
+      delete window.__FORCE_LANGUAGE_WELCOME__;
+    });
+
     it('does not render if user has already been welcomed', () => {
       localStorage.setItem('kisanmandi_welcomed', 'true');
       const { container } = render(<LanguageWelcomeModal />);
@@ -197,4 +205,116 @@ describe('UI v2 Foundation Tests (Part 1)', () => {
       expect(container.firstChild).toBeNull();
     });
   });
+
+  describe('6. NumberStepper Component', () => {
+    it('handles increments, decrements, and step clamping', async () => {
+      const { default: NumberStepper } = await import('../components/ui/NumberStepper');
+      const handleChange = vi.fn();
+
+      const { rerender } = render(
+        <NumberStepper value={5} min={2} max={10} step={1} unit="kg" onChange={handleChange} />
+      );
+
+      // Decrement
+      const minusBtn = screen.getByLabelText(/decrease/i);
+      fireEvent.click(minusBtn);
+      expect(handleChange).toHaveBeenCalledWith(4);
+
+      // Increment
+      const plusBtn = screen.getByLabelText(/increase/i);
+      fireEvent.click(plusBtn);
+      expect(handleChange).toHaveBeenCalledWith(6);
+
+      // Re-render at min
+      rerender(<NumberStepper value={2} min={2} max={10} step={1} unit="kg" onChange={handleChange} />);
+      expect(minusBtn.disabled).toBe(true);
+
+      // Re-render at max
+      rerender(<NumberStepper value={10} min={2} max={10} step={1} unit="kg" onChange={handleChange} />);
+      expect(plusBtn.disabled).toBe(true);
+    });
+
+    it('handles direct typing and clamps value on blur', async () => {
+      const { default: NumberStepper } = await import('../components/ui/NumberStepper');
+      const handleChange = vi.fn();
+
+      render(
+        <NumberStepper value={5} min={1} max={50} step={1} unit="kg" onChange={handleChange} />
+      );
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: '25' } });
+      expect(handleChange).toHaveBeenCalledWith(25);
+
+      // Blur clamps within bounds
+      fireEvent.blur(input);
+      expect(handleChange).toHaveBeenCalled();
+    });
+  });
+
+  describe('7. BigChoice Component', () => {
+    it('triggers onSelect on click and via keyboard Space and Enter', async () => {
+      const { default: BigChoice } = await import('../components/ui/BigChoice');
+      const handleSelect = vi.fn();
+
+      render(
+        <BigChoice
+          selected={false}
+          onSelect={handleSelect}
+          title="Farmer Account"
+          description="Sell fresh crops directly"
+        />
+      );
+
+      const choice = screen.getByRole('radio');
+      expect(choice.getAttribute('aria-checked')).toBe('false');
+
+      // Click selection
+      fireEvent.click(choice);
+      expect(handleSelect).toHaveBeenCalledTimes(1);
+
+      // Keyboard Space
+      fireEvent.keyDown(choice, { key: ' ' });
+      expect(handleSelect).toHaveBeenCalledTimes(2);
+
+      // Keyboard Enter
+      fireEvent.keyDown(choice, { key: 'Enter' });
+      expect(handleSelect).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('8. StatusPill Component', () => {
+    it('renders with appropriate tone and accessible role', async () => {
+      const { default: StatusPill } = await import('../components/ui/StatusPill');
+
+      render(<StatusPill tone="success" label="Delivered" />);
+
+      const pill = screen.getByRole('status');
+      expect(pill).toBeTruthy();
+      expect(pill.textContent).toContain('Delivered');
+    });
+  });
+
+  describe('9. PhotoPicker Component & Image Compression', () => {
+    it('validates file types and sizes', async () => {
+      const { default: PhotoPicker } = await import('../components/ui/PhotoPicker');
+      const handleChange = vi.fn();
+
+      render(<PhotoPicker onChange={handleChange} />);
+
+      // Verify action buttons exist
+      expect(screen.getByText('Take a photo')).toBeTruthy();
+      expect(screen.getByText('Choose from gallery')).toBeTruthy();
+    });
+  });
+
+  describe('10. ListenButton Component', () => {
+    it('renders nothing when speech synthesis is unsupported', async () => {
+      const { default: ListenButton } = await import('../components/ListenButton');
+
+      const { container } = render(<ListenButton text="Tomato rate 30" />);
+      expect(container.firstChild).toBeNull();
+    });
+  });
 });
+

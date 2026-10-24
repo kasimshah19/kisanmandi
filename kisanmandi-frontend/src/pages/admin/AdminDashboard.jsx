@@ -198,15 +198,15 @@ export default function AdminDashboard() {
                 />
               </Link>
 
-              {/* Delivered GMV */}
+              {/* Delivered Order Sales */}
               <div className="block">
                 <StatCard
-                  title="Delivered GMV"
+                  title="Delivered Order Sales"
                   value={stats?.revenue?.gmvDelivered ?? stats?.totalSales ?? 0}
                   type="currency"
                   icon={DollarSign}
                   color="green"
-                  hint="Total fulfilled volume"
+                  hint="Total fulfilled sales"
                 />
               </div>
 

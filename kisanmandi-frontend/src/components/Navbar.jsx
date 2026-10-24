@@ -110,17 +110,17 @@ export default function Navbar() {
   };
 
   const navLinkClass = ({ isActive }) =>
-    `px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 relative ${
+    `inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-150 min-h-[44px] relative ${
       isActive
-        ? 'text-green-800 bg-green-50/80 font-bold'
-        : 'text-gray-700 hover:text-green-700 hover:bg-gray-50'
+        ? 'text-green-900 bg-emerald-50/90 font-bold border border-emerald-200/70 shadow-2xs'
+        : 'text-stone-700 hover:text-green-800 hover:bg-stone-50'
     }`;
 
   const mobileNavLinkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors min-h-[48px] ${
+    `flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-base font-semibold transition-colors min-h-[56px] ${
       isActive
-        ? 'text-green-800 bg-green-50 font-bold'
-        : 'text-gray-700 hover:text-green-800 hover:bg-gray-50'
+        ? 'text-green-900 bg-emerald-50 font-bold border border-emerald-200'
+        : 'text-stone-700 hover:text-green-900 hover:bg-stone-50'
     }`;
 
   return (
@@ -345,6 +345,16 @@ export default function Navbar() {
                     </>
                   )}
 
+                  <Link
+                    to="/about"
+                    role="menuitem"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                  >
+                    <Info size={16} className="text-blue-600" />
+                    <span>{t('nav.about', 'About Project')}</span>
+                  </Link>
+
                   <div className="pt-1 border-t border-gray-100">
                     <button
                       type="button"
@@ -414,10 +424,20 @@ export default function Navbar() {
               }
             }}
           >
-            {/* Language & Text Size Controls */}
-            <div className="pb-4 border-b border-gray-100 space-y-3">
-              <LanguageSwitcher variant="segmented" />
-              <TextSizeControl variant="full" />
+            {/* Language & Text Size Controls with Big Labels */}
+            <div className="pb-4 border-b border-gray-100 space-y-4">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  {t('common.language', 'Language')}
+                </p>
+                <LanguageSwitcher variant="segmented" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  {t('common.text_size', 'Text size')}
+                </p>
+                <TextSizeControl variant="full" />
+              </div>
             </div>
 
             {/* Navigation Links (Icon + Word, min 48px height) */}
@@ -527,11 +547,11 @@ export default function Navbar() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button as={Link} to="/login" variant="outline" fullWidth onClick={() => setMenuOpen(false)}>
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <Button as={Link} to="/login" variant="outline" size="lg" fullWidth onClick={() => setMenuOpen(false)}>
                     {t('nav.login', 'Login')}
                   </Button>
-                  <Button as={Link} to="/register" variant="primary" fullWidth onClick={() => setMenuOpen(false)}>
+                  <Button as={Link} to="/register" variant="primary" size="lg" fullWidth onClick={() => setMenuOpen(false)}>
                     {t('nav.register', 'Register')}
                   </Button>
                 </div>

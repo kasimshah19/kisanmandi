@@ -9,11 +9,12 @@ import {
   Truck,
   Banknote,
   ShieldAlert,
-  Store
+  Store,
+  ShoppingBag
 } from 'lucide-react';
 import { cartService } from '../../services/cartService';
 import { useCart } from '../../context/CartContext';
-import QuantityInput from '../../components/QuantityInput';
+import NumberStepper from '../../components/ui/NumberStepper';
 import EmptyState from '../../components/EmptyState';
 import ErrorState from '../../components/ErrorState';
 import EmptyBox from '../../components/illustrations/EmptyBox';
@@ -28,7 +29,7 @@ import toast from 'react-hot-toast';
 
 export default function Cart() {
   const { t } = useTranslation();
-  useDocumentTitle(`${t('cart.title')} | KisanMandi`);
+  useDocumentTitle(`${t('cart.title', 'My Cart')} | KisanMandi`);
 
   const navigate = useNavigate();
   const { refreshCart } = useCart();
@@ -72,7 +73,7 @@ export default function Cart() {
   const handleRemove = async (itemId) => {
     try {
       await cartService.remove(itemId);
-      toast.success(t('cart.item_removed'));
+      toast.success(t('cart.item_removed', 'Item removed from cart'));
       await loadCart();
       refreshCart();
     } catch {
@@ -81,10 +82,10 @@ export default function Cart() {
   };
 
   const handleClear = async () => {
-    if (!window.confirm(t('cart.empty_cart_confirm'))) return;
+    if (!window.confirm(t('cart.empty_cart_confirm', 'Are you sure you want to remove all items from your cart?'))) return;
     try {
       await cartService.clear();
-      toast.success(t('cart.cart_cleared'));
+      toast.success(t('cart.cart_cleared', 'Cart cleared'));
       await loadCart();
       refreshCart();
     } catch {
@@ -92,7 +93,7 @@ export default function Cart() {
     }
   };
 
-  // Group items visually by farmer
+  // Group items visually by farmer: "From {farm name}, {village}"
   const itemsByFarmer = useMemo(() => {
     if (!cart?.items) return [];
     const groups = {};
@@ -115,7 +116,7 @@ export default function Cart() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafaf7] py-8">
+      <div className="min-h-screen bg-warm-50 py-8">
         <div className="page-container max-w-5xl space-y-4">
           <SkeletonRow />
           <SkeletonRow />
@@ -126,9 +127,9 @@ export default function Cart() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#fafaf7] py-12">
+      <div className="min-h-screen bg-warm-50 py-12">
         <div className="page-container max-w-lg">
-          <ErrorState title={t('cart.title')} message={error} onRetry={loadCart} />
+          <ErrorState title={t('cart.title', 'My cart')} message={error} onRetry={loadCart} />
         </div>
       </div>
     );
@@ -136,15 +137,16 @@ export default function Cart() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#fafaf7] py-12">
+      <div className="min-h-screen bg-warm-50 py-12">
         <div className="page-container max-w-lg">
           <EmptyState
             illustration={EmptyBox}
-            title={t('cart.empty_cart')}
-            message={t('cart.empty_cart_desc')}
+            title={t('cart.empty_cart', 'Your cart is empty')}
+            message={t('cart.empty_cart_desc', 'Explore direct farm harvests and support local growers.')}
             action={
-              <Button as={Link} to="/products" variant="primary">
-                {t('cart.start_shopping')}
+              <Button as={Link} to="/products" variant="primary" size="lg" className="min-h-[50px] font-bold">
+                <ShoppingBag size={18} className="mr-2" />
+                {t('cart.start_shopping', 'Browse produce')}
               </Button>
             }
           />
@@ -156,136 +158,155 @@ export default function Cart() {
   const hasUnavailable = cart.items.some((i) => !i.available);
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] py-6 sm:py-8 lg:py-10 pb-28 sm:pb-12">
+    <div className="min-h-screen bg-warm-50 py-6 sm:py-8 lg:py-10 pb-36 sm:pb-12">
       <div className="page-container max-w-5xl">
-        <PageHeader
-          breadcrumbs={[
-            { label: t('nav.home'), to: '/' },
-            { label: t('nav.cart') }
-          ]}
-          title={t('cart.title')}
-          subtitle={t('cart.item_count', { count: cart.itemCount })}
-          actions={
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClear}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
-            >
-              {t('cart.empty_cart_btn')}
-            </Button>
-          }
-        />
+        {/* Page Header with Rename to 'My cart' and Big Item Count */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">
+                {t('cart.title', 'My cart')}
+              </h1>
+              <span className="px-3.5 py-1 rounded-full bg-green-100 text-green-900 font-extrabold text-sm border border-green-200">
+                {t('cart.item_count', { count: cart.itemCount })}
+              </span>
+            </div>
+            <p className="text-sm text-stone-600 mt-1 font-medium">
+              {t('cart.cart_subtitle', 'Review your fresh items before placing your doorstep cash order.')}
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-6">
-          {/* Left Column: Farmer Group Cards */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 text-xs font-bold self-start sm:self-auto min-h-[40px] cursor-pointer"
+          >
+            <Trash2 size={14} className="mr-1.5" />
+            {t('cart.empty_cart_btn', 'Empty entire cart')}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Left Column: Grouped by Farmer */}
           <div className="lg:col-span-2 space-y-6">
             {itemsByFarmer.map((group, gIdx) => (
               <div
                 key={group.farmerId || gIdx}
-                className="bg-white rounded-3xl border border-neutral-200/90 shadow-sm overflow-hidden"
+                className="bg-white rounded-3xl border-2 border-stone-200/90 shadow-2xs overflow-hidden"
               >
-                {/* Farmer Group Header */}
-                <div className="px-5 py-3.5 bg-gradient-to-r from-brand-50/70 to-neutral-50/50 border-b border-brand-100/70 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-brand-700 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                      <Store size={15} />
+                {/* Farmer Group Header: "From {farm name}, {village}" */}
+                <div className="px-5 py-4 bg-gradient-to-r from-green-50/80 to-stone-50 border-b-2 border-stone-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-green-700 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                      <Store size={17} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-neutral-900 text-sm">
-                        {group.farmName || group.farmerName || 'Local Grower'}
-                      </h3>
-                      {(group.village || group.district) && (
-                        <p className="text-xs text-neutral-500 flex items-center gap-1">
-                          <MapPin size={11} className="text-brand-600" />
-                          {group.village ? `${group.village}, ` : ''}{group.district || ''}
+                      <h2 className="font-extrabold text-stone-900 text-base">
+                        From {group.farmName || group.farmerName || 'Local Grower'}
+                        {group.village ? `, ${group.village}` : ''}
+                      </h2>
+                      {group.district && (
+                        <p className="text-xs text-stone-500 flex items-center gap-1 mt-0.5 font-medium">
+                          <MapPin size={12} className="text-green-700" />
+                          <span>{group.district}, Maharashtra</span>
                         </p>
                       )}
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-brand-800 bg-white px-2.5 py-1 rounded-full border border-brand-200">
+                  <span className="text-xs font-bold text-green-900 bg-white px-3 py-1 rounded-full border border-green-200 shadow-2xs">
                     {group.items.length} {group.items.length === 1 ? 'item' : 'items'}
                   </span>
                 </div>
 
                 {/* Items in this farm group */}
-                <div className="divide-y divide-neutral-100">
-                  {group.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`p-4 sm:p-5 transition ${
-                        !item.available ? 'bg-red-50/60' : 'hover:bg-neutral-50/50'
-                      }`}
-                    >
-                      <div className="flex gap-4 items-start">
-                        {/* Image */}
-                        <Link
-                          to={`/products/${item.productId}`}
-                          className="shrink-0 w-20 h-20 sm:w-24 sm:h-24 bg-neutral-100 rounded-2xl overflow-hidden border border-neutral-200/80 flex items-center justify-center group"
-                        >
-                          <img
-                            src={getOptimizedImageUrl(item.imageUrl, 200)}
-                            alt={item.name || 'Produce item'}
-                            loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-105 transition"
-                          />
-                        </Link>
+                <div className="divide-y divide-stone-100">
+                  {group.items.map((item) => {
+                    const unitStr = unitLabel(item.unit, t);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`p-4 sm:p-5 transition ${
+                          !item.available ? 'bg-rose-50/80 border-l-4 border-l-rose-500' : 'hover:bg-stone-50/50'
+                        }`}
+                      >
+                        <div className="flex gap-4 items-start">
+                          {/* Photo */}
+                          <Link
+                            to={`/products/${item.productId}`}
+                            className="shrink-0 w-20 h-20 sm:w-24 sm:h-24 bg-stone-100 rounded-2xl overflow-hidden border-2 border-stone-200 flex items-center justify-center group"
+                          >
+                            <img
+                              src={getOptimizedImageUrl(item.imageUrl, 200)}
+                              alt={item.name || 'Produce item'}
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition"
+                            />
+                          </Link>
 
-                        {/* Details */}
-                        <div className="flex-1 min-w-0 flex flex-col justify-between">
-                          <div>
-                            <div className="flex items-start justify-between gap-2">
-                              <Link
-                                to={`/products/${item.productId}`}
-                                className="font-bold text-neutral-900 hover:text-brand-700 text-sm sm:text-base transition truncate"
-                              >
-                                {item.name}
-                              </Link>
-                              <button
-                                onClick={() => handleRemove(item.id)}
-                                aria-label={`Remove ${item.name} from cart`}
-                                className="text-neutral-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-neutral-100 transition shrink-0"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                          {/* Details */}
+                          <div className="flex-1 min-w-0 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <Link
+                                  to={`/products/${item.productId}`}
+                                  className="font-extrabold text-stone-900 hover:text-green-700 text-base sm:text-lg transition truncate leading-snug"
+                                >
+                                  {item.name}
+                                </Link>
 
-                            <p className="text-brand-800 text-xs sm:text-sm font-bold mt-0.5">
-                              {formatINR(item.pricePerUnit)} / {unitLabel(item.unit, t)}
-                            </p>
-
-                            {!item.available && (
-                              <div className="inline-flex items-center gap-1 text-xs text-red-700 font-semibold bg-red-100/80 px-2.5 py-0.5 rounded-lg border border-red-200 mt-1.5">
-                                <AlertCircle size={12} />
-                                {item.unavailableReason || t('products.out_of_stock')}
+                                {/* Labeled Remove Button with Icon + Word */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemove(item.id)}
+                                  aria-label={`Remove ${item.name} from cart`}
+                                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-rose-700 hover:text-rose-900 hover:bg-rose-100/80 rounded-xl transition shrink-0 cursor-pointer border border-rose-200"
+                                >
+                                  <Trash2 size={13} />
+                                  <span>{t('cart.remove_item', 'Remove')}</span>
+                                </button>
                               </div>
-                            )}
-                          </div>
 
-                          {/* Quantity & Line Total */}
-                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-neutral-100/70 gap-2">
-                            <div className="w-32">
-                              <QuantityInput
-                                value={item.quantity}
-                                unit={item.unit}
-                                maxStock={item.availableStock}
-                                onChange={(qty) => handleUpdate(item.id, qty)}
-                                disabled={!item.available || updatingId === item.id}
-                              />
+                              <p className="text-green-800 text-sm font-extrabold mt-1">
+                                {formatINR(item.pricePerUnit)}{' '}
+                                <span className="text-xs font-semibold text-stone-500">/ {unitStr}</span>
+                              </p>
+
+                              {/* Red-tinted reason if unavailable */}
+                              {!item.available && (
+                                <div className="inline-flex items-center gap-1.5 text-xs text-rose-800 font-bold bg-white px-3 py-1 rounded-xl border border-rose-300 mt-2 shadow-2xs">
+                                  <AlertCircle size={14} className="text-rose-600" />
+                                  <span>{item.unavailableReason || t('products.out_of_stock', 'Not available')}</span>
+                                </div>
+                              )}
                             </div>
-                            <div className="text-right">
-                              <span className="text-[11px] text-neutral-400 block font-medium">
-                                {t('cart.subtotal')}
-                              </span>
-                              <span className="font-black text-neutral-900 text-base tabular-nums">
-                                {formatINR(item.lineTotal)}
-                              </span>
+
+                            {/* Quantity & Line Total */}
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100 gap-2">
+                              <div className="w-36">
+                                <NumberStepper
+                                  value={item.quantity}
+                                  unit={unitStr}
+                                  max={item.availableStock || 9999}
+                                  step={item.unit === 'DOZEN' || item.unit === 'PIECE' ? 1 : 1}
+                                  onChange={(qty) => handleUpdate(item.id, qty)}
+                                  disabled={!item.available || updatingId === item.id}
+                                />
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs text-stone-400 block font-bold uppercase tracking-wider">
+                                  {t('cart.subtotal', 'Total')}
+                                </span>
+                                <span className="font-black text-stone-900 text-lg tabular-nums">
+                                  {formatINR(item.lineTotal)}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -293,84 +314,85 @@ export default function Cart() {
 
           {/* Right Column: Order Summary (Sticky Desktop) */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl p-6 border border-neutral-200/90 shadow-sm sticky top-24 space-y-5">
-              <h2 className="text-lg font-black text-neutral-900 tracking-tight">
-                {t('checkout.order_summary')}
+            <div className="bg-white rounded-3xl p-6 border-2 border-stone-200/90 shadow-sm sticky top-24 space-y-5">
+              <h2 className="text-xl font-black text-stone-900 tracking-tight">
+                {t('checkout.order_summary', 'Order summary')}
               </h2>
 
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between text-neutral-600">
+                <div className="flex justify-between text-stone-600 font-medium">
                   <span>{t('cart.item_count', { count: cart.itemCount })}</span>
-                  <span className="font-semibold text-neutral-900 tabular-nums">
+                  <span className="font-bold text-stone-900 tabular-nums">
                     {formatINR(cart.totalAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between text-neutral-600">
-                  <span>{t('cart.delivery_fee')}</span>
-                  <span className="text-brand-700 font-bold">{t('cart.free_delivery')}</span>
+                <div className="flex justify-between text-stone-600 font-medium">
+                  <span>{t('cart.delivery_fee', 'Doorstep Delivery')}</span>
+                  <span className="text-green-700 font-bold">{t('cart.free_delivery', 'Free')}</span>
                 </div>
-                <div className="border-t border-neutral-200 pt-3 flex justify-between items-baseline font-black text-lg text-neutral-900">
-                  <span>{t('cart.total')}</span>
-                  <span className="text-2xl text-brand-800 tabular-nums">
+                <div className="border-t-2 border-stone-100 pt-3 flex justify-between items-baseline font-black text-lg text-stone-900">
+                  <span>{t('cart.total', 'Total')}</span>
+                  <span className="text-3xl text-green-900 tabular-nums font-black">
                     {formatINR(cart.totalAmount)}
                   </span>
                 </div>
               </div>
 
-              {/* Informational notes */}
-              <div className="space-y-2 pt-2 border-t border-neutral-100 text-xs text-neutral-600">
-                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
-                  <Banknote size={15} className="text-brand-700 shrink-0 mt-0.5" />
-                  <p className="leading-snug">{t('cart.cod_notice')}</p>
-                </div>
-                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-neutral-50 border border-neutral-200/80">
-                  <Truck size={15} className="text-brand-700 shrink-0 mt-0.5" />
-                  <p className="leading-snug">{t('cart.separate_orders_notice')}</p>
+              {/* Short plain note as required: "Items from different farmers come as separate orders. You pay cash when you receive." */}
+              <div className="space-y-2 pt-2 border-t border-stone-100 text-xs text-stone-700 font-medium">
+                <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/70 border border-amber-200">
+                  <Banknote size={18} className="text-amber-800 shrink-0 mt-0.5" />
+                  <p className="leading-snug">
+                    {t(
+                      'cart.plain_cod_explanation',
+                      'Items from different farmers come as separate orders. You pay cash when you receive.'
+                    )}
+                  </p>
                 </div>
               </div>
 
               {hasUnavailable && (
-                <div className="bg-red-50 text-red-700 text-xs p-3 rounded-2xl border border-red-200 flex items-start gap-2">
-                  <ShieldAlert size={16} className="shrink-0 mt-0.5" />
-                  <p className="font-medium leading-snug">{t('cart.unavailable_warning')}</p>
+                <div className="bg-rose-50 text-rose-800 text-xs p-3.5 rounded-2xl border border-rose-200 flex items-start gap-2">
+                  <ShieldAlert size={16} className="shrink-0 mt-0.5 text-rose-600" />
+                  <p className="font-bold leading-snug">{t('cart.unavailable_warning', 'Please remove unavailable items before placing order.')}</p>
                 </div>
               )}
 
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full text-base font-bold shadow-md"
+                className="w-full text-base font-extrabold min-h-[56px] shadow-card cursor-pointer"
                 disabled={hasUnavailable || cart.items.length === 0}
                 onClick={() => navigate('/customer/checkout')}
               >
-                <span>{t('cart.proceed_to_checkout')}</span>
-                <ArrowRight size={18} className="ml-1.5" />
+                <span>{t('cart.place_order_btn', 'Place order')}</span>
+                <ArrowRight size={18} className="ml-2" />
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Sticky Bottom Bar */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 p-3 shadow-2xl z-40 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)]">
+      {/* Mobile Sticky Bottom Bar: "Total Rs X" and big "Place order" button */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t-2 border-stone-200 p-3.5 shadow-pop z-40 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)]">
         <div className="flex items-center justify-between gap-4 max-w-md mx-auto">
           <div>
-            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
-              {t('cart.total')}
+            <p className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+              {t('cart.total', 'Total')}
             </p>
-            <p className="text-xl font-black text-brand-800 tabular-nums">
+            <p className="text-2xl font-black text-green-900 tabular-nums leading-tight">
               {formatINR(cart.totalAmount)}
             </p>
           </div>
           <Button
             variant="primary"
-            size="md"
+            size="lg"
             disabled={hasUnavailable || cart.items.length === 0}
             onClick={() => navigate('/customer/checkout')}
-            className="flex-1"
+            className="flex-1 min-h-[52px] font-extrabold text-sm sm:text-base shadow-xs"
           >
-            <span>{t('cart.proceed_to_checkout')}</span>
-            <ArrowRight size={16} className="ml-1" />
+            <span>{t('cart.place_order_btn', 'Place order')}</span>
+            <ArrowRight size={16} className="ml-1.5" />
           </Button>
         </div>
       </div>

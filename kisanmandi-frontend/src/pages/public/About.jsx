@@ -1,29 +1,26 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import {
-  Leaf,
-  Layers,
-  Database,
-  ShieldCheck,
-  TrendingUp,
-  Volume2,
-  ExternalLink,
-  Code2,
-  Cpu,
-  Play,
-  CheckCircle2,
-  ArrowRight,
-  User,
-  ShoppingBag,
+  SITE_NAME,
+  GITHUB_URL,
+  LINKEDIN_URL,
+  DEMO_VIDEO_URL,
+} from '../../config/site';
+import {
   Sparkles,
+  ShoppingBag,
+  Tractor,
+  ShieldCheck,
+  CheckCircle2,
+  Video,
+  ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
-import { GITHUB_URL, DEMO_VIDEO_URL } from '../../config/site';
 
 function GitHubIcon({ size = 18, className = '' }) {
   return (
@@ -45,79 +42,72 @@ function GitHubIcon({ size = 18, className = '' }) {
   );
 }
 
+function LinkedInIcon({ size = 18, className = '' }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+    </svg>
+  );
+}
+
 export default function About() {
-  useDocumentTitle('About KisanMandi | Architecture, Tech Stack & Recruiter Overview');
+  useDocumentTitle('About KisanMandi | Architecture & Overview');
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
-  const handleTestLogin = (email, password) => {
-    navigate('/login', { state: { prefillEmail: email, prefillPassword: password } });
-  };
+  const creatorUrl = LINKEDIN_URL || GITHUB_URL || null;
 
-  const techStack = [
-    {
-      category: 'Frontend Client',
-      icon: Code2,
-      badge: 'React 18 & Tailwind v4',
-      items: [
-        'Vite + React JS SPA with role-based protected routing',
-        'Tailwind CSS v4 with custom @theme agricultural tokens',
-        'Multi-lingual i18n (English, हिन्दी, मराठी) with zero missing keys',
-        'Native Web Speech API for voice synthesis and voice search',
-        'Responsive mobile-first touch UX (min 48px/56px targets)',
-      ],
-    },
-    {
-      category: 'Backend & Security',
-      icon: Cpu,
-      badge: 'Spring Boot 3 & JWT',
-      items: [
-        'Spring Boot REST architecture with Java 17',
-        'Spring Security 6 stateless authentication with JWT claims',
-        'Multi-tenant RBAC: CUSTOMER, FARMER, and ADMIN enforcement',
-        'Transactional business logic with custom domain exceptions',
-        'Robust global validation and centralized error formatting',
-      ],
-    },
-    {
-      category: 'Database & Mandi Sync',
-      icon: Database,
-      badge: 'MySQL 8 & OGD Sync',
-      items: [
-        'Relational schema: Users, Products, Categories, Orders, MandiRates',
-        'Automated scheduled cron fetching daily prices from data.gov.in',
-        'Agmarknet market modal rate aggregation across Maharashtra',
-        'Optimized query caching and index optimization',
-        'Cloudinary secure image upload pipeline',
-      ],
-    },
+  const techBadges = [
+    'React 18',
+    'Vite',
+    'Tailwind CSS v4',
+    'Spring Boot 3',
+    'Spring Security with JWT',
+    'MySQL 8',
+    'Cloudinary',
+    'data.gov.in API',
+    'Docker',
+    'GitHub Actions',
   ];
 
-  const demoAccounts = [
-    {
-      role: 'Customer',
-      icon: ShoppingBag,
-      color: 'blue',
-      email: 'amit@test.com',
-      password: 'password123',
-      description: 'Browse fresh harvests, test search and geolocation near-me, add to cart, and place cash-on-delivery orders.',
-    },
-    {
-      role: 'Farmer',
-      icon: Leaf,
-      color: 'green',
-      email: 'ramesh@test.com',
-      password: 'password123',
-      description: 'View incoming customer orders, manage crop inventory, upload produce photos, and check live mandi rate comparisons.',
-    },
-    {
-      role: 'Admin',
-      icon: ShieldCheck,
-      color: 'amber',
-      email: 'admin@kisanmandi.com',
-      password: 'Admin@123',
-      description: 'Review and verify pending farmer registrations, inspect daily Agmarknet sync logs, and manage platform categories.',
-    },
+  const engineeringHighlights = [
+    'Role-based access control (CUSTOMER, FARMER, ADMIN) enforced at both gateway and API endpoints',
+    'Admin verification workflow ensuring only vetted farmers with valid documentation can list produce',
+    'Atomic stock inventory management preventing overselling during concurrent order placement',
+    'Formal order lifecycle state machine (PLACED → ACCEPTED → PACKED → OUT_FOR_DELIVERY → DELIVERED / CANCELLED)',
+    'Automated scheduled Spring cron syncing daily wholesale mandi benchmark prices from data.gov.in',
+    'Haversine trigonometric distance calculation for accurate nearby farmer discovery by district and coordinates',
+    'Comprehensive multi-language UI (English, Hindi, Marathi) with dynamic text-scaling and Web Speech audio readouts',
+    'Automated test suites across unit, integration, and security layers',
+  ];
+
+  const customerFeatures = [
+    'Browse harvest by category, keyword, district, or nearby kilometer radius',
+    'Compare farmer listing prices side by side with official government mandi benchmarks',
+    'Cart and order placement with 100% Cash on Delivery (no digital payment required)',
+    'Real-time order tracking timeline with live polling and delivery contact details',
+    'Community reviews and star ratings on delivered produce',
+  ];
+
+  const farmerFeatures = [
+    'Free farmer account registration with land verification documentation',
+    'Quick crop listing in simple steps with quantity in kg or quintal and photo upload',
+    'Live mandi market price reference while creating and editing produce prices',
+    'Incoming order management with clear action states (accept, pack, dispatch)',
+    'Transparent sales earnings overview and customer feedback tracking',
+  ];
+
+  const adminFeatures = [
+    'Review pending farmer applications and verify submitted agricultural proof documents',
+    'Inspect automated daily Agmarknet synchronization logs and manual sync triggers',
+    'Manage agricultural produce categories and global taxonomy',
+    'Full oversight over platform users, products, orders, and customer reviews',
   ];
 
   return (
@@ -127,67 +117,85 @@ export default function About() {
           { label: t('nav.home', 'Home'), to: '/' },
           { label: t('nav.about', 'About') },
         ]}
-        title={t('about.page_title', 'About KisanMandi')}
-        subtitle={t(
-          'about.page_subtitle',
-          'A direct Kisan-to-Customer marketplace and live Mandi Rate Tracker designed for rural simplicity and engineering excellence.'
-        )}
+        title="About KisanMandi"
+        subtitle="A direct farmer-to-customer marketplace and live Mandi rate tracker built for real-world agricultural commerce in Maharashtra."
       />
 
-      <div className="page-container mt-8 space-y-12">
-        {/* Project Mission Banner */}
+      <div className="page-container max-w-5xl mt-8 space-y-12">
+        {/* Mission & Problem Statement */}
         <section aria-labelledby="mission-heading">
-          <div className="relative rounded-3xl bg-gradient-to-br from-green-900 via-green-800 to-green-950 text-white p-8 sm:p-12 overflow-hidden shadow-lg border border-green-700/50">
+          <div className="relative rounded-3xl bg-gradient-to-br from-[#052e16] via-[#14532d] to-[#064e3b] text-white p-8 sm:p-12 overflow-hidden shadow-lg border border-green-800/40">
             <div className="relative z-10 max-w-3xl space-y-4">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-green-700/60 border border-green-500/40 text-xs font-semibold text-green-100">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" aria-hidden="true" />
-                <span>Mission & Social Impact</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/30 text-xs font-bold text-green-200">
+                <Sparkles size={14} className="text-amber-300" />
+                <span>The Mission</span>
               </div>
               <h2 id="mission-heading" className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight">
-                Empowering farmers across Maharashtra with direct market access and real-time wholesale price intelligence.
+                Direct trade between farmers and households, guided by transparent market prices.
               </h2>
               <p className="text-sm sm:text-base text-green-100/90 leading-relaxed">
-                Traditional agricultural supply chains take up to 40-50% in middleman commissions before crops reach urban kitchens.
-                KisanMandi bridges this gap: farmers list their produce at fair prices, customers receive farm-fresh harvest with 100% Cash on Delivery,
-                and everyone has transparent access to official Agmarknet APMC mandi prices.
+                Smallholder farmers often sell their hard-earned harvests through layered distribution chains with little visibility into prevailing market rates, while urban families pay inflated rates for produce that spent days in transit.
+              </p>
+              <p className="text-sm sm:text-base text-green-100/90 leading-relaxed">
+                KisanMandi provides a clean, accessible platform where growers set their own selling prices with live government mandi benchmark context, and household customers receive farm-fresh produce with 100% Cash on Delivery.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Creator & Links Section */}
+        {/* Prominent Creator Banner */}
         <section aria-labelledby="creator-heading">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/90 shadow-card flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-green-700 text-white flex items-center justify-center font-extrabold text-2xl shadow-sm shrink-0">
-                KS
-              </div>
-              <div>
-                <h3 id="creator-heading" className="text-xl font-bold text-gray-900">
-                  Designed & Built by Kasim Shah
-                </h3>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  Full-Stack Software Engineer • Production Architecture & Design Systems
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="success">Production Ready</Badge>
-                  <Badge variant="neutral">Open Source Monorepo</Badge>
-                </div>
-              </div>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-green-800">
+                Creator & Architecture
+              </span>
+              <h3 id="creator-heading" className="text-xl sm:text-2xl font-extrabold text-stone-900">
+                Designed &amp; Built by{' '}
+                {creatorUrl ? (
+                  <a
+                    href={creatorUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-700 hover:text-amber-800 underline underline-offset-4 decoration-amber-400 transition-colors"
+                  >
+                    Kasim Shah
+                  </a>
+                ) : (
+                  <span className="text-amber-700">Kasim Shah</span>
+                )}
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-600">
+                Full-stack software engineer specializing in resilient web applications, accessible design systems, and robust API architectures.
+              </p>
             </div>
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Non-empty links from config/site.js */}
+            <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 flex-wrap">
               {GITHUB_URL && (
                 <Button
                   as="a"
                   href={GITHUB_URL}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   variant="outline"
-                  leftIcon={<GitHubIcon size={18} />}
-                  className="flex-1 md:flex-initial"
+                  size="md"
+                  leftIcon={<GitHubIcon size={16} />}
                 >
-                  GitHub Repo
+                  GitHub
+                </Button>
+              )}
+              {LINKEDIN_URL && (
+                <Button
+                  as="a"
+                  href={LINKEDIN_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outline"
+                  size="md"
+                  leftIcon={<LinkedInIcon size={16} />}
+                >
+                  LinkedIn
                 </Button>
               )}
               {DEMO_VIDEO_URL && (
@@ -195,159 +203,184 @@ export default function About() {
                   as="a"
                   href={DEMO_VIDEO_URL}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   variant="primary"
-                  leftIcon={<Play size={18} />}
-                  className="flex-1 md:flex-initial"
+                  size="md"
+                  leftIcon={<Video size={16} />}
                 >
-                  Watch Demo
+                  Demo Video
                 </Button>
               )}
             </div>
           </div>
         </section>
 
-        {/* Recruiter Quick Test Roles (Try Demo) */}
-        <section aria-labelledby="demo-heading" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 id="demo-heading" className="text-xl sm:text-2xl font-bold text-gray-900">
-                Try Demo Accounts (Instant Test)
-              </h2>
-              <p className="text-sm text-gray-600">
-                Recruiter quick-start: click any role below to pre-fill credentials and test without creating an account.
-              </p>
-            </div>
+        {/* Feature Grid: Customer / Farmer / Admin */}
+        <section aria-labelledby="features-heading" className="space-y-6">
+          <div className="space-y-1">
+            <h2 id="features-heading" className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+              What You Can Do
+            </h2>
+            <p className="text-sm text-stone-600">
+              Production features available in the platform, strictly verified from source code.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {demoAccounts.map((demo) => {
-              const Icon = demo.icon;
-              return (
-                <Card key={demo.role} hover className="flex flex-col justify-between p-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="inline-flex items-center gap-2 font-bold text-lg text-gray-900">
-                        <span className="w-8 h-8 rounded-lg bg-green-100 text-green-800 flex items-center justify-center shrink-0">
-                          <Icon size={18} />
-                        </span>
-                        <span>{demo.role}</span>
-                      </div>
-                      <Badge variant={demo.color === 'blue' ? 'info' : demo.color === 'amber' ? 'warning' : 'success'}>
-                        Test Role
-                      </Badge>
-                    </div>
+            {/* Customer Column */}
+            <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-2xs space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0">
+                  <ShoppingBag size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-stone-900 text-lg">Customer</h3>
+                  <span className="text-xs text-stone-500">Household Buyers</span>
+                </div>
+              </div>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-stone-600">
+                {customerFeatures.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <CheckCircle2 size={16} className="text-green-700 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                      {demo.description}
-                    </p>
+            {/* Farmer Column */}
+            <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-2xs space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                  <Tractor size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-stone-900 text-lg">Farmer</h3>
+                  <span className="text-xs text-stone-500">Verified Growers</span>
+                </div>
+              </div>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-stone-600">
+                {farmerFeatures.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <CheckCircle2 size={16} className="text-green-700 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-                    <div className="bg-gray-50 rounded-xl p-3 text-xs space-y-1 font-mono border border-gray-200">
-                      <div><span className="text-gray-500 font-sans">Email: </span>{demo.email}</div>
-                      <div><span className="text-gray-500 font-sans">Password: </span>{demo.password}</div>
-                    </div>
-                  </div>
-
-                  <div className="pt-5 mt-4 border-t border-gray-100">
-                    <Button
-                      variant="secondary"
-                      size="md"
-                      fullWidth
-                      rightIcon={<ArrowRight size={16} />}
-                      onClick={() => handleTestLogin(demo.email, demo.password)}
-                    >
-                      Login as {demo.role}
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
+            {/* Admin Column */}
+            <div className="bg-white rounded-3xl p-6 border border-stone-200/90 shadow-2xs space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-stone-900 text-lg">Admin</h3>
+                  <span className="text-xs text-stone-500">Platform Operations</span>
+                </div>
+              </div>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-stone-600">
+                {adminFeatures.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <CheckCircle2 size={16} className="text-green-700 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
 
-        {/* Tech Stack Breakdown */}
-        <section aria-labelledby="tech-heading" className="space-y-4">
+        {/* Technical Architecture & Stack */}
+        <section aria-labelledby="architecture-heading" className="space-y-6">
           <div className="space-y-1">
-            <h2 id="tech-heading" className="text-xl sm:text-2xl font-bold text-gray-900">
-              Technical Architecture & Stack
+            <h2 id="architecture-heading" className="text-2xl sm:text-3xl font-extrabold text-stone-900">
+              How It Is Built
             </h2>
-            <p className="text-sm text-gray-600">
-              Engineered with clean separation of concerns, high accessibility, and resilient performance on slow 3G networks.
+            <p className="text-sm text-stone-600">
+              Technology stack and system architecture powering the frontend client and backend services.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {techStack.map((stack) => {
-              const Icon = stack.icon;
-              return (
-                <Card key={stack.category} className="p-6 space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-9 h-9 rounded-xl bg-green-50 text-green-700 border border-green-200 flex items-center justify-center shrink-0">
-                        <Icon size={20} />
-                      </span>
-                      <h3 className="font-bold text-gray-900 text-base">{stack.category}</h3>
-                    </div>
-                    <Badge variant="neutral">{stack.badge}</Badge>
-                  </div>
-
-                  <ul className="space-y-2.5 text-xs sm:text-sm text-gray-600">
-                    {stack.items.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 size={16} className="text-green-600 shrink-0 mt-0.5" />
-                        <span className="leading-snug">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Key Features & Low-Literacy Farmer UX */}
-        <section aria-labelledby="features-heading" className="bg-amber-50/60 rounded-3xl p-6 sm:p-10 border border-amber-200/80 space-y-6">
-          <div className="space-y-2 max-w-2xl">
-            <h2 id="features-heading" className="text-xl sm:text-2xl font-bold text-gray-900">
-              Low-Literacy & Farmer-First UX Philosophy
-            </h2>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              Designed specifically for low-end Android smartphones, slow network conditions, and rural agricultural communities where complex ecommerce interfaces fail:
-            </p>
+          {/* Tech Badges */}
+          <div className="flex flex-wrap gap-2">
+            {techBadges.map((badge) => (
+              <span
+                key={badge}
+                className="px-3.5 py-1.5 rounded-xl bg-white border border-stone-200 text-xs sm:text-sm font-semibold text-stone-800 shadow-2xs"
+              >
+                {badge}
+              </span>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-amber-200/60 space-y-2">
-              <span className="text-2xl" role="img" aria-hidden="true">🔊</span>
-              <h4 className="font-bold text-gray-900 text-sm">Audio Assistance</h4>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                One-tap voice readout reads mandi rates and produce details out loud in Hindi and Marathi.
-              </p>
-            </div>
+          {/* Clean Inline SVG Architecture Diagram */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-2xs overflow-x-auto">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-stone-500 mb-6">
+              System Architecture Flow
+            </h3>
 
-            <div className="bg-white p-4 rounded-2xl border border-amber-200/60 space-y-2">
-              <span className="text-2xl" role="img" aria-hidden="true">🔤</span>
-              <h4 className="font-bold text-gray-900 text-sm">A / A+ / A++ Text Scale</h4>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Instant root font-scaling allows elderly farmers to enlarge text across the whole platform without breaking layout.
-              </p>
-            </div>
+            <svg
+              viewBox="0 0 760 220"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-full min-w-[640px] h-auto"
+              aria-label="KisanMandi Architecture Diagram: Browser talks to Spring Boot API, which interacts with MySQL, Cloudinary, and data.gov.in"
+            >
+              {/* Browser Node */}
+              <rect x="20" y="70" width="160" height="80" rx="16" fill="#f0fdf4" stroke="#15803d" strokeWidth="2" />
+              <text x="100" y="105" textAnchor="middle" fill="#14532d" fontSize="14" fontWeight="bold">Browser Client</text>
+              <text x="100" y="125" textAnchor="middle" fill="#166534" fontSize="11">React 18 • Vite • Tailwind v4</text>
 
-            <div className="bg-white p-4 rounded-2xl border border-amber-200/60 space-y-2">
-              <span className="text-2xl" role="img" aria-hidden="true">🍅</span>
-              <h4 className="font-bold text-gray-900 text-sm">Recognize, Don't Read</h4>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Large visual category tiles (Sabzi, Fal, Anaaj, Dudh) with icons + words together on every primary action.
-              </p>
-            </div>
+              {/* Arrow 1: Browser <-> API */}
+              <path d="M180 110 H260" stroke="#059669" strokeWidth="2.5" strokeDasharray="4 4" />
+              <polygon points="262,110 252,105 252,115" fill="#059669" />
+              <text x="220" y="100" textAnchor="middle" fill="#047857" fontSize="10" fontWeight="bold">REST / JWT</text>
 
-            <div className="bg-white p-4 rounded-2xl border border-amber-200/60 space-y-2">
-              <span className="text-2xl" role="img" aria-hidden="true">🤝</span>
-              <h4 className="font-bold text-gray-900 text-sm">100% Cash on Delivery</h4>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                No complex digital wallets or OTP stress required: pay in cash only when fresh produce arrives at your doorstep.
-              </p>
-            </div>
+              {/* Backend API Node */}
+              <rect x="270" y="45" width="200" height="130" rx="18" fill="#ecfdf5" stroke="#059669" strokeWidth="2.5" />
+              <text x="370" y="80" textAnchor="middle" fill="#064e3b" fontSize="15" fontWeight="bold">Spring Boot 3 API</text>
+              <text x="370" y="102" textAnchor="middle" fill="#047857" fontSize="11">Spring Security 6 (RBAC)</text>
+              <text x="370" y="122" textAnchor="middle" fill="#047857" fontSize="11">Spring Data JPA • Hibernate</text>
+              <text x="370" y="145" textAnchor="middle" fill="#047857" fontSize="11">Scheduled Price Sync Cron</text>
+
+              {/* Top Right: Cloudinary */}
+              <path d="M470 85 Q 520 85 540 50" stroke="#0284c7" strokeWidth="2" strokeDasharray="3 3" />
+              <polygon points="542,48 534,54 542,58" fill="#0284c7" />
+              <rect x="550" y="15" width="180" height="60" rx="14" fill="#f0f9ff" stroke="#0284c7" strokeWidth="1.5" />
+              <text x="640" y="42" textAnchor="middle" fill="#075985" fontSize="13" fontWeight="bold">Cloudinary Storage</text>
+              <text x="640" y="58" textAnchor="middle" fill="#0369a1" fontSize="10">Image &amp; Document Uploads</text>
+
+              {/* Middle Right: MySQL Database */}
+              <path d="M470 110 H540" stroke="#15803d" strokeWidth="2" />
+              <polygon points="542,110 534,105 534,115" fill="#15803d" />
+              <rect x="550" y="85" width="180" height="60" rx="14" fill="#fefce8" stroke="#ca8a04" strokeWidth="1.5" />
+              <text x="640" y="112" textAnchor="middle" fill="#713f12" fontSize="13" fontWeight="bold">MySQL 8 Database</text>
+              <text x="640" y="128" textAnchor="middle" fill="#854d0e" fontSize="10">Users • Products • Orders</text>
+
+              {/* Bottom Right: data.gov.in Mandi Sync */}
+              <path d="M470 140 Q 520 140 540 175" stroke="#d97706" strokeWidth="2" strokeDasharray="3 3" />
+              <polygon points="542,177 534,171 542,167" fill="#d97706" />
+              <rect x="550" y="155" width="180" height="60" rx="14" fill="#fffbeb" stroke="#d97706" strokeWidth="1.5" />
+              <text x="640" y="182" textAnchor="middle" fill="#78350f" fontSize="13" fontWeight="bold">data.gov.in (OGD)</text>
+              <text x="640" y="198" textAnchor="middle" fill="#92400e" fontSize="10">Agmarknet Daily Mandi Sync</text>
+            </svg>
+          </div>
+
+          {/* Engineering Highlights */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-2xs space-y-4">
+            <h3 className="text-lg font-bold text-stone-900">
+              Engineering Highlights
+            </h3>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-stone-600">
+              {engineeringHighlights.map((highlight, idx) => (
+                <li key={idx} className="flex items-start gap-2.5">
+                  <CheckCircle2 size={16} className="text-emerald-700 shrink-0 mt-0.5" />
+                  <span className="leading-snug">{highlight}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
       </div>

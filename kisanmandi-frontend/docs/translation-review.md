@@ -137,9 +137,144 @@ This document lists the 40+ most visible user-facing strings across **Navigation
 
 ---
 
-## Technical Integration Details
-- **Google Fonts**: `Noto Sans Devanagari` (weights 400, 500, 600, 700) loaded in `index.html` and configured in `index.css`.
-- **Dynamic Language Detection**: Browser detects `localStorage.getItem('kisanmandi_lang')` first, falling back to browser navigator language (`en-US`, `mr-IN`, `hi-IN`).
-- **Real-Time Language Switcher**: Seamless language toggle component (`LanguageSwitcher.jsx`) accessible across desktop header, mobile navigation drawer, and login/register pages.
-- **Automated Key Validation**: CI script `npm run i18n:check` strictly enforces key equality between `en.json`, `hi.json`, and `mr.json`.
+## UI v2 Part 1: Plain-Language Copy Pass (Jargon Removal & Order Status Next Steps)
+
+| # | Translation Key | English (`en.json`) | Hindi Spoken (`hi.json`) | Marathi Spoken (`mr.json`) | Context / Improvement |
+|---|-----------------|---------------------|--------------------------|----------------------------|-----------------------|
+| 110 | `common.unauthorized_title` | You cannot open this page | यह पेज खोलने की अनुमति नहीं है | हे पेज उघडता येत नाही | Error state: plain wording |
+| 111 | `common.unauthorized_desc` | You do not have permission to view this page. Please log in with the correct account. | आपके पास यह पेज देखने की अनुमति नहीं है। कृपया सही खाते से लॉगिन करें। | हे पेज पाहण्याची परवानगी नाही. कृपया योग्य खात्यातून लॉगिन करा. | Error state guidance |
+| 112 | `home.trust_cod` | Pay cash when you receive | सामान मिलने पर नकद दें | माल मिळाल्यावर रोख पैसे द्या | Trust badge: replaces "COD" |
+| 113 | `cart.proceed_to_checkout` | Place order | ऑर्डर भेजें | ऑर्डर पूर्ण करा | Cart CTA: replaces "Proceed to Checkout" |
+| 114 | `cart.cod_notice` | Pay cash when you receive. You pay each farmer directly upon receiving your fresh produce. | सामान मिलने पर नकद दें। ताज़ा फसल मिलने पर आप सीधे किसान को भुगतान करते हैं। | माल मिळाल्यावर रोख पैसे द्या. शेतमाल हातात आल्यावर थेट शेतकऱ्याला पैसे द्या. | Cart reassurance |
+| 115 | `checkout.title` | Place order | ऑर्डर भेजें | ऑर्डर पूर्ण करा | Checkout Header: replaces "Order Checkout" |
+| 116 | `checkout.cash_on_delivery` | Pay cash when you receive | सामान मिलने पर नकद दें | माल मिळाल्यावर रोख पैसे द्या | Payment choice: replaces "Cash on Delivery (COD)" |
+| 117 | `customer.addresses_desc` | Manage your home and farm delivery addresses. | घर और खेत के डिलीवरी पते संभालें। | घर आणि शेताचे डिलिव्हरी पत्ते व्यवस्थापित करा. | Addresses description |
+| 118 | `addresses.pincode` | Pin code | पिन कोड | पिन कोड | Input label: replaces "Pincode" |
+| 119 | `addresses.no_addresses_desc` | Add a delivery address to place orders quickly. | जल्दी ऑर्डर भेजने के लिए डिलीवरी का पता जोड़ें। | पटकन ऑर्डर नोंदवण्यासाठी डिलिव्हरी पत्ता जोडा. | Empty addresses |
+| 120 | `products.filter_by_pincode` | Pin code | पिन कोड | पिन कोड | Filter input: replaces "PIN Code" |
+| 121 | `products.location_denied_help` | Location access was denied. You can still search by district or Pin code. | स्थान की अनुमति नहीं मिली। आप ज़िला या पिन कोड लिखकर भी खोज सकते हैं। | स्थान परवानगी नाकारली गेली. तरीही आपण जिल्हा किंवा पिन कोड टाकून शोधू शकता. | Geolocation error fix |
+| 122 | `products.insufficient_stock` | Not enough stock | पर्याप्त स्टॉक नहीं है | पुरेसा साठा शिल्लक नाही | Stock warning |
+| 123 | `errors.insufficient_stock` | Not enough stock available. Please reduce quantity. | पर्याप्त स्टॉक उपलब्ध नहीं है। कृपया मात्रा कम करें। | पुरेसा साठा उपलब्ध नाही. कृपया प्रमाण कमी करा. | Form validation message |
+| 124 | `errors.unauthorized` | You cannot open this page. Please log in again. | यह पेज खोलने की अनुमति नहीं है। कृपया दोबारा लॉगिन करें। | हे पेज उघडता येत नाही. कृपया पुन्हा लॉगिन करा. | Auth expiration message |
+| 125 | `mandi.modal_price` | Most common price | सबसे आम भाव | नेहमीचा भाव | APMC Price: replaces "Modal Price" |
+| 126 | `mandi.min_price` | Lowest price | सबसे कम भाव | कमीत कमी भाव | APMC Price: replaces "Min Price" |
+| 127 | `mandi.max_price` | Highest price | सबसे ज़्यादा भाव | जास्तीत जास्त भाव | APMC Price: replaces "Max Price" |
+| 128 | `mandi.per_quintal` | per quintal (100 kg) | प्रति क्विंटल (१०० किलो) | प्रति क्विंटल (१०० किलो) | Unit clarification: explains quintal |
+| 129 | `units.QUINTAL` | quintal (100 kg) | क्विंटल (१०० किलो) | क्विंटल (१०० किलो) | Unit badge: explains quintal |
+| 130 | `farmer.profile_pending_msg` | Waiting for admin to check your details | एडमिन द्वारा जांच बाकी है | ॲडमिन तपासणी सुरू आहे | Registration status: replaces "Approval pending" |
+| 131 | `status.placed.next` | Order sent. Waiting for the farmer to accept | ऑर्डर भेजी गई। किसान द्वारा स्वीकारने का इंतज़ार है | ऑर्डर पाठवली. शेतकरी स्वीकारण्याची वाट पाहत आहोत | Order timeline: What happens next |
+| 132 | `status.accepted.next` | Farmer accepted your order | किसान ने आपकी ऑर्डर स्वीकार कर ली है | शेतकऱ्याने तुमची ऑर्डर स्वीकारली आहे | Order timeline: What happens next |
+| 133 | `status.packed.next` | Your order is being packed | आपकी फसल ताज़ा पैक की जा रही है | तुमची ऑर्डर ताजी पॅक केली जात आहे | Order timeline: What happens next |
+| 134 | `status.out_for_delivery.next` | On the way to you | ऑर्डर आपके पते पर निकल चुकी है | ऑर्डर तुमच्या पत्त्यावर निघाली आहे | Order timeline: What happens next |
+| 135 | `status.delivered.next` | Delivered. Please rate the farmer | सामान मिल गया। कृपया किसान को रेटिंग दें | माल मिळाला. कृपया शेतकऱ्याला रेटिंग द्या | Order timeline: What happens next |
+| 136 | `status.rejected.next` | Farmer could not take this order | किसान यह ऑर्डर नहीं ले पाए | शेतकरी ही ऑर्डर पूर्ण करू शकले नाहीत | Order timeline: What happens next |
+| 137 | `status.cancelled.next` | Order cancelled | ऑर्डर रद्द कर दी गई है | ऑर्डर रद्द करण्यात आली आहे | Order timeline: What happens next |
+
+---
+
+## UI v2 Part 4: Farmer Area, Mandi Simple View, Admin Polish & Final Copy Sweep
+
+### 1. Farmer Layout & Navigation (`DashboardLayout.jsx`)
+
+| Translation Key | English (`en.json`) | Hindi Spoken (`hi.json`) | Marathi Spoken (`mr.json`) | Placement / UX Improvement |
+|-----------------|---------------------|--------------------------|----------------------------|----------------------------|
+| `farmer_nav.home` | Home | होम | होम | Bottom Navigation Item 1 |
+| `farmer_nav.orders` | Orders | ऑर्डर्स | ऑर्डर्स | Bottom Navigation Item 2 with live pending badge |
+| `farmer_nav.products` | Products | फसलें | शेतमाल | Bottom Navigation Item 3 |
+| `farmer_nav.mandi` | Mandi Rates | मंडी भाव | बाजारभाव | Bottom Navigation Item 4 |
+| `farmer_nav.more` | More | अन्य | अधिक | Bottom Navigation Item 5 (opens mobile drawer) |
+| `farmer_nav.drawer_title` | More Options | अन्य विकल्प | अधिक पर्याय | Mobile BottomSheet drawer title |
+| `farmer_nav.profile` | Farm Profile | खेत की जानकारी | शेती प्रोफाइल | Mobile drawer & sidebar link |
+| `farmer_nav.earnings` | Earnings | कमाई | कमाई व हिशोब | Mobile drawer & sidebar link |
+| `farmer_nav.reviews` | Customer Reviews | ग्राहकों की राय | ग्राहकांचे अभिप्राय | Mobile drawer & sidebar link |
+
+### 2. Farmer Dashboard ("Today") (`FarmerDashboard.jsx`)
+
+| Translation Key | English (`en.json`) | Hindi Spoken (`hi.json`) | Marathi Spoken (`mr.json`) | Placement / UX Improvement |
+|-----------------|---------------------|--------------------------|----------------------------|----------------------------|
+| `farmer_dash.greeting` | Namaste, {{name}}! | नमस्ते, {{name}} जी! | नमस्ते, {{name}}! | Friendly spoken farmer greeting |
+| `farmer_dash.today_summary` | You have {{orders}} new orders and ₹{{earnings}} earned today. | आज आपके {{orders}} नए ऑर्डर हैं और ₹{{earnings}} की कमाई हुई है। | आज तुमच्याकडे {{orders}} नवीन ऑर्डर्स आहेत आणि ₹{{earnings}} कमाई झाली आहे. | Daily summary with `ListenButton` audio readout |
+| `farmer_dash.checklist_title` | Get Ready to Sell | फसल बेचने के लिए ये 4 कदम पूरे करें | शेतमाल विकण्यासाठी ही ४ पावले पूर्ण करा | Unapproved farmer onboarding checklist title |
+| `farmer_dash.step_details` | 1. Fill your farm details | १. अपने खेत की जानकारी भरें | १. शेताचा सविस्तर पत्ता भरा | Step 1 state (Done / To do) |
+| `farmer_dash.step_doc` | 2. Upload your farm paper (7/12) | २. खेत का कागज़ (7/12) अपलोड करें | २. शेतीचा पुरावा (७/१२ किंवा दाखला) जोडा | Step 2 state (Done / To do) |
+| `farmer_dash.step_wait` | 3. Wait for admin to check | ३. एडमिन की मंज़ूरी का इंतज़ार करें | ३. ॲडमिन तपासणीची वाट पाहा | Step 3 state (Done / Waiting) |
+| `farmer_dash.step_product` | 4. Add your first crop | ४. अपनी पहली फसल जोड़ें | ४. तुमचा पहिला शेतमाल जोडा | Step 4 state (Done / To do) |
+| `farmer_dash.rejection_fix` | Your documents need attention. Please fix and send again. | आपके दस्तावेज़ में सुधार की आवश्यकता है। कृपया ठीक करके दोबारा भेजें। | कागदपत्रांमध्ये सुधारणा आवश्यक आहे. कृपया दुरुस्त करून पुन्हा पाठवा. | Plain words rejection banner with 1 big CTA button |
+| `farmer_dash.tile_orders` | New Orders | नए ऑर्डर | नवीन ऑर्डर्स | Big 72px tappable tile 1 |
+| `farmer_dash.tile_earnings` | Today's Earnings | आज की कमाई | आजची कमाई | Big 72px tappable tile 2 |
+| `farmer_dash.tile_products` | My Products | मेरी फसलें | माझा शेतमाल | Big 72px tappable tile 3 |
+| `farmer_dash.tile_rates` | Today's Mandi Rates | आज के मंडी भाव | आजचे बाजारभाव | Big 72px tappable tile 4 |
+| `farmer_dash.low_stock_alert` | {{name}}: only {{stock}} {{unit}} left | {{name}}: केवल {{stock}} {{unit}} बचा है | {{name}}: फक्त {{stock}} {{unit}} शिल्लक आहे | Plain-language low stock alert card |
+| `farmer_dash.add_stock_btn` | Add stock | स्टॉक बढ़ाएं | साठा वाढवा | 1-click CTA on low-stock item |
+
+### 3. Add & Edit Product Wizard (`ProductForm.jsx`)
+
+| Translation Key | English (`en.json`) | Hindi Spoken (`hi.json`) | Marathi Spoken (`mr.json`) | Placement / UX Improvement |
+|-----------------|---------------------|--------------------------|----------------------------|----------------------------|
+| `wizard.step_counter` | Step {{current}} of {{total}} | कदम {{current}} / {{total}} | पायरी {{current}} पैकी {{total}} | Stepper indicator above question |
+| `wizard.step1_title` | Take a photo of your produce | अपनी ताज़ा फसल का फोटो लें | तुमच्या शेतमालाचा फोटो काढा | Step 1 photo picker with camera/gallery |
+| `wizard.step2_title` | What are you selling? | आप क्या बेचना चाहते हैं? | तुम्ही काय विकत आहात? | Step 2 produce name & category choice |
+| `wizard.step3_title` | Price and quantity | भाव और उपलब्ध मात्रा तय करें | दर आणि उपलब्ध साठा ठरवा | Step 3 unit chips, PriceInput, NumberStepper |
+| `wizard.step4_title` | Check and publish | जांचें और ग्राहकों को दिखाएं | तपासा आणि ग्राहकांसाठी उपलब्ध करा | Step 4 customer preview card & publish |
+| `wizard.mandi_hint` | Today's government mandi rate for {{crop}}: ₹{{min}} to ₹{{max}} per quintal (about ₹{{kg}} per kg). Shop prices are usually higher. | {{crop}} का आज का सरकारी मंडी भाव: ₹{{min}} से ₹{{max}} प्रति क्विंटल (लगभग ₹{{kg}} प्रति किलो)। दुकानों में भाव इससे अधिक रहता है। | {{crop}} चा आजचा बाजारभाव: ₹{{min}} ते ₹{{max}} प्रति क्विंटल (साधारण ₹{{kg}} प्रति किलो). दुकानातील दर यापेक्षा जास्त असतात. | Clear green guidance card |
+| `wizard.success_title` | Your product is live! | आपकी फसल ग्राहकों को दिखने लगी है! | तुमचा शेतमाल ग्राहकांना दिसू लागला आहे! | Wizard live celebration card |
+| `wizard.add_another` | Add another product | दूसरी फसल जोड़ें | आणखी शेतमाल जोडा | Success screen action 1 |
+| `wizard.view_products` | See my products | मेरी फसलें देखें | माझा शेतमाल पहा | Success screen action 2 |
+
+### 4. My Products (`MyProducts.jsx`)
+
+| Translation Key | English (`en.json`) | Hindi Spoken (`hi.json`) | Marathi Spoken (`mr.json`) | Placement / UX Improvement |
+|-----------------|---------------------|--------------------------|----------------------------|----------------------------|
+| `my_products.status_visible` | Showing to customers | ग्राहकों को दिख रहा है | ग्राहकांना दिसत आहे | Green StatusPill |
+| `my_products.status_hidden` | Hidden by you | आपने छिपा रखा है | तुम्ही लपवले आहे | Neutral StatusPill |
+| `my_products.status_admin_hidden` | Hidden by admin | एडमिन द्वारा रोका गया | ॲडमिनने थांबवले आहे | Amber StatusPill with reason |
+| `my_products.quick_stock_save` | Save | सुरक्षित करें | सेव्ह करा | Inline NumberStepper stock update |
+| `my_products.delete_confirm_title` | Delete this product? You cannot undo this. | क्या आप इस फसल को हटाना चाहते हैं? यह वापस नहीं आएगी। | हा शेतमाल कायमचा काढून टाकायचा का? हे पूर्ववत करता येणार नाही. | Plain words delete confirm modal |
+| `my_products.delete_yes` | Yes, delete | हां, हटा दें | होय, काढून टाका | Primary destructive action |
+| `my_products.delete_no` | No, keep it | नहीं, रहने दें | नाही, राहू द्या | Secondary safe action |
+
+### 5. Incoming Orders (`FarmerOrders.jsx`)
+
+| Translation Key | English (`en.json`) | Hindi Spoken (`hi.json`) | Marathi Spoken (`mr.json`) | Placement / UX Improvement |
+|-----------------|---------------------|--------------------------|----------------------------|----------------------------|
+| `farmer_orders.tab_new` | New | नए | नवीन | Sticky filter pill with live count |
+| `farmer_orders.tab_progress` | In progress | चालू | चालू | Sticky filter pill with live count |
+| `farmer_orders.tab_done` | Done | पूरे हुए | पूर्ण झालेले | Sticky filter pill with live count |
+| `farmer_orders.call_customer` | Call customer | ग्राहक को फोन करें | ग्राहकाला कॉल करा | Prominent green `tel:` button |
+| `farmer_orders.collect_cash` | Collect cash: ₹{{amount}} | नकद लें: ₹{{amount}} | रोख रक्कम घ्या: ₹{{amount}} | High-contrast cash collection box |
+| `farmer_orders.action_accept` | Accept order | ऑर्डर स्वीकारें | ऑर्डर स्वीकारा | Big primary action 1 |
+| `farmer_orders.action_decline` | Cannot take it | अभी नहीं ले सकते | सध्या शक्य नाही | Rejection with plain reason modal |
+| `farmer_orders.action_pack` | Pack harvest | फसल पैक करें | शेतमाल पॅक करा | Big primary action 2 |
+| `farmer_orders.action_dispatch` | Out for delivery | डिलीवरी पर भेजें | डिलिव्हरीसाठी पाठवा | Big primary action 3 |
+| `farmer_orders.action_delivered` | Delivered: I got the cash | डिलीवर हुआ: नकद पैसे मिल गए | डिलिव्हर झाले: रोख पैसे मिळाले | Big primary action 4 with confirm dialog |
+
+### 6. Mandi Dashboard: Simple View & Detailed View (`MandiDashboard.jsx`)
+
+| Translation Key | English (`en.json`) | Hindi Spoken (`hi.json`) | Marathi Spoken (`mr.json`) | Placement / UX Improvement |
+|-----------------|---------------------|--------------------------|----------------------------|----------------------------|
+| `mandi_view.simple` | Simple view | आसान दृश्य | सोपे दृश्य | Segmented toggle option 1 (Default, persisted) |
+| `mandi_view.detailed` | Detailed view | विस्तृत दृश्य | सविस्तर दृश्य | Segmented toggle option 2 (Lazy loads Recharts) |
+| `mandi_simple.pick_crop` | Pick your crop | अपनी फसल चुनें | तुमचे पीक निवडा | Horizontal commodity chips with `CommodityIcon` |
+| `mandi_simple.today_rate` | Today's rate | आज का भाव | आजचा भाव | Big 48px price card heading |
+| `mandi_simple.per_quintal_kg` | ₹{{quintal}} per quintal (100 kg) • about ₹{{kg}} per kg | ₹{{quintal}} प्रति क्विंटल (१०० किलो) • लगभग ₹{{kg}} प्रति किलो | ₹{{quintal}} प्रति क्विंटल (१०० किलो) • साधारण ₹{{kg}} प्रति किलो | Dual unit pricing in large type |
+| `mandi_simple.price_up` | ₹{{diff}} more than yesterday | कल से ₹{{diff}} अधिक | कालपेक्षा ₹{{diff}} जास्त | Plain trend indicator with green arrow |
+| `mandi_simple.price_down` | ₹{{diff}} less than yesterday | कल से ₹{{diff}} कम | कालपेक्षा ₹{{diff}} कमी | Plain trend indicator with red arrow |
+| `mandi_simple.lowest_price` | Lowest price | सबसे कम भाव | सर्वात कमी भाव | Small stat card 1 |
+| `mandi_simple.highest_price` | Highest price | सबसे ज़्यादा भाव | सर्वात जास्त भाव | Small stat card 2 |
+| `mandi_simple.top_markets` | Best markets today | आज सबसे अच्छे भाव वाली मंडियां | आजचे सर्वाधिक दरांचे बाजार | Top 3 market rows |
+| `mandi_simple.change_place` | Change place | स्थान बदलें | जागा बदला | Opens District/Market BottomSheet |
+| `mandi_simple.more_crops` | Find more crops | अन्य फसलें खोजें | इतर पिके शोधा | Search modal with `VoiceSearchButton` |
+
+### 7. Admin Area & Global Jargon Cleanup
+
+| Old Jargon / Technical String | Plain-Language Replacement | English | Hindi | Marathi | Location |
+|--------------------------------|----------------------------|---------|-------|---------|----------|
+| `COD` / `Payment: COD` | Pay cash on delivery | Pay cash on delivery | नकद भुगतान (कैश ऑन डिलीवरी) | कॅश ऑन डिलिव्हरी (रोख पैसे) | Checkout, Orders, FAQs |
+| `APMC Mandi` | Mandi / Government Mandi | Government Mandi | सरकारी मंडी | शासकीय बाजार समिती | Mandi pages, Home, About |
+| `Modal Price` / `Avg Modal` | Average Market Price | Average Market Price | औसत मंडी भाव | सरासरी बाजारभाव | Mandi table & cards |
+| `Min` / `Max` | Lowest / Highest | Lowest / Highest | सबसे कम / सबसे ज़्यादा | सर्वात कमी / सर्वात जास्त | Mandi table columns |
+| `Delivered GMV` | Delivered Order Sales | Delivered Order Sales | पूरी हुई कुल बिक्री | यशस्वी एकूण विक्री | Admin Dashboard StatCard |
+| `Pincode` | Pin code | Pin code | पिन कोड | पिन कोड | Address forms & filters |
+| `Unauthorized` | You cannot open this page | You cannot open this page | यह पेज खोलने की अनुमति नहीं है | हे पेज उघडता येत नाही | Auth guard error page |
+| `Insufficient stock` | Not enough stock available | Not enough stock available | पर्याप्त स्टॉक उपलब्ध नहीं है | पुरेसा साठा उपलब्ध नाही | Cart warning & toasts |
 

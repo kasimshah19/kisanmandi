@@ -1,16 +1,22 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Home from '../pages/public/Home';
 import Login from '../pages/public/Login';
 import Register from '../pages/public/Register';
+import About from '../pages/public/About';
+import Help from '../pages/public/Help';
+import Footer from '../components/Footer';
+import CategoryTilesSection from '../components/home/CategoryTilesSection';
 import { AuthProvider } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
 import { ServerStatusProvider } from '../context/ServerStatusContext';
-import '../i18n';
+import * as siteConfig from '../config/site';
+import { categoryService } from '../services/categoryService';
+import i18n from '../i18n';
 
-// Class mock for IntersectionObserver
+// Mock IntersectionObserver
 class MockIntersectionObserver {
   observe() {}
   unobserve() {}
@@ -32,101 +38,183 @@ function renderWithProviders(ui, { route = '/' } = {}) {
   );
 }
 
-describe('Home Page Redesign', () => {
-  it('renders Hero headline and direct call-to-actions', () => {
+describe('Part 2: Footer & Creator Attribution', () => {
+  it('renders centered "Designed & Built by Kasim Shah" in en, hi, and mr', async () => {
+    // English
+    await i18n.changeLanguage('en');
+    const { unmount } = renderWithProviders(<Footer />);
+    expect(screen.getByText(/Designed & Built by/i)).toBeTruthy();
+    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
+    unmount();
+
+    // Hindi (Name credit remains in exact English wording as specified)
+    await i18n.changeLanguage('hi');
+    const { unmount: unmountHi } = renderWithProviders(<Footer />);
+    expect(screen.getByText(/Designed & Built by/i)).toBeTruthy();
+    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
+    unmountHi();
+
+    // Marathi (Name credit remains in exact English wording as specified)
+    await i18n.changeLanguage('mr');
+    const { unmount: unmountMr } = renderWithProviders(<Footer />);
+    expect(screen.getByText(/Designed & Built by/i)).toBeTruthy();
+    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
+    unmountMr();
+
+    // Reset back to English
+    await i18n.changeLanguage('en');
+  });
+
+  it('renders creator name as link only when configured, plain text when not set', () => {
+    renderWithProviders(<Footer />);
+    const creatorElement = screen.getByText('Kasim Shah');
+    // In default siteConfig, LINKEDIN_URL and GITHUB_URL are empty strings
+    if (siteConfig.LINKEDIN_URL || siteConfig.GITHUB_URL) {
+      expect(creatorElement.tagName.toLowerCase()).toBe('a');
+    } else {
+      expect(creatorElement.tagName.toLowerCase()).toBe('strong');
+    }
+  });
+
+  it('does NOT contain hosting or database provider names', () => {
+    renderWithProviders(<Footer />);
+    expect(screen.queryByText(/Render/i)).toBeNull();
+    expect(screen.queryByText(/Vercel/i)).toBeNull();
+    expect(screen.queryByText(/PlanetScale/i)).toBeNull();
+    expect(screen.queryByText(/Neon/i)).toBeNull();
+  });
+});
+
+describe('Part 2: Home Page & Sections', () => {
+  it('renders Hero headline and two big role buttons', () => {
     renderWithProviders(<Home />);
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading.textContent).toContain('Fresh from the farm');
-    expect(screen.getAllByText(/Buy Fresh Produce/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Check Mandi Rates/i).length).toBeGreaterThan(0);
+
+    // Role buttons (present in Hero and Final CTA)
+    expect(screen.getAllByText(/I want to BUY fresh produce/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/I want to SELL my crops/i).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders How It Works tabs and FAQ questions', () => {
-    renderWithProviders(<Home />);
-    expect(screen.getByText(/How KisanMandi Works/i)).toBeTruthy();
-    expect(screen.getByRole('tab', { name: /For Customers/i })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: /For Farmers/i })).toBeTruthy();
-    expect(screen.getByText(/How do I pay for my order\?/i)).toBeTruthy();
+  it('CategoryTilesSection fetches from categoryService and links with categoryId', async () => {
+    vi.spyOn(categoryService, 'getCategories').mockResolvedValueOnce({
+      status: 200,
+      data: [
+        { id: 101, name: 'Fresh Vegetables' },
+        { id: 102, name: 'Organic Fruits' },
+      ],
+    });
+
+    renderWithProviders(<CategoryTilesSection />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Fresh Vegetables')).toBeTruthy();
+      expect(screen.getByText('Organic Fruits')).toBeTruthy();
+    });
+
+    const link = screen.getByText('Fresh Vegetables').closest('a');
+    expect(link.getAttribute('href')).toBe('/products?categoryId=101');
   });
 
-  it('does NOT contain old developer System Live Status card or provider names', () => {
+  it('CategoryTilesSection gracefully hides if API call fails', async () => {
+    vi.spyOn(categoryService, 'getCategories').mockRejectedValueOnce(new Error('Network failure'));
+
+    const { container } = renderWithProviders(<CategoryTilesSection />);
+
+    await waitFor(() => {
+      expect(container.querySelector('section')).toBeNull();
+    });
+  });
+
+  it('does NOT contain old System Live Status card', () => {
     renderWithProviders(<Home />);
     expect(screen.queryByText(/System Live Status/i)).toBeNull();
     expect(screen.queryByText(/Online \(Render\)/i)).toBeNull();
-    expect(screen.queryByText(/Connected \(MySQL\)/i)).toBeNull();
   });
 });
 
-import About from '../pages/public/About';
-import Help from '../pages/public/Help';
-import Footer from '../components/Footer';
-
-describe('About & Help Pages (Recruiter & Farmer-First Hub)', () => {
-  it('renders About page with Kasim Shah attribution, architecture overview, and demo accounts', () => {
-    renderWithProviders(<About />, { route: '/about' });
-    const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading.textContent).toContain('About KisanMandi');
-    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
-    expect(screen.getByText(/Full-Stack Software Engineer/i)).toBeTruthy();
-    expect(screen.getByText(/Spring Boot 3/i)).toBeTruthy();
-    expect(screen.getByText(/Tailwind CSS v4/i)).toBeTruthy();
-    expect(screen.getAllByText(/amit@test.com/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/ramesh@test.com/i).length).toBeGreaterThan(0);
-  });
-
-  it('renders Help page with step-by-step customer & farmer guides and interactive FAQ', () => {
+describe('Part 2: Help Page', () => {
+  it('renders PageHeader and switches between buyer and seller tabs', () => {
     renderWithProviders(<Help />, { route: '/help' });
-    const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading.textContent).toContain('Help & How-To Guides');
-    expect(screen.getByText(/1\. Choose Fresh Harvest/i)).toBeTruthy();
-    
-    // Switch to farmer tab
-    const farmerTab = screen.getByRole('tab', { name: /How to Sell/i });
-    fireEvent.click(farmerTab);
-    expect(screen.getByText(/1\. Register in 1 Minute/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: /How to use KisanMandi/i })).toBeTruthy();
 
-    expect(screen.getByText(/How do payments work\? Do I need online banking\?/i)).toBeTruthy();
+    // Default tab: I want to buy
+    expect(screen.getByText(/1\. Choose Fresh Harvest/i)).toBeTruthy();
+
+    // Switch to seller tab
+    const sellerTab = screen.getByRole('tab', { name: /I want to sell/i });
+    fireEvent.click(sellerTab);
+
+    expect(screen.getByText(/1\. Register in 1 Minute/i)).toBeTruthy();
   });
 
-  it('renders Footer with prominent Kasim Shah creator attribution badge', () => {
-    renderWithProviders(<Footer />);
-    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
-    expect(screen.getByText(/Designed & Built by/i)).toBeTruthy();
+  it('renders email support button only when CONTACT_EMAIL is configured', () => {
+    renderWithProviders(<Help />, { route: '/help' });
+    const supportLink = screen.queryByRole('link', { name: /Email Support/i });
+    if (siteConfig.CONTACT_EMAIL) {
+      expect(supportLink).toBeTruthy();
+    } else {
+      expect(supportLink).toBeNull();
+    }
   });
 });
 
-describe('Login & Register Redesign', () => {
-  it('renders Login form with segmented LanguageSwitcher and email/password fields', () => {
-    renderWithProviders(<Login />, { route: '/login' });
-    const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading.textContent).toContain('Login');
-    expect(screen.getByLabelText(/Email Address/i)).toBeTruthy();
-    expect(screen.getByLabelText(/Password/i)).toBeTruthy();
+describe('Part 2: About Page', () => {
+  it('renders About page with mission, Kasim Shah attribution, and verified tech stack', () => {
+    renderWithProviders(<About />, { route: '/about' });
+    expect(screen.getByRole('heading', { level: 1, name: /About KisanMandi/i })).toBeTruthy();
+    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
+    expect(screen.getAllByText(/Spring Boot 3/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Tailwind CSS v4/i)).toBeTruthy();
+    expect(screen.getAllByText(/MySQL 8/i).length).toBeGreaterThanOrEqual(1);
+
+    // Features grouped by Customer, Farmer, Admin
+    expect(screen.getByText('Customer')).toBeTruthy();
+    expect(screen.getByText('Farmer')).toBeTruthy();
+    expect(screen.getByText('Admin')).toBeTruthy();
+
+    // Architecture diagram inline SVG exists
+    expect(screen.getByLabelText(/KisanMandi Architecture Diagram/i)).toBeTruthy();
   });
 
-  it('prefills credentials when clicking recruiter quick test demo buttons', () => {
-    renderWithProviders(<Login />, { route: '/login' });
-    const farmerBtn = screen.getByText('ramesh@test.com').closest('button');
-    fireEvent.click(farmerBtn);
-    const emailInput = screen.getByLabelText(/Email Address/i);
-    expect(emailInput.value).toBe('ramesh@test.com');
+  it('does NOT expose admin passwords or demo credentials on About page', () => {
+    renderWithProviders(<About />, { route: '/about' });
+    expect(screen.queryByText(/Admin@123/i)).toBeNull();
+    expect(screen.queryByText(/password123/i)).toBeNull();
+  });
+});
 
-    const customerBtn = screen.getByText('amit@test.com').closest('button');
-    fireEvent.click(customerBtn);
-    expect(emailInput.value).toBe('amit@test.com');
+describe('Part 2: Login & Register', () => {
+  it('renders Login form with 56px inputs and word+icon password toggle', () => {
+    renderWithProviders(<Login />, { route: '/login' });
+    expect(screen.getByRole('heading', { level: 1, name: /Login|Welcome back/i })).toBeTruthy();
+
+    const emailInput = screen.getByLabelText(/Email Address/i);
+    expect(emailInput.className).toContain('min-h-[56px]');
+
+    const toggleBtn = screen.getByRole('button', { name: /Show password/i });
+    expect(toggleBtn.textContent).toContain('Show');
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn.textContent).toContain('Hide');
+  });
+
+  it('renders demo buttons only when env vars exist, never for admin', () => {
+    renderWithProviders(<Login />, { route: '/login' });
+    // In testing without VITE_DEMO_* env vars, no demo buttons should be rendered
+    expect(screen.queryByText(/Try as admin/i)).toBeNull();
+    expect(screen.queryByText(/admin@kisanmandi/i)).toBeNull();
   });
 
   it('preselects FARMER role in Register when ?role=FARMER query param is passed', () => {
     renderWithProviders(<Register />, { route: '/register?role=FARMER' });
-    const farmerRadio = screen.getByRole('radio', { name: /Farmer \/ Producer/i });
-    expect(farmerRadio.getAttribute('aria-checked')).toBe('true');
+    const farmerChoice = screen.getByRole('radio', { name: /I want to SELL/i });
+    expect(farmerChoice.getAttribute('aria-checked')).toBe('true');
   });
 
-  it('shows password strength indicator when typing password in Register', () => {
+  it('shows password strength indicator when typing in Register', () => {
     renderWithProviders(<Register />, { route: '/register' });
     const pwdInput = screen.getByLabelText(/^Password \*/i);
     fireEvent.change(pwdInput, { target: { value: 'Secret123!' } });
     expect(screen.getByText(/Strong/i)).toBeTruthy();
   });
 });
-

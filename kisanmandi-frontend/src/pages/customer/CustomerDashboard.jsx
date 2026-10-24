@@ -12,7 +12,8 @@ import {
   Star,
   Clock,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  HelpCircle
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import { reviewService } from '../../services/phase5Services';
@@ -151,27 +152,27 @@ export default function CustomerDashboard() {
             </div>
           </Link>
 
-          {/* Addresses */}
+          {/* Help & Guides Tile */}
           <Link
-            to="/customer/addresses"
+            to="/help"
             className="bg-white rounded-3xl p-5 border border-neutral-200/90 shadow-sm hover:shadow-md hover:border-brand-300 transition group flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between mb-4">
-                <IconTile icon={MapPin} tone="gray" size="md" />
-                <span className="text-xs font-bold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full">
-                  Saved
+                <IconTile icon={HelpCircle} tone="emerald" size="md" />
+                <span className="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                  Guides
                 </span>
               </div>
-              <h3 className="font-bold text-neutral-900 text-base mb-1 group-hover:text-neutral-900 transition">
-                {t('customer.addresses_title')}
+              <h3 className="font-bold text-neutral-900 text-base mb-1 group-hover:text-green-800 transition">
+                {t('help.page_title', 'Help & Guides')}
               </h3>
               <p className="text-neutral-500 text-xs leading-relaxed">
-                {t('customer.addresses_desc')}
+                {t('help.page_subtitle', 'Easy step-by-step guides for ordering and produce verification.')}
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center text-xs font-bold text-neutral-700 group-hover:translate-x-1 transition">
-              {t('customer.manage')} <ArrowRight size={14} className="ml-1" />
+            <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center text-xs font-bold text-green-700 group-hover:translate-x-1 transition">
+              <span>{t('common.see_details', 'View Guides')}</span> <ArrowRight size={14} className="ml-1" />
             </div>
           </Link>
         </div>

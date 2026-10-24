@@ -3,8 +3,14 @@ import { Mic, MicOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { isSpeechRecognitionSupported, createSpeechRecognizer } from '../../utils/speech';
 
+/**
+ * VoiceSearchButton Component
+ * Uses Web Speech Recognition for voice search in rural regional languages.
+ * Note: SpeechRecognition works only on HTTPS or localhost origins.
+ */
 export default function VoiceSearchButton({
   onTranscript,
+  onResult,
   className = '',
   size = 'md',
   lang,
@@ -43,8 +49,9 @@ export default function VoiceSearchButton({
       onStart: () => setIsListening(true),
       onResult: (transcript) => {
         setIsListening(false);
-        if (transcript && onTranscript) {
-          onTranscript(transcript);
+        if (transcript) {
+          if (onResult) onResult(transcript);
+          else if (onTranscript) onTranscript(transcript);
         }
       },
       onError: () => setIsListening(false),

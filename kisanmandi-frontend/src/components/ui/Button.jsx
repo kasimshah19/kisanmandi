@@ -33,8 +33,12 @@ export default function Button({
       'bg-transparent hover:bg-gray-100 active:bg-gray-200 text-gray-700 hover:text-gray-900 focus-visible:ring-gray-400',
     danger:
       'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-xs focus-visible:ring-red-600',
+    accent:
+      'bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-stone-950 font-semibold shadow-xs focus-visible:ring-amber-500',
     harvest:
-      'bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-950 font-semibold shadow-xs focus-visible:ring-amber-500',
+      'bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-stone-950 font-semibold shadow-xs focus-visible:ring-amber-500',
+    soft:
+      'bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-950 border border-emerald-200/70 focus-visible:ring-emerald-600',
   };
 
   // Size styling: minimum 48px height for standard touch targets, 56px for primary mobile actions
@@ -70,11 +74,11 @@ export default function Button({
       {...props}
     >
       {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin shrink-0" aria-hidden="true" />
+        <Loader2 className="w-5 h-5 animate-spin shrink-0" aria-hidden="true" />
       ) : (
         leftIcon && <span className="shrink-0">{leftIcon}</span>
       )}
-      <span>{children}</span>
+      <span className={loading ? 'opacity-80' : ''}>{children}</span>
       {!loading && rightIcon && <span className="shrink-0">{rightIcon}</span>}
     </RenderComponent>
   );

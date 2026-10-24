@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,8 +12,9 @@ import {
   ChevronRight,
   RotateCcw,
   Sparkles,
-  Layers,
-  ArrowRight
+  ArrowUpDown,
+  Calendar,
+  Layers
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
@@ -27,7 +28,8 @@ import NoResults from '../../components/illustrations/NoResults';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import Card from '../../components/ui/Card';
+import VoiceSearchButton from '../../components/VoiceSearchButton';
+import { getCategoryIcon } from '../../utils/categoryIcons';
 import useDebounce from '../../hooks/useDebounce';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
@@ -78,8 +80,9 @@ export default function BrowseProducts() {
 
   // Load categories
   useEffect(() => {
-    categoryService.getCategories()
-      .then(res => setCategories(res.data || []))
+    categoryService
+      .getCategories()
+      .then((res) => setCategories(res.data || []))
       .catch(() => {});
   }, []);
 
@@ -91,8 +94,9 @@ export default function BrowseProducts() {
   // Fetch nearby farmers when location is active
   useEffect(() => {
     if (latitude && longitude) {
-      nearbyService.getNearbyFarmers({ latitude, longitude, radius })
-        .then(res => setNearbyFarmers(res || []))
+      nearbyService
+        .getNearbyFarmers({ latitude, longitude, radius })
+        .then((res) => setNearbyFarmers(res || []))
         .catch(() => setNearbyFarmers([]));
     } else {
       setNearbyFarmers([]);
@@ -172,17 +176,10 @@ export default function BrowseProducts() {
     setSearchParams(params);
   };
 
-  const activeFiltersCount = [
-    categoryId,
-    district,
-    pincode,
-    sort,
-    latitude
-  ].filter(Boolean).length;
-
+  const activeFiltersCount = [categoryId, district, pincode, sort, latitude].filter(Boolean).length;
   const hasAnyFilter = activeFiltersCount > 0 || !!q;
 
-  // Body scroll lock for mobile filter sheet
+  // Body scroll lock for filter sheet
   useEffect(() => {
     if (isFilterSheetOpen) {
       document.body.style.overflow = 'hidden';
@@ -205,115 +202,112 @@ export default function BrowseProducts() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFilterSheetOpen]);
 
-  const selectedCategoryObj = categories.find(c => String(c.id) === String(categoryId));
+  const selectedCategoryObj = categories.find((c) => String(c.id) === String(categoryId));
 
-  const renderFilterControls = (isMobile = false) => (
+  // Advanced Filter Controls inside BottomSheet / Drawer
+  const renderAdvancedFilterControls = () => (
     <div className="space-y-6">
-      {/* Categories */}
+      {/* Category selection list */}
       <div>
-        <div className="flex items-center justify-between mb-2.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-            <Layers size={13} className="text-brand-600" />
-            {t('farmer.category_select')}
-          </label>
-          {categoryId && (
-            <button
-              onClick={() => updateParam('categoryId', '')}
-              className="text-xs text-brand-700 hover:text-brand-800 font-medium"
-            >
-              {t('common.clear')}
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col gap-1 max-h-56 overflow-y-auto pr-1">
+        <label className="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5 mb-2.5">
+          <Layers size={14} className="text-green-700" />
+          <span>{t('farmer.category_select', 'Category')}</span>
+        </label>
+        <div className="flex flex-col gap-1 max-h-52 overflow-y-auto pr-1">
           <button
+            type="button"
             onClick={() => updateParam('categoryId', '')}
-            className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition text-left ${
+            className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition text-left cursor-pointer ${
               !categoryId
-                ? 'bg-brand-50 text-brand-800 font-semibold ring-1 ring-brand-200'
-                : 'text-neutral-700 hover:bg-neutral-100/70'
+                ? 'bg-green-100 text-green-900 border border-green-300'
+                : 'text-stone-700 hover:bg-stone-100'
             }`}
           >
-            <span>{t('products.category_all')}</span>
-            {!categoryId && <Check size={15} className="text-brand-600" />}
+            <span>{t('products.category_all', 'All Categories')}</span>
+            {!categoryId && <Check size={16} className="text-green-700 stroke-[2.5]" />}
           </button>
-          {categories.filter(c => c.active !== false).map(cat => {
-            const isSelected = String(categoryId) === String(cat.id);
-            return (
-              <button
-                key={cat.id}
-                onClick={() => updateParam('categoryId', String(cat.id))}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition text-left ${
-                  isSelected
-                    ? 'bg-brand-50 text-brand-800 font-semibold ring-1 ring-brand-200'
-                    : 'text-neutral-700 hover:bg-neutral-100/70'
-                }`}
-              >
-                <span>{cat.name}</span>
-                {isSelected && <Check size={15} className="text-brand-600" />}
-              </button>
-            );
-          })}
+          {categories
+            .filter((c) => c.active !== false)
+            .map((cat) => {
+              const isSelected = String(categoryId) === String(cat.id);
+              return (
+                <button
+                  type="button"
+                  key={cat.id}
+                  onClick={() => updateParam('categoryId', String(cat.id))}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition text-left cursor-pointer ${
+                    isSelected
+                      ? 'bg-green-100 text-green-900 border border-green-300'
+                      : 'text-stone-700 hover:bg-stone-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>{getCategoryIcon(cat.name)}</span>
+                    <span>{cat.name}</span>
+                  </span>
+                  {isSelected && <Check size={16} className="text-green-700 stroke-[2.5]" />}
+                </button>
+              );
+            })}
         </div>
       </div>
 
-      {/* Near Me Card */}
-      <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-3.5 space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center shrink-0">
-            <MapPin size={15} />
+      {/* Near Me & Radius Controls */}
+      <div className="rounded-2xl border-2 border-green-100 bg-green-50/60 p-4 space-y-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-green-700 text-white flex items-center justify-center shrink-0 shadow-2xs">
+            <MapPin size={16} />
           </div>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-brand-900">
-              {t('products.near_me_title')}
+            <h4 className="text-xs font-bold uppercase tracking-wider text-green-950">
+              {t('products.near_me_title', 'Distance Search')}
             </h4>
-            <p className="text-xs text-neutral-600 leading-snug">
-              {t('products.near_me_desc')}
+            <p className="text-xs text-stone-600 leading-snug">
+              {t('products.near_me_desc', 'Find farmers close to your kitchen')}
             </p>
           </div>
         </div>
 
-        {/* 4 States */}
         {!latitude ? (
           locatingState === 'asking' ? (
-            <div className="p-2.5 rounded-xl bg-white border border-brand-200 text-xs text-brand-800 flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-brand-600 border-t-transparent animate-spin" />
-              <span>{t('products.location_permission_asking')}</span>
+            <div className="p-3 rounded-xl bg-white border border-green-200 text-xs text-green-800 flex items-center gap-2">
+              <span className="w-4 h-4 rounded-full border-2 border-green-600 border-t-transparent animate-spin" />
+              <span>{t('products.location_permission_asking', 'Asking for your location...')}</span>
             </div>
           ) : locatingState === 'denied' ? (
             <div className="space-y-2">
-              <p className="text-xs text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
-                {t('products.location_denied_help')}
+              <p className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                {t('products.location_denied_help', 'Location permission was denied in your browser.')}
               </p>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs"
+                className="w-full text-xs min-h-[44px]"
                 onClick={handleUseLocation}
               >
-                <Navigation size={13} className="mr-1.5" />
-                {t('common.retry')}
+                <Navigation size={14} className="mr-1.5" />
+                {t('common.retry', 'Try again')}
               </Button>
             </div>
           ) : (
             <Button
               variant="secondary"
               size="sm"
-              className="w-full text-xs"
+              className="w-full text-xs min-h-[44px] font-bold"
               onClick={handleUseLocation}
             >
-              <Navigation size={13} className="mr-1.5 text-brand-700" />
-              {t('products.use_current_location')}
+              <Navigation size={14} className="mr-1.5 text-green-700" />
+              {t('products.use_current_location', 'Use my current location')}
             </Button>
           )
         ) : (
-          <div className="space-y-2 pt-1 border-t border-brand-100">
+          <div className="space-y-2 pt-2 border-t border-green-200/80">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-neutral-700">{t('products.within_radius')}</span>
+              <span className="font-semibold text-stone-700">{t('products.within_radius', 'Within radius')}</span>
               <select
                 value={radius}
                 onChange={(e) => updateParam('radius', e.target.value)}
-                className="bg-white border border-brand-200 rounded-lg text-xs font-semibold text-brand-800 px-2 py-1 outline-none focus:ring-1 focus:ring-brand-500"
+                className="bg-white border border-green-300 rounded-xl text-xs font-bold text-green-900 px-3 py-1.5 outline-none focus:ring-2 focus:ring-green-600 cursor-pointer"
               >
                 <option value="5">5 km</option>
                 <option value="10">10 km</option>
@@ -323,34 +317,35 @@ export default function BrowseProducts() {
               </select>
             </div>
             <button
+              type="button"
               onClick={() => handleLocationChange(null)}
-              className="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
+              className="text-xs text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer pt-1"
             >
-              <X size={12} />
-              {t('products.turn_off')}
+              <X size={13} />
+              {t('products.turn_off', 'Turn off location')}
             </button>
           </div>
         )}
       </div>
 
-      {/* District & Pincode */}
+      {/* District & Pincode Filter */}
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-            {t('auth.district_label')}
+          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+            {t('auth.district_label', 'District in Maharashtra')}
           </label>
           <input
             type="text"
             value={district}
             onChange={(e) => updateParam('district', e.target.value)}
-            placeholder="e.g. Pune, Nashik"
-            className="w-full px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+            placeholder="e.g. Pune, Nashik, Kolhapur"
+            className="w-full px-3.5 py-3 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none transition font-medium"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-            {t('products.filter_by_pincode')}
+          <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+            {t('products.filter_by_pincode', '6-Digit Pin Code')}
           </label>
           <input
             type="text"
@@ -358,361 +353,411 @@ export default function BrowseProducts() {
             maxLength={6}
             value={pincode}
             onChange={(e) => updateParam('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-            placeholder="6-digit pincode"
-            className="w-full px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+            placeholder="e.g. 411001"
+            className="w-full px-3.5 py-3 text-sm bg-stone-50 border border-stone-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-green-600 focus:border-green-600 outline-none transition font-medium"
           />
         </div>
       </div>
-
-      {/* Sort By */}
-      <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-          {t('products.sort_by')}
-        </label>
-        <select
-          value={sort}
-          onChange={(e) => updateParam('sort', e.target.value)}
-          className="w-full px-3 py-2 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
-        >
-          <option value="">{t('products.sort_newest')}</option>
-          <option value="priceAsc">{t('products.sort_price_low_high')}</option>
-          <option value="priceDesc">{t('products.sort_price_high_low')}</option>
-          {latitude && longitude && (
-            <option value="distanceAsc">{t('products.sort_distance')}</option>
-          )}
-        </select>
-      </div>
-
-      {/* Clear Filters button */}
-      {hasAnyFilter && (
-        <button
-          onClick={clearFilters}
-          className="w-full py-2 text-xs font-semibold text-neutral-600 hover:text-red-600 transition flex items-center justify-center gap-1.5 border border-dashed border-neutral-300 rounded-xl hover:border-red-300"
-        >
-          <RotateCcw size={13} />
-          {t('products.clear_filters')}
-        </button>
-      )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#fafaf7] py-6 sm:py-8 lg:py-10">
-      <div className="page-container">
+    <div className="min-h-screen bg-warm-50 py-6 sm:py-8 lg:py-10 pb-20">
+      <div className="page-container max-w-7xl">
         {/* Page Header */}
         <PageHeader
           breadcrumbs={[
-            { label: t('nav.home'), to: '/' },
-            { label: t('nav.browse') }
+            { label: t('nav.home', 'Home'), to: '/' },
+            { label: t('nav.browse', 'Produce') }
           ]}
-          title={t('products.browse_title')}
-          subtitle={t('products.browse_subtitle')}
+          title={t('products.browse_title', 'Browse Fresh Produce')}
+          subtitle={t('products.browse_subtitle', 'Directly listed by verified farmers across Maharashtra')}
         />
 
-        {/* Search Bar + Mobile Filter Button */}
-        <div className="mt-4 mb-6 flex items-center gap-3">
+        {/* 1. TOP HUGE FRIENDLY SEARCH BAR (56px) WITH VOICE SEARCH */}
+        <div className="mt-4 mb-4 flex items-center gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" size={19} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={22} />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={t('products.search_placeholder')}
-              className="w-full pl-11 pr-10 py-3 bg-white border border-neutral-200 rounded-2xl shadow-sm text-sm sm:text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+              placeholder={t('products.search_placeholder', 'Search vegetables, fruits, grains, or farmer names...')}
+              className="w-full min-h-[56px] pl-12 pr-24 sm:pr-28 py-3.5 bg-white border-2 border-stone-200/90 rounded-2xl shadow-xs text-base sm:text-lg text-stone-900 placeholder:text-stone-400 focus:ring-3 focus:ring-green-600 focus:border-green-600 outline-none transition font-medium"
             />
-            {searchInput && (
-              <button
-                onClick={() => setSearchInput('')}
-                aria-label={t('common.clear')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 p-1"
-              >
-                <X size={16} />
-              </button>
-            )}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={() => setSearchInput('')}
+                  aria-label={t('common.clear', 'Clear search')}
+                  className="p-1.5 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              )}
+              {/* Feature-detected VoiceSearchButton */}
+              <VoiceSearchButton
+                onResult={(text) => setSearchInput(text)}
+                size="md"
+              />
+            </div>
           </div>
 
-          {/* Mobile Filter Toggle */}
+          {/* Filter button for mobile and desktop */}
           <button
+            type="button"
             onClick={() => setIsFilterSheetOpen(true)}
-            aria-label={t('products.filter_sheet_title')}
-            className={`lg:hidden flex items-center gap-2 px-4 py-3 rounded-2xl border font-semibold text-sm transition shadow-sm min-h-[46px] ${
+            aria-label={t('common.filter', 'Filter produce')}
+            className={`flex items-center justify-center gap-2 px-4 sm:px-5 min-h-[56px] rounded-2xl border-2 font-bold text-sm sm:text-base transition shadow-xs cursor-pointer ${
               activeFiltersCount > 0
-                ? 'bg-brand-50 border-brand-300 text-brand-800'
-                : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                ? 'bg-green-100 border-green-600 text-green-950'
+                : 'bg-white border-stone-200/90 text-stone-800 hover:bg-stone-50 active:bg-stone-100'
             }`}
           >
-            <SlidersHorizontal size={17} />
-            <span className="hidden sm:inline">{t('common.filter')}</span>
+            <SlidersHorizontal size={19} className="text-green-700" />
+            <span className="hidden sm:inline">{t('common.filter', 'Filters')}</span>
             {activeFiltersCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-brand-700 text-white text-xs flex items-center justify-center font-bold">
+              <span className="w-5 h-5 rounded-full bg-green-700 text-white text-xs flex items-center justify-center font-extrabold">
                 {activeFiltersCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* Layout Grid: Sidebar (Desktop) + Products (Right) */}
-        <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 items-start">
-          {/* Desktop Filter Sidebar */}
-          <aside className="hidden lg:block sticky top-24">
-            <div className="bg-white rounded-2xl border border-neutral-200/90 p-5 shadow-sm">
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-neutral-100">
-                <span className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-                  <SlidersHorizontal size={16} className="text-brand-700" />
-                  {t('products.filter_sheet_title')}
-                </span>
-                {activeFiltersCount > 0 && (
-                  <Badge variant="brand" size="sm">
-                    {activeFiltersCount} active
-                  </Badge>
-                )}
-              </div>
-              {renderFilterControls(false)}
-            </div>
-          </aside>
+        {/* 2. HORIZONTALLY SCROLLABLE ROW OF CATEGORY TILES (snap scrolling, min 84px) */}
+        <div className="mb-4 overflow-x-auto pb-2 scrollbar-hide snap-x flex items-center gap-2.5">
+          {/* 'All' Category Tile */}
+          <button
+            type="button"
+            onClick={() => updateParam('categoryId', '')}
+            className={`snap-start shrink-0 min-w-[96px] sm:min-w-[110px] min-h-[84px] p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition cursor-pointer active:scale-95 ${
+              !categoryId
+                ? 'bg-green-700 border-green-800 text-white shadow-card'
+                : 'bg-white border-stone-200 text-stone-800 hover:border-green-400 hover:bg-green-50/40 shadow-2xs'
+            }`}
+          >
+            <span className="text-2xl mb-1">🌾</span>
+            <span className="text-xs sm:text-sm font-bold truncate max-w-[90px]">
+              {t('products.category_all', 'All')}
+            </span>
+          </button>
 
-          {/* Main Content Area */}
-          <main className="space-y-5">
-            {/* Active Filter Chips & Results Count */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-neutral-200/80 shadow-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-neutral-500">
-                  {t('products.results_summary', {
-                    shown: products.length,
-                    total: totalElements
-                  })}
-                </span>
-
-                {/* Filter Chips */}
-                {selectedCategoryObj && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-800 border border-brand-200">
-                    {selectedCategoryObj.name}
-                    <button
-                      onClick={() => updateParam('categoryId', '')}
-                      className="hover:text-brand-950 p-0.5"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {district && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
-                    {district}
-                    <button
-                      onClick={() => updateParam('district', '')}
-                      className="hover:text-neutral-950 p-0.5"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {pincode && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
-                    PIN: {pincode}
-                    <button
-                      onClick={() => updateParam('pincode', '')}
-                      className="hover:text-neutral-950 p-0.5"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {latitude && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-800 border border-brand-200">
-                    {t('products.near_me')} ({radius} km)
-                    <button
-                      onClick={() => handleLocationChange(null)}
-                      className="hover:text-brand-950 p-0.5"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {hasAnyFilter && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs text-red-600 hover:text-red-700 font-semibold underline underline-offset-2 ml-1"
-                  >
-                    {t('products.clear_filters')}
-                  </button>
-                )}
-              </div>
-
-              {/* Sort quick dropdown for desktop / mobile */}
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs text-neutral-500 font-medium hidden sm:inline">
-                  {t('products.sort_by')}:
-                </span>
-                <select
-                  value={sort}
-                  onChange={(e) => updateParam('sort', e.target.value)}
-                  className="text-xs font-semibold bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 text-neutral-700 outline-none focus:ring-1 focus:ring-brand-500"
+          {/* Category List */}
+          {categories
+            .filter((c) => c.active !== false)
+            .map((cat) => {
+              const isSelected = String(categoryId) === String(cat.id);
+              return (
+                <button
+                  type="button"
+                  key={cat.id}
+                  onClick={() => updateParam('categoryId', String(cat.id))}
+                  className={`snap-start shrink-0 min-w-[96px] sm:min-w-[110px] min-h-[84px] p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition cursor-pointer active:scale-95 ${
+                    isSelected
+                      ? 'bg-green-700 border-green-800 text-white shadow-card'
+                      : 'bg-white border-stone-200 text-stone-800 hover:border-green-400 hover:bg-green-50/40 shadow-2xs'
+                  }`}
                 >
-                  <option value="">{t('products.sort_newest')}</option>
-                  <option value="priceAsc">{t('products.sort_price_low_high')}</option>
-                  <option value="priceDesc">{t('products.sort_price_high_low')}</option>
-                  {latitude && longitude && (
-                    <option value="distanceAsc">{t('products.sort_distance')}</option>
-                  )}
-                </select>
-              </div>
+                  <span className="text-2xl mb-1">{getCategoryIcon(cat.name)}</span>
+                  <span className="text-xs sm:text-sm font-bold truncate max-w-[95px]">
+                    {cat.name}
+                  </span>
+                </button>
+              );
+            })}
+        </div>
+
+        {/* 3. THREE BIG QUICK BUTTONS IN ONE ROW */}
+        <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-3">
+          {/* Near Me Quick Button */}
+          <button
+            type="button"
+            onClick={latitude ? () => handleLocationChange(null) : handleUseLocation}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-3 min-h-[50px] rounded-2xl border-2 font-bold text-xs sm:text-sm transition cursor-pointer text-center ${
+              latitude
+                ? 'bg-green-700 border-green-800 text-white shadow-xs'
+                : 'bg-white border-stone-200 text-stone-800 hover:bg-stone-50 active:bg-stone-100 shadow-2xs'
+            }`}
+          >
+            <Navigation size={16} className={latitude ? 'text-white' : 'text-green-700'} />
+            <span className="truncate">
+              {latitude ? `${radius} km` : t('products.near_me', 'Near me')}
+            </span>
+            {latitude && <X size={14} className="ml-1 text-white/80" />}
+          </button>
+
+          {/* Cheapest First Quick Button */}
+          <button
+            type="button"
+            onClick={() => updateParam('sort', sort === 'priceAsc' ? '' : 'priceAsc')}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-3 min-h-[50px] rounded-2xl border-2 font-bold text-xs sm:text-sm transition cursor-pointer text-center ${
+              sort === 'priceAsc'
+                ? 'bg-green-700 border-green-800 text-white shadow-xs'
+                : 'bg-white border-stone-200 text-stone-800 hover:bg-stone-50 active:bg-stone-100 shadow-2xs'
+            }`}
+          >
+            <ArrowUpDown size={16} className={sort === 'priceAsc' ? 'text-white' : 'text-green-700'} />
+            <span className="truncate">{t('products.sort_cheapest', 'Cheapest')}</span>
+          </button>
+
+          {/* Newest Quick Button */}
+          <button
+            type="button"
+            onClick={() => updateParam('sort', '')}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-3 min-h-[50px] rounded-2xl border-2 font-bold text-xs sm:text-sm transition cursor-pointer text-center ${
+              !sort
+                ? 'bg-green-700 border-green-800 text-white shadow-xs'
+                : 'bg-white border-stone-200 text-stone-800 hover:bg-stone-50 active:bg-stone-100 shadow-2xs'
+            }`}
+          >
+            <Calendar size={16} className={!sort ? 'text-white' : 'text-green-700'} />
+            <span className="truncate">{t('products.sort_newest', 'Newest')}</span>
+          </button>
+        </div>
+
+        {/* 4. ACTIVE FILTER CHIPS WITH PLAIN WORDS */}
+        {hasAnyFilter && (
+          <div className="mb-6 flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs">
+            <span className="text-xs font-bold text-stone-500 mr-1">
+              {t('products.results_summary', {
+                shown: products.length,
+                total: totalElements,
+              })}
+            </span>
+
+            {selectedCategoryObj && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-900 border border-green-200">
+                <span>{selectedCategoryObj.name}</span>
+                <button
+                  type="button"
+                  onClick={() => updateParam('categoryId', '')}
+                  className="hover:text-green-950 p-0.5 cursor-pointer"
+                  aria-label="Remove category filter"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            )}
+
+            {district && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-800 border border-stone-200">
+                <span>{district}</span>
+                <button
+                  type="button"
+                  onClick={() => updateParam('district', '')}
+                  className="hover:text-stone-950 p-0.5 cursor-pointer"
+                  aria-label="Remove district filter"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            )}
+
+            {pincode && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-800 border border-stone-200">
+                <span>PIN: {pincode}</span>
+                <button
+                  type="button"
+                  onClick={() => updateParam('pincode', '')}
+                  className="hover:text-stone-950 p-0.5 cursor-pointer"
+                  aria-label="Remove pincode filter"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            )}
+
+            {latitude && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-900 border border-green-200">
+                <span>{t('products.near_me', 'Near me')} ({radius} km)</span>
+                <button
+                  type="button"
+                  onClick={() => handleLocationChange(null)}
+                  className="hover:text-green-950 p-0.5 cursor-pointer"
+                  aria-label="Remove location filter"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            )}
+
+            {sort === 'priceAsc' && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-800 border border-stone-200">
+                <span>{t('products.sort_price_low_high', 'Cheapest first')}</span>
+                <button
+                  type="button"
+                  onClick={() => updateParam('sort', '')}
+                  className="hover:text-stone-950 p-0.5 cursor-pointer"
+                  aria-label="Remove price sort"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-xs text-rose-600 hover:text-rose-700 font-bold underline underline-offset-2 ml-auto cursor-pointer"
+            >
+              {t('products.clear_filters', 'Clear all')}
+            </button>
+          </div>
+        )}
+
+        {/* Nearby Farmers Section if coordinates are set */}
+        {latitude && nearbyFarmers.length > 0 && (
+          <div className="mb-8 bg-white rounded-3xl border-2 border-green-100 p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm sm:text-base font-bold text-stone-900 flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-500" />
+                <span>{t('products.nearby_farmers_heading', 'Farmers near you')}</span>
+              </h3>
+              <span className="text-xs font-bold text-stone-500">
+                {nearbyFarmers.length} found
+              </span>
             </div>
 
-            {/* Nearby Farmers Row (When location is active and farmers exist) */}
-            {latitude && nearbyFarmers.length > 0 && (
-              <div className="bg-white rounded-2xl border border-brand-200/80 p-4 shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-                    <Sparkles size={16} className="text-brand-600" />
-                    {t('products.nearby_farmers_heading')}
-                  </h3>
-                  <span className="text-xs text-neutral-500">
-                    {nearbyFarmers.length} nearby
-                  </span>
-                </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+              {nearbyFarmers.map((f) => (
+                <Link
+                  key={f.id || f.farmerId}
+                  to={`/farmers/${f.id || f.farmerId}`}
+                  className="snap-start shrink-0 w-60 p-3.5 rounded-2xl border-2 border-stone-200 hover:border-green-500 hover:shadow-card transition bg-gradient-to-b from-white to-green-50/20 group"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-green-100 text-green-800 font-extrabold text-base flex items-center justify-center shrink-0 group-hover:bg-green-700 group-hover:text-white transition shadow-2xs">
+                      {(f.farmName || f.fullName || 'F')[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-bold text-stone-900 truncate">
+                        {f.farmName || f.fullName}
+                      </h4>
+                      <p className="text-xs text-stone-500 truncate">
+                        {f.village ? `${f.village}, ${f.district || ''}` : f.district}
+                      </p>
+                    </div>
+                  </div>
+                  {f.distanceKm !== undefined && (
+                    <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs">
+                      <span className="text-green-800 font-bold">
+                        {f.distanceKm.toFixed(1)} km away
+                      </span>
+                      <span className="text-stone-400 group-hover:text-green-700 flex items-center">
+                        <ChevronRight size={15} />
+                      </span>
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
-                  {nearbyFarmers.map((f) => (
-                    <Link
-                      key={f.id || f.farmerId}
-                      to={`/farmers/${f.id || f.farmerId}`}
-                      className="snap-start shrink-0 w-56 p-3 rounded-xl border border-neutral-200 hover:border-brand-300 hover:shadow-md transition bg-gradient-to-b from-white to-brand-50/20 group"
-                    >
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-800 font-bold text-sm flex items-center justify-center shrink-0 group-hover:bg-brand-600 group-hover:text-white transition">
-                          {(f.farmName || f.fullName || 'F')[0].toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-semibold text-neutral-900 truncate">
-                            {f.farmName || f.fullName}
-                          </h4>
-                          <p className="text-xs text-neutral-500 truncate">
-                            {f.village ? `${f.village}, ${f.district || ''}` : f.district}
-                          </p>
-                        </div>
-                      </div>
-                      {f.distanceKm !== undefined && (
-                        <div className="flex items-center justify-between pt-1 border-t border-neutral-100 text-xs">
-                          <span className="text-brand-700 font-medium">
-                            {f.distanceKm.toFixed(1)} km away
-                          </span>
-                          <span className="text-neutral-400 group-hover:text-brand-700 flex items-center">
-                            <ChevronRight size={14} />
-                          </span>
-                        </div>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* 5. PRODUCT GRID (2 columns at 360px with large photos, 3-4 on desktop) */}
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : error ? (
+          <ErrorState
+            title="Could not load produce items"
+            message={error}
+            onRetry={loadProducts}
+          />
+        ) : products.length === 0 ? (
+          <EmptyState
+            illustration={NoResults}
+            title={t('products.no_products_found', 'No Produce Found')}
+            message={t('products.no_products_desc', 'Try clearing your search or distance filters to see more harvests.')}
+            action={
+              hasAnyFilter ? (
+                <Button onClick={clearFilters} variant="primary" size="lg" className="min-h-[50px] font-bold">
+                  {t('products.clear_filters', 'Clear filters')}
+                </Button>
+              ) : null
+            }
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
 
-            {/* Product Grid */}
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <ProductCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : error ? (
-              <ErrorState
-                title="Could not load produce items"
-                message={error}
-                onRetry={loadProducts}
+            {/* Pagination */}
+            <div className="pt-8">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={(p) => updateParam('page', String(p))}
               />
-            ) : products.length === 0 ? (
-              <EmptyState
-                illustration={NoResults}
-                title={t('products.no_products_found')}
-                message={t('products.no_products_desc')}
-                action={
-                  hasAnyFilter ? (
-                    <Button onClick={clearFilters} variant="primary">
-                      {t('products.clear_filters')}
-                    </Button>
-                  ) : null
-                }
-              />
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {products.map((p) => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
-                </div>
-
-                <div className="pt-4">
-                  <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    onPageChange={(p) => updateParam('page', String(p))}
-                  />
-                </div>
-              </>
-            )}
-          </main>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Mobile Filter Bottom Sheet via Portal */}
+      {/* FILTER BOTTOM SHEET VIA PORTAL */}
       {isFilterSheetOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-stone-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => setIsFilterSheetOpen(false)}
           >
             <div
-              className="bg-white w-full max-h-[85vh] sm:max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200"
+              className="bg-white w-full max-h-[85vh] sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-pop flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Sheet Header */}
-              <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal size={18} className="text-brand-700" />
-                  <h3 className="font-bold text-neutral-900 text-base">
-                    {t('products.filter_sheet_title')}
+              <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <SlidersHorizontal size={20} className="text-green-700" />
+                  <h3 className="font-extrabold text-stone-900 text-lg">
+                    {t('products.filter_sheet_title', 'Filter Produce')}
                   </h3>
                   {activeFiltersCount > 0 && (
                     <Badge variant="brand" size="sm">
-                      {activeFiltersCount}
+                      {activeFiltersCount} active
                     </Badge>
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsFilterSheetOpen(false)}
-                  className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition"
-                  aria-label={t('common.close')}
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+                  aria-label={t('common.close', 'Close')}
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
 
               {/* Sheet Body */}
-              <div className="px-5 py-4 overflow-y-auto flex-1">
-                {renderFilterControls(true)}
+              <div className="px-6 py-5 overflow-y-auto flex-1">
+                {renderAdvancedFilterControls()}
               </div>
 
               {/* Sheet Footer */}
-              <div className="px-5 py-3.5 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between gap-3">
+              <div className="px-6 py-4 border-t border-stone-100 bg-stone-50 flex items-center justify-between gap-3">
                 <Button
                   variant="ghost"
                   size="md"
                   onClick={clearFilters}
                   disabled={!hasAnyFilter}
+                  className="font-bold min-h-[46px]"
                 >
-                  {t('products.clear_filters')}
+                  {t('products.clear_filters', 'Clear all')}
                 </Button>
                 <Button
                   variant="primary"
                   size="md"
-                  className="flex-1"
+                  className="flex-1 font-bold min-h-[46px]"
                   onClick={() => setIsFilterSheetOpen(false)}
                 >
-                  {t('products.apply_filters')}
+                  {t('products.apply_filters', 'Show results')}
                 </Button>
               </div>
             </div>

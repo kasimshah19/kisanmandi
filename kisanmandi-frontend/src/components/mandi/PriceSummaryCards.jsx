@@ -79,7 +79,7 @@ export default function PriceSummaryCards({ summary, status, isLoading }) {
           </div>
         </div>
         <div className="mt-3 pt-2.5 border-t border-neutral-100 text-2xs font-semibold text-neutral-500">
-          Spread across reporting APMC mandis
+          Spread across reporting mandis
         </div>
       </div>
 
@@ -99,7 +99,7 @@ export default function PriceSummaryCards({ summary, status, isLoading }) {
           </div>
         </div>
         <div className="mt-3 pt-2.5 border-t border-neutral-100 text-2xs font-semibold text-neutral-500">
-          APMC market yards reporting today
+          Mandi market yards reporting today
         </div>
       </div>
 
