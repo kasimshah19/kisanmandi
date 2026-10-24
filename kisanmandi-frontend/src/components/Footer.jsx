@@ -132,12 +132,24 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* About / Data note */}
+          {/* Transparency & Help */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold uppercase tracking-wider text-green-300">
-              {t('footer.col_transparency', 'Transparency')}
+              {t('footer.col_transparency', 'Transparency & Help')}
             </h3>
-            <p className="text-xs text-green-100/75 leading-relaxed">
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link to="/about" className="text-green-100/80 hover:text-white transition-colors flex items-center gap-1.5">
+                  <span>{t('nav.about', 'About Project & Tech Stack')}</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/help" className="text-green-100/80 hover:text-white transition-colors flex items-center gap-1.5">
+                  <span>{t('nav.help', 'Help & 4-Step Guides')}</span>
+                </Link>
+              </li>
+            </ul>
+            <p className="text-xs text-green-100/75 leading-relaxed pt-1">
               {t('footer.data_source_disclaimer', 'Mandi price data is synced daily from Agmarknet via data.gov.in (Open Government Data). Wholesale mandi prices represent market modal rates.')}
             </p>
             <div className="pt-2 text-xs text-green-200/90 flex items-center gap-2">
@@ -153,20 +165,36 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Center Creator Attribution Bar */}
+        <div className="mt-10 pt-6 border-t border-green-900/60 flex flex-col items-center justify-center text-center">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-green-950/90 border border-green-800/80 text-xs sm:text-sm text-green-100 shadow-xs">
+            <Leaf className="w-4 h-4 text-green-400 shrink-0" aria-hidden="true" />
+            <span>Designed & Built by <strong className="text-white font-bold tracking-wide">Kasim Shah</strong></span>
+            <span className="text-green-500 hidden sm:inline">•</span>
+            <Link to="/about" className="text-amber-300 hover:text-amber-200 underline font-semibold transition-colors">
+              Tech Stack & Demo Video →
+            </Link>
+          </div>
+        </div>
+
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-green-900/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-green-200/70">
+        <div className="mt-6 pt-4 border-t border-green-900/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-green-200/70">
           <div>
             &copy; {new Date().getFullYear()} {SITE_NAME}. {t('footer.built_with', 'Built with React, Spring Boot and MySQL.')}
           </div>
-          <button
-            type="button"
-            onClick={scrollToTop}
-            aria-label="Scroll back to top"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-900/50 hover:bg-green-800 text-green-200 hover:text-white transition-colors min-h-[36px]"
-          >
-            <span>{t('footer.back_to_top', 'Back to top')}</span>
-            <ArrowUp size={14} />
-          </button>
+          <div className="flex items-center gap-4">
+            <Link to="/about" className="hover:text-white transition-colors">{t('nav.about', 'About')}</Link>
+            <Link to="/help" className="hover:text-white transition-colors">{t('nav.help', 'Help')}</Link>
+            <button
+              type="button"
+              onClick={scrollToTop}
+              aria-label="Scroll back to top"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-900/50 hover:bg-green-800 text-green-200 hover:text-white transition-colors min-h-[36px]"
+            >
+              <span>{t('footer.back_to_top', 'Back to top')}</span>
+              <ArrowUp size={14} />
+            </button>
+          </div>
         </div>
       </div>
     </footer>

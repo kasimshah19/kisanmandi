@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import Reveal from '../../components/ui/Reveal';
 import HeroSection from '../../components/home/HeroSection';
+import CategoryTilesSection from '../../components/home/CategoryTilesSection';
 import MandiRatesSection from '../../components/home/MandiRatesSection';
 import HowItWorksSection from '../../components/home/HowItWorksSection';
 import FreshArrivalsSection from '../../components/home/FreshArrivalsSection';
@@ -30,7 +31,12 @@ export default function Home() {
       {/* 1. Hero: Text and CTAs render immediately */}
       <HeroSection latestProduct={latestProduct} topMandi={topMandi} />
 
-      {/* 2. Today's Mandi Rates Strip (parallel fetch, whole rupees, 10min cache) */}
+      {/* 2. Visual Agricultural Category Showcase (Sabzi, Fal, Anaaj, Dudh) */}
+      <Reveal>
+        <CategoryTilesSection />
+      </Reveal>
+
+      {/* 3. Today's Mandi Rates Strip (with audio 'Listen / सुनें' button) */}
       <Reveal>
         <MandiRatesSection onRatesLoaded={handleTopMandi} />
       </Reveal>

@@ -17,9 +17,16 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({
+    email: location.state?.prefillEmail || '',
+    password: location.state?.prefillPassword || '',
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const fillDemo = (email, password) => {
+    setForm({ email, password });
+  };
 
   // Safe target route resolver to prevent cross-role unauthorized loops
   const resolveTarget = (role) => {
@@ -141,13 +148,52 @@ export default function Login() {
             </div>
 
             {/* Title & Subtitle */}
-            <div className="mb-6">
+            <div className="mb-5">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
                 {t('auth.login_title')}
               </h1>
               <p className="text-xs sm:text-sm text-neutral-500 mt-1">
                 {t('auth.login_subtitle')}
               </p>
+            </div>
+
+            {/* Quick Recruiter Demo Buttons */}
+            <div className="mb-6 bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  <span role="img" aria-hidden="true">⚡</span>
+                  <span>{t('auth.demo_credentials_title', 'Recruiter Quick Test (Tap to prefill)')}</span>
+                </span>
+                <Link to="/about" className="text-[11px] font-semibold text-amber-800 hover:underline">
+                  About & Tech Stack →
+                </Link>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => fillDemo('amit@test.com', 'password123')}
+                  className="p-2 rounded-xl bg-white border border-amber-200 text-xs font-semibold text-gray-800 hover:bg-amber-100/50 hover:border-amber-300 transition text-center min-h-[44px] flex flex-col items-center justify-center cursor-pointer"
+                >
+                  <span className="font-bold">🛍️ Customer</span>
+                  <span className="text-[10px] text-gray-500 font-normal">amit@test.com</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemo('ramesh@test.com', 'password123')}
+                  className="p-2 rounded-xl bg-white border border-amber-200 text-xs font-semibold text-gray-800 hover:bg-amber-100/50 hover:border-amber-300 transition text-center min-h-[44px] flex flex-col items-center justify-center cursor-pointer"
+                >
+                  <span className="font-bold">🧑‍🌾 Farmer</span>
+                  <span className="text-[10px] text-gray-500 font-normal">ramesh@test.com</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemo('admin@kisanmandi.com', 'Admin@123')}
+                  className="p-2 rounded-xl bg-white border border-amber-200 text-xs font-semibold text-gray-800 hover:bg-amber-100/50 hover:border-amber-300 transition text-center min-h-[44px] flex flex-col items-center justify-center cursor-pointer"
+                >
+                  <span className="font-bold">🛡️ Admin</span>
+                  <span className="text-[10px] text-gray-500 font-normal">admin@kisanmandi</span>
+                </button>
+              </div>
             </div>
 
             {/* Form */}

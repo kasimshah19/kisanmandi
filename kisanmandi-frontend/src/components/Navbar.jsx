@@ -14,11 +14,16 @@ import {
   MapPin,
   TrendingUp,
   UserCheck,
+  HelpCircle,
+  Info,
+  Home as HomeIcon,
+  ShoppingBag,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth, getDashboardPath } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import TextSizeControl from './ui/TextSizeControl';
 import Button from './ui/Button';
 
 export default function Navbar() {
@@ -138,21 +143,35 @@ export default function Navbar() {
           <span className="leading-none">KisanMandi</span>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1 lg:gap-2">
+        {/* Desktop Navigation Links (Icon + Word) */}
+        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1 lg:gap-1.5">
           <NavLink to="/" className={navLinkClass}>
-            {t('nav.home', 'Home')}
+            <HomeIcon className="w-4 h-4 shrink-0 text-green-700" aria-hidden="true" />
+            <span>{t('nav.home', 'Home')}</span>
           </NavLink>
           <NavLink to="/mandi" className={navLinkClass}>
-            {t('nav.mandi_rates', 'Mandi Rates')}
+            <TrendingUp className="w-4 h-4 shrink-0 text-amber-600" aria-hidden="true" />
+            <span>{t('nav.mandi_rates', 'Mandi Rates')}</span>
           </NavLink>
           <NavLink to="/products" className={navLinkClass}>
-            {t('nav.browse', 'Buy Produce')}
+            <ShoppingBag className="w-4 h-4 shrink-0 text-green-700" aria-hidden="true" />
+            <span>{t('nav.browse', 'Buy Produce')}</span>
+          </NavLink>
+          <NavLink to="/help" className={navLinkClass}>
+            <HelpCircle className="w-4 h-4 shrink-0 text-emerald-600" aria-hidden="true" />
+            <span>{t('nav.help', 'Help')}</span>
+          </NavLink>
+          <NavLink to="/about" className={navLinkClass}>
+            <Info className="w-4 h-4 shrink-0 text-blue-600" aria-hidden="true" />
+            <span>{t('nav.about', 'About')}</span>
           </NavLink>
         </nav>
 
         {/* Desktop Right items */}
-        <div className="hidden md:flex items-center gap-2.5 lg:gap-3">
+        <div className="hidden md:flex items-center gap-2 lg:gap-2.5">
+          {/* Text Size Control */}
+          <TextSizeControl variant="compact" />
+
           {/* Customer Cart */}
           {isAuthenticated && isCustomer && (
             <Link
@@ -395,21 +414,33 @@ export default function Navbar() {
               }
             }}
           >
-            {/* Language Segmented Control Section */}
-            <div className="pb-4 border-b border-gray-100">
+            {/* Language & Text Size Controls */}
+            <div className="pb-4 border-b border-gray-100 space-y-3">
               <LanguageSwitcher variant="segmented" />
+              <TextSizeControl variant="full" />
             </div>
 
-            {/* Navigation Links */}
+            {/* Navigation Links (Icon + Word, min 48px height) */}
             <nav aria-label="Mobile Navigation" className="space-y-1">
               <NavLink to="/" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
-                {t('nav.home', 'Home')}
+                <HomeIcon size={18} className="text-green-700" />
+                <span>{t('nav.home', 'Home')}</span>
               </NavLink>
               <NavLink to="/mandi" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
-                {t('nav.mandi_rates', 'Mandi Rates')}
+                <TrendingUp size={18} className="text-amber-600" />
+                <span>{t('nav.mandi_rates', 'Mandi Rates')}</span>
               </NavLink>
               <NavLink to="/products" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
-                {t('nav.browse', 'Buy Produce')}
+                <ShoppingBag size={18} className="text-green-700" />
+                <span>{t('nav.browse', 'Buy Produce')}</span>
+              </NavLink>
+              <NavLink to="/help" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
+                <HelpCircle size={18} className="text-emerald-600" />
+                <span>{t('nav.help', 'Help')}</span>
+              </NavLink>
+              <NavLink to="/about" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
+                <Info size={18} className="text-blue-600" />
+                <span>{t('nav.about', 'About')}</span>
               </NavLink>
 
               {isAuthenticated && (

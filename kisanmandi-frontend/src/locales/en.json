@@ -46,7 +46,8 @@
     "increase_quantity": "Increase quantity",
     "footer_tagline": "Connecting Farmers and Customers.",
     "language": "Language",
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "items": "items"
   },
   "nav": {
     "brand": "KisanMandi",
@@ -68,7 +69,9 @@
     "menu": "Menu",
     "close_menu": "Close Menu",
     "account": "Account",
-    "switch_language": "Language"
+    "switch_language": "Language",
+    "help": "Help",
+    "about": "About"
   },
   "home": {
     "hero_badge": "Direct Farm-to-Kitchen Marketplace",
@@ -177,11 +180,14 @@
     "join_farmer_title": "Are you a farmer?",
     "join_farmer_desc": "Sell directly to thousands of buyers in your district and earn up to 40% more.",
     "register_as_farmer_btn": "Register as Farmer",
-    "contact_support": "Need help? Call our farmer support helpline"
+    "contact_support": "Need help? Call our farmer support helpline",
+    "categories_title": "Browse by Crop Category",
+    "categories_subtitle": "Recognize by picture and tap to explore fresh local harvest"
   },
   "auth": {
     "login_title": "Login to your account",
     "login_subtitle": "Enter your credentials to continue",
+    "demo_credentials_title": "Recruiter Quick Test (Tap to prefill)",
     "register_title": "Create a new account",
     "register_subtitle": "Join KisanMandi as a buyer or farmer",
     "email_label": "Email Address",
@@ -502,9 +508,9 @@
     "select_market": "Select APMC Market",
     "view_rates": "View Live Rates",
     "live_rates": "Live APMC Rates",
-    "modal_price": "Modal Rate",
-    "min_price": "Min Rate",
-    "max_price": "Max Rate",
+    "modal_price": "Most Common Price (Modal)",
+    "min_price": "Lowest Price",
+    "max_price": "Highest Price",
     "arrivals": "Arrival Quantity",
     "arrival_date": "Rate Date",
     "trend_title": "7-Day Price Trend",
@@ -514,7 +520,7 @@
     "per_kg": "per Kg",
     "kg_unit": "Kg",
     "quintal_unit": "Quintal",
-    "data_source_note": "Prices sourced daily from Government APMC Mandi database.",
+    "data_source_note": "Prices synced daily from Agmarknet via data.gov.in (Open Government Data).",
     "no_data_available": "No mandi records found",
     "no_data_desc": "Select a commodity or change filters to view live market prices.",
     "filter_heading": "Filters",
@@ -626,5 +632,72 @@
     "status_normal": "All systems operational",
     "built_with": "Built with React, Spring Boot and MySQL.",
     "back_to_top": "Back to top"
+  },
+  "welcome_modal": {
+    "badge": "KisanMandi • किसानमंडी",
+    "title": "Choose your language",
+    "subtitle": "Direct farm-to-kitchen marketplace for farmers and customers across Maharashtra",
+    "subtext": "You can change your language anytime from the menu.",
+    "continue_english": "Continue in English →"
+  },
+  "text_size": {
+    "label": "Text Size",
+    "normal": "Normal text size",
+    "large": "Large text size",
+    "xlarge": "Largest text size",
+    "normal_short": "Normal",
+    "large_short": "Large",
+    "xlarge_short": "Extra"
+  },
+  "speech": {
+    "listen": "Listen",
+    "listen_all": "Listen Rates",
+    "stop": "Stop",
+    "voice_search": "Search by voice",
+    "listening": "Listening... speak now",
+    "mandi_rate_speech": "{{crop}} rate in {{market}}: ₹{{price}} per quintal",
+    "not_supported": "Voice assistance is not available on this device"
+  },
+  "categories": {
+    "vegetables": "Vegetables",
+    "fruits": "Fruits",
+    "grains": "Grains & Cereals",
+    "pulses": "Pulses & Dal",
+    "dairy": "Dairy & Milk",
+    "organic": "Organic & Herbs"
+  },
+  "about": {
+    "page_title": "About KisanMandi",
+    "page_subtitle": "A direct Kisan-to-Customer marketplace and live Mandi Rate Tracker designed for rural simplicity and engineering excellence."
+  },
+  "help": {
+    "page_title": "Help & How-To Guides",
+    "page_subtitle": "Easy step-by-step guides for farmers and customers. Learn how to order, sell, and check mandi rates.",
+    "cust_step_1_title": "1. Choose Fresh Harvest",
+    "cust_step_1_desc": "Browse by vegetables, fruits, or grains using large visual category tiles. Filter by distance to find farmers nearest to you.",
+    "cust_step_2_title": "2. Verify Fair Mandi Rate",
+    "cust_step_2_desc": "Every product shows transparent pricing benchmarked against daily official Agmarknet wholesale rates. No inflated supermarket markups.",
+    "cust_step_3_title": "3. Add to Cart & Enter Address",
+    "cust_step_3_desc": "Select how many kilos you need and enter your doorstep delivery location. No complicated digital payment needed.",
+    "cust_step_4_title": "4. Pay Cash at Doorstep",
+    "cust_step_4_desc": "Receive farm-fresh produce directly from the grower. Inspect the harvest first, then pay in cash (100% Cash on Delivery).",
+    "farmer_step_1_title": "1. Register in 1 Minute",
+    "farmer_step_1_desc": "Create your free farmer profile using your mobile number and district in Maharashtra. Verified by admin for trustworthiness.",
+    "farmer_step_2_title": "2. Post Your Crop in 3 Questions",
+    "farmer_step_2_desc": "Snap a photo of your vegetables or grain, enter the available quantity (in kg or quintal), and set your desired selling price.",
+    "farmer_step_3_title": "3. Receive Customer Orders",
+    "farmer_step_3_desc": "Get direct order requests from conscious households and local buyers in your area. Zero middleman cuts or dalal fees.",
+    "farmer_step_4_title": "4. Handover & Collect Cash",
+    "farmer_step_4_desc": "Hand over your produce at the agreed delivery point and collect full 100% cash payment on the spot.",
+    "faq_cod_q": "How do payments work? Do I need online banking?",
+    "faq_cod_a": "No online banking or card is needed! KisanMandi operates on 100% Cash on Delivery (COD). You only pay cash after the produce arrives at your doorstep.",
+    "faq_voice_q": "How does the \"Listen / सुनें\" button work?",
+    "faq_voice_a": "On modern phones, tapping the 🔊 \"Listen\" button reads today's mandi prices or product details out loud in Hindi, Marathi, or English. It helps users who prefer listening over reading.",
+    "faq_size_q": "Can I make the text bigger if I have trouble reading?",
+    "faq_size_a": "Yes! Tap the \"A / A+ / A++\" button in the top navigation bar to enlarge the text across the entire application instantly.",
+    "faq_mandi_q": "Where do the Mandi rates come from?",
+    "faq_mandi_a": "Wholesale mandi rates are synced daily from the official Government Agmarknet portal via data.gov.in (Open Government Data). They reflect real market modal rates across Maharashtra APMCs.",
+    "faq_reg_q": "Is registration free for farmers?",
+    "faq_reg_a": "Yes, KisanMandi is 100% free for farmers. There are no registration fees, listing fees, or commission deductions on your sales."
   }
 }

@@ -56,8 +56,8 @@ export const Input = React.forwardRef(function Input(
       ref={ref}
       type={type}
       className={`
-        w-full px-3.5 py-2.5 rounded-xl border bg-white text-gray-900 text-sm
-        placeholder:text-gray-400 outline-none transition-colors duration-150 min-h-[44px]
+        w-full px-3.5 py-3 rounded-xl border bg-white text-gray-900 text-base sm:text-sm
+        placeholder:text-gray-400 outline-none transition-colors duration-150 min-h-[48px]
         ${
           hasError
             ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100'
@@ -79,8 +79,8 @@ export const Select = React.forwardRef(function Select(
     <select
       ref={ref}
       className={`
-        w-full px-3.5 py-2.5 rounded-xl border bg-white text-gray-900 text-sm
-        outline-none transition-colors duration-150 min-h-[44px]
+        w-full px-3.5 py-3 rounded-xl border bg-white text-gray-900 text-base sm:text-sm
+        outline-none transition-colors duration-150 min-h-[48px]
         ${
           hasError
             ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100'

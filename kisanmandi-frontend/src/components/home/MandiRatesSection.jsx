@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown, ArrowRight, Sprout, Info } from 'lucide-react';
 import SectionHeader from '../ui/SectionHeader';
 import IconTile from '../ui/IconTile';
+import SpeakButton from '../ui/SpeakButton';
 import { mandiService } from '../../services/mandiService';
 
 const COMMODITIES = ['Tomato', 'Onion', 'Potato', 'Wheat', 'Soyabean', 'Cotton'];
@@ -101,13 +102,22 @@ export default function MandiRatesSection({ onRatesLoaded }) {
           title={t('home.mandi_section_title')}
           subtitle={t('home.mandi_section_subtitle')}
           action={
-            <Link
-              to="/mandi"
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:text-brand-800 transition-colors group"
-            >
-              <span>{t('home.mandi_view_all')}</span>
-              <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+            <div className="flex items-center gap-2.5">
+              {rates.length > 0 && (
+                <SpeakButton
+                  text={`Aaj ka mandi bhav: ` + rates.map(r => `${r.commodity}: ₹${formatWholeRupees(r.avgModal)} prati quintal`).join(', ')}
+                  size="sm"
+                  label={t('speech.listen_all', 'Listen Rates')}
+                />
+              )}
+              <Link
+                to="/mandi"
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-green-700 hover:text-green-800 transition-colors group"
+              >
+                <span>{t('home.mandi_view_all')}</span>
+                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
           }
         />
 
@@ -149,9 +159,9 @@ export default function MandiRatesSection({ onRatesLoaded }) {
                   className="group bg-white rounded-2xl p-4 border border-neutral-200/80 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all flex flex-col justify-between h-full"
                 >
                   <div>
-                    {/* Header: Icon + Name */}
-                    <div className="flex items-center justify-between gap-1.5 mb-3">
-                      <div className="flex items-center gap-2 min-w-0">
+                    {/* Header: Icon + Name + Speak Button */}
+                    <div className="flex items-center justify-between gap-1 mb-2.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <IconTile
                           icon={Sprout}
                           tone="green"
@@ -162,6 +172,12 @@ export default function MandiRatesSection({ onRatesLoaded }) {
                           {rate.commodity}
                         </span>
                       </div>
+                      <SpeakButton
+                        text={`${rate.commodity} mandi bhav: lagbhag ${formatWholeRupees(rate.avgModal)} rupaye prati quintal, lagbhag ${perKg || ''} rupaye kilo`}
+                        size="sm"
+                        variant="ghost"
+                        className="!min-h-[30px] !px-1.5 shrink-0"
+                      />
                     </div>
 
                     {/* Modal Price */}

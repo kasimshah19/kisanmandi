@@ -57,6 +57,44 @@ describe('Home Page Redesign', () => {
   });
 });
 
+import About from '../pages/public/About';
+import Help from '../pages/public/Help';
+import Footer from '../components/Footer';
+
+describe('About & Help Pages (Recruiter & Farmer-First Hub)', () => {
+  it('renders About page with Kasim Shah attribution, architecture overview, and demo accounts', () => {
+    renderWithProviders(<About />, { route: '/about' });
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading.textContent).toContain('About KisanMandi');
+    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
+    expect(screen.getByText(/Full-Stack Software Engineer/i)).toBeTruthy();
+    expect(screen.getByText(/Spring Boot 3/i)).toBeTruthy();
+    expect(screen.getByText(/Tailwind CSS v4/i)).toBeTruthy();
+    expect(screen.getAllByText(/amit@test.com/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/ramesh@test.com/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders Help page with step-by-step customer & farmer guides and interactive FAQ', () => {
+    renderWithProviders(<Help />, { route: '/help' });
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading.textContent).toContain('Help & How-To Guides');
+    expect(screen.getByText(/1\. Choose Fresh Harvest/i)).toBeTruthy();
+    
+    // Switch to farmer tab
+    const farmerTab = screen.getByRole('tab', { name: /How to Sell/i });
+    fireEvent.click(farmerTab);
+    expect(screen.getByText(/1\. Register in 1 Minute/i)).toBeTruthy();
+
+    expect(screen.getByText(/How do payments work\? Do I need online banking\?/i)).toBeTruthy();
+  });
+
+  it('renders Footer with prominent Kasim Shah creator attribution badge', () => {
+    renderWithProviders(<Footer />);
+    expect(screen.getByText(/Kasim Shah/i)).toBeTruthy();
+    expect(screen.getByText(/Designed & Built by/i)).toBeTruthy();
+  });
+});
+
 describe('Login & Register Redesign', () => {
   it('renders Login form with segmented LanguageSwitcher and email/password fields', () => {
     renderWithProviders(<Login />, { route: '/login' });
@@ -64,6 +102,18 @@ describe('Login & Register Redesign', () => {
     expect(heading.textContent).toContain('Login');
     expect(screen.getByLabelText(/Email Address/i)).toBeTruthy();
     expect(screen.getByLabelText(/Password/i)).toBeTruthy();
+  });
+
+  it('prefills credentials when clicking recruiter quick test demo buttons', () => {
+    renderWithProviders(<Login />, { route: '/login' });
+    const farmerBtn = screen.getByText('ramesh@test.com').closest('button');
+    fireEvent.click(farmerBtn);
+    const emailInput = screen.getByLabelText(/Email Address/i);
+    expect(emailInput.value).toBe('ramesh@test.com');
+
+    const customerBtn = screen.getByText('amit@test.com').closest('button');
+    fireEvent.click(customerBtn);
+    expect(emailInput.value).toBe('amit@test.com');
   });
 
   it('preselects FARMER role in Register when ?role=FARMER query param is passed', () => {
@@ -79,3 +129,4 @@ describe('Login & Register Redesign', () => {
     expect(screen.getByText(/Strong/i)).toBeTruthy();
   });
 });
+

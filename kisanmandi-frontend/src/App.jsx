@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ServerStatusBanner from './components/ServerStatusBanner';
+import LanguageWelcomeModal from './components/LanguageWelcomeModal';
 import PageLoader from './components/PageLoader';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -20,6 +21,8 @@ import Unauthorized from './pages/public/Unauthorized';
 // Heavy & role-specific routes lazy loaded to minimize initial bundle size
 const MandiDashboard = lazy(() => import('./pages/public/MandiDashboard'));
 const FarmerPublicProfile = lazy(() => import('./pages/public/FarmerPublicProfile'));
+const About = lazy(() => import('./pages/public/About'));
+const Help = lazy(() => import('./pages/public/Help'));
 
 // Farmer routes
 const FarmerDashboard = lazy(() => import('./pages/farmer/FarmerDashboard'));
@@ -82,6 +85,7 @@ function App() {
     <div className="flex flex-col min-h-screen bg-warm-50 text-gray-900">
       <ScrollToTop />
       <ServerStatusBanner />
+      <LanguageWelcomeModal />
       {!isDashboardRoute && <Navbar />}
       <main className={`flex-grow ${isFullBleed ? '' : 'container mx-auto px-4 py-8'}`}>
         <Suspense fallback={<PageLoader />}>
@@ -93,6 +97,8 @@ function App() {
             <Route path="/products" element={<BrowseProducts />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/mandi" element={<MandiDashboard />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/help" element={<Help />} />
             <Route path="/farmers/:id" element={<FarmerPublicProfile />} />
             <Route path="/farmer/:id" element={<FarmerPublicProfile />} />
             <Route path="/unauthorized" element={<Unauthorized />} />

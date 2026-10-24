@@ -37,11 +37,12 @@ export default function Button({
       'bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-gray-950 font-semibold shadow-xs focus-visible:ring-amber-500',
   };
 
-  // Size styling (md and lg ensure minimum 44px tap targets)
+  // Size styling: minimum 48px height for standard touch targets, 56px for primary mobile actions
   const sizeStyles = {
-    sm: 'text-xs px-3 py-1.5 rounded-lg min-h-[36px] gap-1.5',
-    md: 'text-sm px-4 py-2.5 rounded-xl min-h-[44px] gap-2',
-    lg: 'text-base px-6 py-3.5 rounded-xl min-h-[48px] gap-2.5 font-semibold',
+    sm: 'text-xs sm:text-sm px-3 py-2 rounded-lg min-h-[44px] gap-1.5',
+    md: 'text-sm sm:text-base px-4 py-2.5 rounded-xl min-h-[48px] gap-2',
+    lg: 'text-base sm:text-lg px-6 py-3.5 rounded-xl min-h-[56px] gap-2.5 font-semibold',
+    xl: 'text-lg px-7 py-4 rounded-2xl min-h-[56px] gap-3 font-bold',
   };
 
   const isDisabled = disabled || loading;

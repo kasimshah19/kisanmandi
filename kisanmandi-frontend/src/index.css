@@ -51,9 +51,29 @@
 
 @layer base {
   html {
+    font-size: 106.25%; /* 17px base on mobile for enhanced readability */
     scroll-behavior: smooth;
     overflow-x: hidden;
     max-width: 100vw;
+  }
+
+  @media (min-width: 640px) {
+    html {
+      font-size: 100%; /* 16px base on tablet and desktop screens */
+    }
+  }
+
+  /* Accessible text-size switcher scaling */
+  html[data-text-size="normal"] {
+    /* default scale */
+  }
+
+  html[data-text-size="large"] {
+    font-size: 118.75% !important; /* ~19px scale (+18%) */
+  }
+
+  html[data-text-size="xlarge"] {
+    font-size: 131.25% !important; /* ~21px scale (+31%) */
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -66,10 +86,16 @@
     font-family: var(--font-sans);
     background-color: var(--color-warm-bg);
     color: var(--color-warm-text);
+    line-height: 1.6;
     overflow-x: hidden;
     max-width: 100vw;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent ascender/descender clipping on Devanagari characters */
+  [lang="hi"], [lang="mr"] {
+    line-height: 1.65;
   }
 
   ::selection {
