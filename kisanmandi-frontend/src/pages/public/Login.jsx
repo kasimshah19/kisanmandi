@@ -77,46 +77,46 @@ export default function Login() {
   return (
     <div className="min-h-[calc(100vh-128px)] flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-card border border-neutral-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-        {/* Left Brand Panel (visible on lg) */}
-        <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#052e16] via-[#14532d] to-[#064e3b] text-white p-10 flex-col justify-between relative overflow-hidden">
+        {/* Brand Panel: on mobile it sits at top, on lg it sits on the left column */}
+        <div className="flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#052e16] via-[#14532d] to-[#064e3b] text-white p-6 sm:p-8 lg:p-10 lg:col-span-5">
           {/* Subtle decorative glow */}
           <div
             className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 bg-amber-400/10 blur-3xl rounded-full"
             aria-hidden="true"
           />
 
-          <div className="relative z-10 space-y-6">
-            <Link to="/" className="inline-flex items-center gap-2.5 text-white font-extrabold text-2xl tracking-tight">
+          <div className="relative z-10 space-y-4 lg:space-y-6">
+            <Link to="/" className="inline-flex items-center gap-2.5 text-white font-extrabold text-xl sm:text-2xl tracking-tight">
               <span className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center text-white shadow-xs">
                 <Leaf className="w-5 h-5" />
               </span>
               <span>KisanMandi</span>
             </Link>
 
-            <p className="text-green-100/80 text-sm leading-relaxed">
+            <p className="text-green-100/80 text-xs sm:text-sm leading-relaxed">
               {t('auth.brand_tagline')}
             </p>
 
-            <div className="pt-4 space-y-4">
-              <div className="flex items-start gap-3">
-                <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={12} strokeWidth={3} />
+            <div className="pt-1 lg:pt-4 space-y-2.5 lg:space-y-4">
+              <div className="flex items-start gap-2.5 sm:gap-3">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={11} strokeWidth={3} />
                 </span>
                 <span className="text-xs sm:text-sm text-green-50/90 leading-snug">
                   {t('auth.buyer_benefit_1')}
                 </span>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={12} strokeWidth={3} />
+              <div className="flex items-start gap-2.5 sm:gap-3">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={11} strokeWidth={3} />
                 </span>
                 <span className="text-xs sm:text-sm text-green-50/90 leading-snug">
                   {t('auth.buyer_benefit_2')}
                 </span>
               </div>
-              <div className="flex items-start gap-3">
-                <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-                  <Check size={12} strokeWidth={3} />
+              <div className="flex items-start gap-2.5 sm:gap-3">
+                <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={11} strokeWidth={3} />
                 </span>
                 <span className="text-xs sm:text-sm text-green-50/90 leading-snug">
                   {t('auth.buyer_benefit_3')}
@@ -125,24 +125,17 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="relative z-10 pt-8 border-t border-green-800/60 text-xs text-green-200/70">
+          <div className="hidden lg:block relative z-10 pt-8 border-t border-green-800/60 text-xs text-green-200/70">
             &copy; {new Date().getFullYear()} KisanMandi
           </div>
         </div>
 
         {/* Right Form Panel */}
-        <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+        <div className="lg:col-span-7 p-5 sm:p-8 lg:p-10 flex flex-col justify-between">
           <div>
-            {/* Top Bar: Language switcher visible without scroll at 360px */}
-            <div className="flex items-center justify-between pb-6 mb-6 border-b border-neutral-100">
-              {/* Mobile-only compact brand logo */}
-              <Link to="/" className="lg:hidden inline-flex items-center gap-2 text-neutral-900 font-extrabold text-lg">
-                <span className="w-7 h-7 rounded-lg bg-brand-700 flex items-center justify-center text-white">
-                  <Leaf className="w-4 h-4" />
-                </span>
-                <span>KisanMandi</span>
-              </Link>
-              <div className="ml-auto">
+            {/* Top Bar: Language switcher */}
+            <div className="pb-5 mb-5 border-b border-neutral-100 flex justify-end">
+              <div className="w-full sm:w-auto">
                 <LanguageSwitcher variant="segmented" />
               </div>
             </div>
