@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ServerStatusBanner from './components/ServerStatusBanner';
 import PageLoader from './components/PageLoader';
+import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './routes/ProtectedRoute';
 import { checkHealth } from './services/healthService';
 
@@ -51,6 +52,25 @@ const AllOrders = lazy(() => import('./pages/admin/AllOrders'));
 const ManageReviews = lazy(() => import('./pages/admin/ManageReviews'));
 
 function App() {
+  const location = useLocation();
+
+  // Dashboard routes have their own dedicated sidebar, topbar, and workspace layout
+  const isDashboardRoute =
+    location.pathname.startsWith('/admin') ||
+    location.pathname === '/farmer/dashboard' ||
+    location.pathname === '/farmer/profile' ||
+    location.pathname === '/farmer/mandi' ||
+    location.pathname.startsWith('/farmer/products') ||
+    location.pathname.startsWith('/farmer/orders') ||
+    location.pathname === '/farmer/earnings' ||
+    location.pathname === '/farmer/reviews';
+
+  const isFullBleed =
+    isDashboardRoute ||
+    location.pathname === '/' ||
+    location.pathname === '/login' ||
+    location.pathname === '/register';
+
   // Silent health ping on initial load to wake the Render server early
   useEffect(() => {
     checkHealth().catch(() => {
@@ -59,10 +79,11 @@ function App() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-900">
+    <div className="flex flex-col min-h-screen bg-warm-50 text-gray-900">
+      <ScrollToTop />
       <ServerStatusBanner />
-      <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8">
+      {!isDashboardRoute && <Navbar />}
+      <main className={`flex-grow ${isFullBleed ? '' : 'container mx-auto px-4 py-8'}`}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Routes */}
@@ -73,6 +94,7 @@ function App() {
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/mandi" element={<MandiDashboard />} />
             <Route path="/farmers/:id" element={<FarmerPublicProfile />} />
+            <Route path="/farmer/:id" element={<FarmerPublicProfile />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* Farmer Routes */}
@@ -278,7 +300,7 @@ function App() {
           </Routes>
         </Suspense>
       </main>
-      <Footer />
+      {!isDashboardRoute && <Footer />}
     </div>
   );
 }

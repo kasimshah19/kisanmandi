@@ -5,7 +5,20 @@ import { formatDateTime } from '../../utils/format';
 import Pagination from '../../components/Pagination';
 import EmptyState from '../../components/EmptyState';
 import ErrorState from '../../components/ErrorState';
-import { RefreshCw, Play, Clock, Database, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import PageHeader from '../../components/PageHeader';
+import StatusBadge from '../../components/StatusBadge';
+import { 
+  RefreshCw, 
+  Play, 
+  Clock, 
+  Database, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle,
+  Layers,
+  ArrowDownCircle,
+  FileCheck2
+} from 'lucide-react';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 
@@ -17,6 +30,7 @@ export default function MandiSyncLogs() {
   const [page, setPage] = useState(0);
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [errorLogs, setErrorLogs] = useState(null);
 
   // Poll status when syncing
   useEffect(() => {
@@ -35,7 +49,7 @@ export default function MandiSyncLogs() {
   // Fetch logs when page changes or status indicates sync completed
   useEffect(() => {
     fetchLogs();
-  }, [page, status?.lastSync?.id]); // Refetch logs if lastSync ID changes
+  }, [page, status?.lastSync?.id]);
 
   const fetchStatus = async () => {
     try {
@@ -43,14 +57,12 @@ export default function MandiSyncLogs() {
       setStatus(res.data);
       if (isSyncing && !res.data.running) {
         setIsSyncing(false);
-        toast.success("Sync completed");
+        toast.success("Mandi sync completed successfully");
       }
     } catch {
       // Tolerate background status polling error silently
     }
   };
-
-  const [errorLogs, setErrorLogs] = useState(null);
 
   const fetchLogs = async () => {
     setIsLoadingLogs(true);
@@ -71,12 +83,12 @@ export default function MandiSyncLogs() {
     try {
       setIsSyncing(true);
       await adminMandiService.triggerSync();
-      toast.success("Sync started");
+      toast.success("Mandi sync routine started");
       fetchStatus();
     } catch (err) {
       setIsSyncing(false);
       if (err.response?.status === 409) {
-        toast.error("A sync is already running");
+        toast.error("A sync routine is currently running");
       } else {
         toast.error("Failed to start sync");
       }
@@ -86,15 +98,35 @@ export default function MandiSyncLogs() {
   const renderStatusBadge = (syncStatus) => {
     switch (syncStatus) {
       case 'SUCCESS':
-        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit"><CheckCircle size={12}/> Success</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle className="w-3 h-3 text-emerald-600" /> Success
+          </span>
+        );
       case 'FAILED':
-        return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit"><XCircle size={12}/> Failed</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+            <XCircle className="w-3 h-3 text-rose-600" /> Failed
+          </span>
+        );
       case 'PARTIAL_SUCCESS':
-        return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit"><AlertTriangle size={12}/> Partial</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+            <AlertTriangle className="w-3 h-3 text-amber-600" /> Partial
+          </span>
+        );
       case 'RUNNING':
-        return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit"><RefreshCw size={12} className="animate-spin"/> Running</span>;
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            <RefreshCw className="w-3 h-3 text-blue-600 animate-spin" /> Running
+          </span>
+        );
       default:
-        return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold">{syncStatus}</span>;
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-neutral-100 text-neutral-700">
+            {syncStatus || 'N/A'}
+          </span>
+        );
     }
   };
 
@@ -105,92 +137,120 @@ export default function MandiSyncLogs() {
     return `${Math.floor(s / 60)}m ${s % 60}s`;
   };
 
+  const isRunning = status?.running || isSyncing;
+
   return (
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">Mandi Sync Logs</h1>
-          <button
-            onClick={handleSyncNow}
-            disabled={status?.running || isSyncing}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {(status?.running || isSyncing) ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-            {(status?.running || isSyncing) ? 'Sync Running...' : 'Sync Now'}
-          </button>
-        </div>
+        <PageHeader 
+          title="Mandi Data Sync"
+          subtitle="Agmarknet government API ingestion pipeline and synchronization audit log"
+          badge={<StatusBadge status="ADMIN" text="Admin Portal" />}
+          actions={
+            <button
+              type="button"
+              onClick={handleSyncNow}
+              disabled={isRunning}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRunning ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Syncing Pipeline...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Trigger Sync Now</span>
+                </>
+              )}
+            </button>
+          }
+        />
 
-        {/* Status Card */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                <Database size={24} />
+        {/* Sync Status Cards */}
+        <div className="bg-white p-5 rounded-2xl shadow-xs border border-neutral-200">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <Database className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 font-medium">Latest Data Date</p>
-                <p className="text-xl font-bold text-gray-900">
+                <p className="text-xs text-neutral-400 font-medium">Latest Data Date</p>
+                <p className="text-base font-bold text-neutral-900 tabular-nums mt-0.5">
                   {status?.latestPriceDate ? status.latestPriceDate : 'Unknown'}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
-                <Clock size={24} />
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                <Clock className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 font-medium">Last Sync Run</p>
+                <p className="text-xs text-neutral-400 font-medium">Last Routine Run</p>
                 {status?.lastSync ? (
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-gray-900">{formatDateTime(status.lastSync.startedAt)}</p>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Duration: {msToMins(status.lastSync.durationMs)}</p>
+                    <p className="text-sm font-bold text-neutral-900 tabular-nums">
+                      {formatDateTime(status.lastSync.startedAt)}
+                    </p>
+                    <p className="text-[11px] text-neutral-500 tabular-nums">
+                      Duration: {msToMins(status.lastSync.durationMs)}
+                    </p>
                   </div>
                 ) : (
-                  <p className="text-gray-900">Never</p>
+                  <p className="text-sm font-bold text-neutral-700">Never executed</p>
                 )}
               </div>
             </div>
             
-            <div className="flex flex-col justify-center">
-               <p className="text-sm text-gray-500 font-medium mb-1">Status</p>
-               {status?.lastSync ? renderStatusBadge(status.lastSync.status) : <span className="text-gray-400">N/A</span>}
+            <div className="flex items-center gap-3.5 sm:border-l sm:border-neutral-100 sm:pl-6">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <FileCheck2 className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-neutral-400 font-medium mb-1">Pipeline Health</p>
+                {status?.lastSync ? renderStatusBadge(status.lastSync.status) : <span className="text-neutral-400 text-xs">No status</span>}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Logs Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-bold text-gray-800">Sync History</h2>
+        {/* Sync History Table */}
+        <div className="bg-white rounded-2xl shadow-xs border border-neutral-200 overflow-hidden">
+          <div className="p-4 bg-neutral-50/60 border-b border-neutral-200 flex items-center justify-between">
+            <h2 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+              Execution History
+            </h2>
+            <span className="text-[11px] text-neutral-400">
+              Auto-scheduled daily from Agmarknet API via data.gov.in
+            </span>
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 text-gray-600 text-sm font-medium border-b border-gray-200">
-                  <th className="p-4">Started At</th>
-                  <th className="p-4">Trigger</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Fetched</th>
-                  <th className="p-4 text-right">Inserted</th>
-                  <th className="p-4 text-right">Updated</th>
-                  <th className="p-4 text-right">Duration</th>
+            <table className="w-full text-left text-xs">
+              <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600 font-semibold uppercase tracking-wider sticky top-0 z-10">
+                <tr>
+                  <th className="px-5 py-3.5">Started At</th>
+                  <th className="px-5 py-3.5">Trigger Source</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5 text-right">Fetched</th>
+                  <th className="px-5 py-3.5 text-right">Inserted</th>
+                  <th className="px-5 py-3.5 text-right">Updated</th>
+                  <th className="px-5 py-3.5 text-right">Duration</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
+              <tbody className="divide-y divide-neutral-100 text-neutral-700">
                 {isLoadingLogs ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-28"></div></td>
-                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
-                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-16"></div></td>
-                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-12 ml-auto"></div></td>
-                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-12 ml-auto"></div></td>
-                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-12 ml-auto"></div></td>
-                      <td className="p-4"><div className="h-4 bg-gray-200 rounded w-16 ml-auto"></div></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-neutral-200 rounded-md w-32"></div></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-neutral-200 rounded-md w-20"></div></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-neutral-200 rounded-md w-16"></div></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-neutral-200 rounded-md w-12 ml-auto"></div></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-neutral-200 rounded-md w-12 ml-auto"></div></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-neutral-200 rounded-md w-12 ml-auto"></div></td>
+                      <td className="px-5 py-4"><div className="h-4 bg-neutral-200 rounded-md w-14 ml-auto"></div></td>
                     </tr>
                   ))
                 ) : errorLogs ? (
@@ -204,24 +264,40 @@ export default function MandiSyncLogs() {
                     </td>
                   </tr>
                 ) : !logs || logs.content.length === 0 ? (
-                  <tr><td colSpan="7"><div className="p-8"><EmptyState message="No sync logs found." /></div></td></tr>
+                  <tr>
+                    <td colSpan="7" className="p-12 text-center">
+                      <EmptyState message="No mandi synchronization runs recorded yet." />
+                    </td>
+                  </tr>
                 ) : (
                   logs.content.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="p-4 text-gray-800 font-medium whitespace-nowrap">
-                        {formatDateTime(log.startedAt)}
+                    <tr key={log.id} className="hover:bg-neutral-50/80 transition-colors">
+                      <td className="px-5 py-4 text-neutral-900 font-bold whitespace-nowrap">
+                        <div className="tabular-nums">{formatDateTime(log.startedAt)}</div>
                         {log.errorMessage && (
-                           <p className="text-xs text-red-500 mt-1 truncate max-w-xs" title={log.errorMessage}>
-                             {log.errorMessage}
-                           </p>
+                          <p className="text-[11px] text-rose-600 font-normal mt-0.5 max-w-xs truncate" title={log.errorMessage}>
+                            {log.errorMessage}
+                          </p>
                         )}
                       </td>
-                      <td className="p-4 text-gray-600 whitespace-nowrap">{log.triggerSource}</td>
-                      <td className="p-4 whitespace-nowrap">{renderStatusBadge(log.status)}</td>
-                      <td className="p-4 text-right text-gray-600">{log.recordsFetched}</td>
-                      <td className="p-4 text-right text-gray-600">{log.recordsInserted}</td>
-                      <td className="p-4 text-right text-gray-600">{log.recordsUpdated}</td>
-                      <td className="p-4 text-right text-gray-600 whitespace-nowrap">{msToMins(log.durationMs)}</td>
+                      <td className="px-5 py-4 text-neutral-600 whitespace-nowrap font-medium">
+                        {log.triggerSource}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {renderStatusBadge(log.status)}
+                      </td>
+                      <td className="px-5 py-4 text-right text-neutral-900 font-semibold tabular-nums">
+                        {log.recordsFetched?.toLocaleString('en-IN') || 0}
+                      </td>
+                      <td className="px-5 py-4 text-right text-emerald-700 font-semibold tabular-nums">
+                        +{log.recordsInserted?.toLocaleString('en-IN') || 0}
+                      </td>
+                      <td className="px-5 py-4 text-right text-neutral-700 font-semibold tabular-nums">
+                        {log.recordsUpdated?.toLocaleString('en-IN') || 0}
+                      </td>
+                      <td className="px-5 py-4 text-right text-neutral-500 tabular-nums">
+                        {msToMins(log.durationMs)}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -230,9 +306,9 @@ export default function MandiSyncLogs() {
           </div>
           
           {logs && logs.totalPages > 1 && (
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 border-t border-neutral-100 bg-neutral-50/50">
               <Pagination
-                currentPage={logs.pageable.pageNumber}
+                page={logs.page ?? logs.pageable?.pageNumber ?? logs.number ?? 0}
                 totalPages={logs.totalPages}
                 onPageChange={setPage}
               />

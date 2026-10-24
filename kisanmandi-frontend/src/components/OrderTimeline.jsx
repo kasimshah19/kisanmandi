@@ -1,29 +1,30 @@
-import { Check, Circle, X } from 'lucide-react';
+import { Check, Circle, X, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { STATUS_META, HAPPY_PATH, getOrderStatusLabel } from '../utils/orderStatus';
+import { HAPPY_PATH, getOrderStatusLabel } from '../utils/orderStatus';
 import { formatDateTime } from '../utils/format';
 
-// Vertical timeline showing order progress through statuses
 export default function OrderTimeline({ history, currentStatus }) {
   const { t } = useTranslation();
-  // Build a map of completed statuses from history
+
   const historyMap = {};
-  (history || []).forEach(h => { historyMap[h.status] = h; });
+  (history || []).forEach((h) => {
+    historyMap[h.status] = h;
+  });
 
   const isRejected = currentStatus === 'REJECTED';
   const isCancelled = currentStatus === 'CANCELLED';
   const isTerminal = isRejected || isCancelled;
 
-  // Build steps to display
   const steps = [];
-  const happyIndex = HAPPY_PATH.indexOf(currentStatus);
 
   for (let i = 0; i < HAPPY_PATH.length; i++) {
     const status = HAPPY_PATH[i];
     const h = historyMap[status];
 
-    // If terminal and this step is after current happy-path progress, skip
     if (isTerminal && !h) continue;
+
+    const isCurrent = status === currentStatus;
+    const isCompleted = !!h && !isCurrent;
 
     steps.push({
       status,
@@ -31,11 +32,10 @@ export default function OrderTimeline({ history, currentStatus }) {
       time: h?.changedAt,
       note: h?.note,
       completed: !!h,
-      current: status === currentStatus,
+      current: isCurrent,
     });
   }
 
-  // Add REJECTED or CANCELLED as the final step if applicable
   if (isRejected && historyMap.REJECTED) {
     steps.push({
       status: 'REJECTED',
@@ -47,6 +47,7 @@ export default function OrderTimeline({ history, currentStatus }) {
       isError: true,
     });
   }
+
   if (isCancelled && historyMap.CANCELLED) {
     steps.push({
       status: 'CANCELLED',
@@ -60,48 +61,85 @@ export default function OrderTimeline({ history, currentStatus }) {
   }
 
   return (
-    <div className="relative pl-6">
+    <div className="relative pl-7 sm:pl-8 space-y-6">
       {steps.map((step, idx) => {
         const isLast = idx === steps.length - 1;
-        let dotColor = 'bg-gray-300';
-        let lineColor = 'bg-gray-200';
-        let Icon = Circle;
+
+        let iconNode = <Circle size={10} className="text-neutral-400" />;
+        let dotClass = 'bg-white border-2 border-neutral-300 text-neutral-400';
+        let lineClass = 'bg-neutral-200';
 
         if (step.isError) {
-          dotColor = 'bg-red-500';
-          Icon = X;
-        } else if (step.completed) {
-          dotColor = 'bg-green-500';
-          lineColor = 'bg-green-300';
-          Icon = Check;
+          dotClass = 'bg-red-600 text-white shadow-xs';
+          iconNode = <X size={12} strokeWidth={3} />;
+          lineClass = 'bg-red-300';
         } else if (step.current) {
-          dotColor = 'bg-blue-500';
+          dotClass = 'bg-brand-600 text-white ring-4 ring-brand-100 shadow-xs motion-safe:animate-pulse';
+          iconNode = <Clock size={12} strokeWidth={3} />;
+          lineClass = 'bg-brand-200';
+        } else if (step.completed) {
+          dotClass = 'bg-brand-600 text-white shadow-xs';
+          iconNode = <Check size={12} strokeWidth={3} />;
+          lineClass = 'bg-brand-500';
         }
 
         return (
-          <div key={step.status} className="relative pb-6">
+          <div key={step.status} className="relative">
             {/* Connecting line */}
             {!isLast && (
-              <div className={`absolute left-[-18px] top-6 w-0.5 h-full ${step.completed ? lineColor : 'bg-gray-200'}`} />
+              <div
+                className={`absolute left-[-22px] sm:left-[-24px] top-6 bottom-[-24px] w-0.5 ${
+                  step.completed ? 'bg-brand-600' : 'bg-neutral-200'
+                }`}
+              />
             )}
 
-            {/* Dot/icon */}
-            <div className={`absolute left-[-24px] top-0.5 w-5 h-5 rounded-full flex items-center justify-center ${dotColor}`}>
-              <Icon size={12} className="text-white" />
+            {/* Dot / Icon */}
+            <div
+              className={`absolute left-[-30px] sm:left-[-32px] top-0.5 w-6 h-6 rounded-full flex items-center justify-center transition ${dotClass}`}
+            >
+              {iconNode}
             </div>
 
             {/* Content */}
-            <div>
-              <p className={`font-medium text-sm ${step.isError ? 'text-red-700' : step.completed ? 'text-gray-900' : 'text-gray-400'}`}>
-                {step.label}
-              </p>
-              {step.time && (
-                <p className="text-xs text-gray-500 mt-0.5">{formatDateTime(step.time)}</p>
-              )}
-              {step.note && (
-                <p className={`text-xs mt-1 px-2 py-1 rounded ${step.isError ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-600'}`}>
-                  {step.note}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p
+                  className={`font-bold text-sm ${
+                    step.isError
+                      ? 'text-red-700'
+                      : step.current
+                      ? 'text-brand-900'
+                      : step.completed
+                      ? 'text-neutral-900'
+                      : 'text-neutral-400'
+                  }`}
+                >
+                  {step.label}
                 </p>
+                {step.current && (
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded-full">
+                    Current
+                  </span>
+                )}
+              </div>
+
+              {step.time && (
+                <p className="text-xs text-neutral-500 mt-0.5 font-medium tabular-nums">
+                  {formatDateTime(step.time)}
+                </p>
+              )}
+
+              {step.note && (
+                <div
+                  className={`text-xs mt-1.5 p-2 rounded-xl leading-relaxed border ${
+                    step.isError
+                      ? 'bg-red-50 text-red-800 border-red-200'
+                      : 'bg-neutral-50 text-neutral-700 border-neutral-200/80'
+                  }`}
+                >
+                  {step.note}
+                </div>
               )}
             </div>
           </div>

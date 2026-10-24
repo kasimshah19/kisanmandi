@@ -10,30 +10,34 @@ import PriceSummaryCards from '../../components/mandi/PriceSummaryCards';
 import PriceTrendChart from '../../components/mandi/PriceTrendChart';
 import MarketCompareChart from '../../components/mandi/MarketCompareChart';
 import PriceTable from '../../components/mandi/PriceTable';
+import PageHeader from '../../components/ui/PageHeader';
+import EmptyState from '../../components/EmptyState';
+import NoResults from '../../components/illustrations/NoResults';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import { Database, Sparkles } from 'lucide-react';
 
 export default function MandiDashboard() {
   const { t } = useTranslation();
   useDocumentTitle(`${t('mandi.title')} | KisanMandi`);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // Read initial filters from URL
   const initialFilters = {
     state: searchParams.get('state') || '',
     district: searchParams.get('district') || '',
     market: searchParams.get('market') || '',
     commodity: searchParams.get('commodity') || '',
-    date: searchParams.get('date') || ''
+    date: searchParams.get('date') || '',
   };
-  
+
   const initialDays = parseInt(searchParams.get('days') || '7', 10);
   const initialPage = parseInt(searchParams.get('page') || '0', 10);
 
   const [filters, setFilters] = useState(initialFilters);
   const [days, setDays] = useState(initialDays);
   const [page, setPage] = useState(initialPage);
-  
+
   const [status, setStatus] = useState(null);
   const [summary, setSummary] = useState(null);
   const [trendData, setTrendData] = useState([]);
@@ -41,30 +45,33 @@ export default function MandiDashboard() {
   const [pricesData, setPricesData] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [hasDemoData, setHasDemoData] = useState(false);
-  
+
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [isLoadingTrend, setIsLoadingTrend] = useState(true);
   const [isLoadingCompare, setIsLoadingCompare] = useState(true);
   const [isLoadingPrices, setIsLoadingPrices] = useState(true);
-  
+
   const [isDataAvailable, setIsDataAvailable] = useState(true);
 
   // Sync state to URL and trigger fetch
-  const handleFilterChange = useCallback((newFilters) => {
-    const merged = { ...filters, ...newFilters };
-    setFilters(merged);
-    
-    // Update URL
-    const params = new URLSearchParams();
-    Object.keys(merged).forEach(k => {
-      if (merged[k]) params.set(k, merged[k]);
-    });
-    params.set('days', days);
-    setSearchParams(params);
-    
-    // Reset page on filter change
-    setPage(0);
-  }, [filters, days, setSearchParams]);
+  const handleFilterChange = useCallback(
+    (newFilters) => {
+      const merged = { ...filters, ...newFilters };
+      setFilters(merged);
+
+      // Update URL
+      const params = new URLSearchParams();
+      Object.keys(merged).forEach((k) => {
+        if (merged[k]) params.set(k, merged[k]);
+      });
+      params.set('days', days);
+      setSearchParams(params);
+
+      // Reset page on filter change
+      setPage(0);
+    },
+    [filters, days, setSearchParams]
+  );
 
   const handleDaysChange = (newDays) => {
     setDays(newDays);
@@ -82,21 +89,27 @@ export default function MandiDashboard() {
 
   // Initial load: get status and default state
   useEffect(() => {
-    mandiService.getStatus()
-      .then(res => {
+    mandiService
+      .getStatus()
+      .then((res) => {
         setStatus(res.data);
         if (!res.data.latestPriceDate) {
           setIsDataAvailable(false);
         } else if (!filters.state) {
           // Default to Maharashtra if no state selected and we can fetch states
-          mandiService.getStates().then(statesRes => {
-            if (statesRes.data.length > 0 && !filters.state) {
-              const defaultState = statesRes.data.includes('Maharashtra') ? 'Maharashtra' : statesRes.data[0];
-              handleFilterChange({ state: defaultState, date: res.data.latestPriceDate });
-            }
-          }).catch(() => {});
+          mandiService
+            .getStates()
+            .then((statesRes) => {
+              if (statesRes.data.length > 0 && !filters.state) {
+                const defaultState = statesRes.data.includes('Maharashtra')
+                  ? 'Maharashtra'
+                  : statesRes.data[0];
+                handleFilterChange({ state: defaultState, date: res.data.latestPriceDate });
+              }
+            })
+            .catch(() => {});
         } else if (!filters.date) {
-           handleFilterChange({ date: res.data.latestPriceDate });
+          handleFilterChange({ date: res.data.latestPriceDate });
         }
       })
       .catch(() => {
@@ -112,23 +125,27 @@ export default function MandiDashboard() {
       setIsLoadingSummary(false);
       return;
     }
-    
+
     const abortCtrl = new AbortController();
     setIsLoadingSummary(true);
-    
-    mandiService.getSummary({ 
-      commodity: filters.commodity, 
-      state: filters.state, 
-      district: filters.district 
-    }, { signal: abortCtrl.signal })
-      .then(res => {
+
+    mandiService
+      .getSummary(
+        {
+          commodity: filters.commodity,
+          state: filters.state,
+          district: filters.district,
+        },
+        { signal: abortCtrl.signal }
+      )
+      .then((res) => {
         setSummary(res.status === 204 ? null : res.data);
       })
-      .catch(err => {
+      .catch((err) => {
         if (err.name !== 'CanceledError') setSummary(null);
       })
       .finally(() => setIsLoadingSummary(false));
-      
+
     return () => abortCtrl.abort();
   }, [filters.commodity, filters.state, filters.district, isDataAvailable]);
 
@@ -143,18 +160,22 @@ export default function MandiDashboard() {
     const abortCtrl = new AbortController();
     setIsLoadingTrend(true);
 
-    mandiService.getTrend({
-      commodity: filters.commodity,
-      state: filters.state,
-      district: filters.district,
-      market: filters.market,
-      days: days
-    }, { signal: abortCtrl.signal })
-      .then(res => {
+    mandiService
+      .getTrend(
+        {
+          commodity: filters.commodity,
+          state: filters.state,
+          district: filters.district,
+          market: filters.market,
+          days: days,
+        },
+        { signal: abortCtrl.signal }
+      )
+      .then((res) => {
         setTrendData(res.data.points || []);
         setHasDemoData(res.data.hasDemoData || false);
       })
-      .catch(err => {
+      .catch((err) => {
         if (err.name !== 'CanceledError') toast.error('Failed to load trend data');
       })
       .finally(() => setIsLoadingTrend(false));
@@ -173,17 +194,21 @@ export default function MandiDashboard() {
     const abortCtrl = new AbortController();
     setIsLoadingCompare(true);
 
-    mandiService.getCompare({
-      commodity: filters.commodity,
-      state: filters.state,
-      district: filters.district,
-      date: filters.date,
-      limit: 10
-    }, { signal: abortCtrl.signal })
-      .then(res => {
+    mandiService
+      .getCompare(
+        {
+          commodity: filters.commodity,
+          state: filters.state,
+          district: filters.district,
+          date: filters.date,
+          limit: 10,
+        },
+        { signal: abortCtrl.signal }
+      )
+      .then((res) => {
         setCompareData(res.data.points || []);
       })
-      .catch(err => {
+      .catch((err) => {
         if (err.name !== 'CanceledError') toast.error('Failed to load compare data');
       })
       .finally(() => setIsLoadingCompare(false));
@@ -202,20 +227,24 @@ export default function MandiDashboard() {
     const abortCtrl = new AbortController();
     setIsLoadingPrices(true);
 
-    mandiService.getPrices({
-      state: filters.state,
-      district: filters.district,
-      market: filters.market,
-      commodity: filters.commodity,
-      date: filters.date,
-      page: page,
-      size: 20
-    }, { signal: abortCtrl.signal })
-      .then(res => {
+    mandiService
+      .getPrices(
+        {
+          state: filters.state,
+          district: filters.district,
+          market: filters.market,
+          commodity: filters.commodity,
+          date: filters.date,
+          page: page,
+          size: 20,
+        },
+        { signal: abortCtrl.signal }
+      )
+      .then((res) => {
         setPricesData(res.data.content || []);
         setPagination(res.data);
       })
-      .catch(err => {
+      .catch((err) => {
         if (err.name !== 'CanceledError') toast.error('Failed to load prices table');
       })
       .finally(() => setIsLoadingPrices(false));
@@ -223,86 +252,81 @@ export default function MandiDashboard() {
     return () => abortCtrl.abort();
   }, [filters.state, filters.district, filters.market, filters.commodity, filters.date, page, isDataAvailable]);
 
-  // Handle Quick Picks
-  const handleQuickPick = (commodity) => {
-    handleFilterChange({ commodity });
-  };
-
-  const quickPicks = ['Tomato', 'Onion', 'Potato', 'Wheat', 'Soyabean', 'Cotton'];
-
   if (!isDataAvailable) {
     return (
       <div className="py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">{t('mandi.title')}</h1>
-        <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center">
-          <div className="animate-pulse flex flex-col items-center">
-            <div className="w-16 h-16 bg-gray-200 rounded-full mb-4"></div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">{t('mandi.fetching_data')}</h2>
-            <p className="text-gray-500">{t('mandi.check_later')}</p>
-          </div>
+        <PageHeader
+          breadcrumbs={[
+            { label: t('nav.home'), to: '/' },
+            { label: t('nav.mandi_rates') },
+          ]}
+          title={t('mandi.title')}
+          subtitle="Daily wholesale modal prices synced directly from Agmarknet."
+        />
+        <div className="bg-white p-12 rounded-3xl shadow-xs border border-neutral-200/90 text-center mt-6">
+          <EmptyState
+            illustration={NoResults}
+            title={t('mandi.fetching_data')}
+            message={t('mandi.check_later')}
+          />
         </div>
       </div>
     );
   }
 
+  const lastUpdatedText = status?.latestPriceDate
+    ? formatDate(status.latestPriceDate)
+    : t('common.loading');
+
   return (
-    <div className="py-4 md:py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">{t('mandi.title')}</h1>
-          <p className="text-sm text-gray-500">
-            {t('mandi.last_updated', { date: status?.latestPriceDate ? formatDate(status.latestPriceDate) : t('common.loading') })} | 
-            <span className="italic ml-1">{t('mandi.source_credit')}</span>
-          </p>
-        </div>
-        
-        {/* Quick Picks */}
-        <div className="flex flex-wrap gap-2">
-          {quickPicks.map(qp => (
-            <button
-              key={qp}
-              onClick={() => handleQuickPick(qp)}
-              className={`px-3 py-1 text-xs md:text-sm rounded-full transition-colors ${filters.commodity === qp ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}`}
-            >
-              {qp}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <MandiFilters 
-        filters={filters} 
-        onFilterChange={handleFilterChange} 
-        latestDate={status?.latestPriceDate} 
-      />
-      
-      <PriceSummaryCards 
-        summary={summary} 
-        status={status} 
-        isLoading={isLoadingSummary} 
+    <div className="space-y-6 sm:space-y-8">
+      {/* PageHeader with last updated and source note */}
+      <PageHeader
+        breadcrumbs={[
+          { label: t('nav.home'), to: '/' },
+          { label: t('nav.mandi_rates') },
+        ]}
+        title={t('mandi.title')}
+        subtitle={`Last updated: ${lastUpdatedText} • Source: Agmarknet via data.gov.in (Wholesale modal benchmark rates)`}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <PriceTrendChart 
-          data={trendData} 
-          isLoading={isLoadingTrend} 
-          days={days} 
-          onDaysChange={handleDaysChange} 
+      {/* Sticky Filters & Commodity Quick-Picks */}
+      <MandiFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        latestDate={status?.latestPriceDate}
+      />
+
+      {/* 4 Summary StatCards */}
+      <PriceSummaryCards
+        summary={summary}
+        status={status}
+        isLoading={isLoadingSummary}
+      />
+
+      {/* 2 Comparison / Trend Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <PriceTrendChart
+          data={trendData}
+          isLoading={isLoadingTrend}
+          days={days}
+          onDaysChange={handleDaysChange}
           commodity={filters.commodity}
           hasDemoData={hasDemoData}
         />
-        <MarketCompareChart 
-          data={compareData} 
-          isLoading={isLoadingCompare} 
+        <MarketCompareChart
+          data={compareData}
+          isLoading={isLoadingCompare}
           commodity={filters.commodity}
         />
       </div>
 
-      <PriceTable 
-        data={pricesData} 
-        isLoading={isLoadingPrices} 
-        pagination={pagination} 
-        onPageChange={handlePageChange} 
+      {/* Detailed Prices Table */}
+      <PriceTable
+        data={pricesData}
+        isLoading={isLoadingPrices}
+        pagination={pagination}
+        onPageChange={handlePageChange}
       />
     </div>
   );

@@ -3,13 +3,15 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '../../components/DashboardLayout';
 import ProductForm from '../../components/ProductForm';
+import PageHeader from '../../components/ui/PageHeader';
+import Button from '../../components/ui/Button';
 import { farmerService } from '../../services/farmerService';
 import { productService } from '../../services/productService';
 import toast from 'react-hot-toast';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, UserCheck, ArrowRight } from 'lucide-react';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 
-const AddProduct = () => {
+export default function AddProduct() {
   const { t } = useTranslation();
   useDocumentTitle(`${t('farmer.add_new_product')} | KisanMandi`);
 
@@ -37,11 +39,11 @@ const AddProduct = () => {
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      Object.keys(formData).forEach((key) => data.append(key, formData[key]));
       if (imageFile) {
         data.append('image', imageFile);
       }
-      
+
       await productService.createProduct(data);
       toast.success(t('common.save'));
       navigate('/farmer/products');
@@ -52,35 +54,57 @@ const AddProduct = () => {
     }
   };
 
-  if (isLoading) return <DashboardLayout role="FARMER"><div className="p-8">{t('common.loading')}</div></DashboardLayout>;
+  const isApproved = profile?.approvalStatus === 'APPROVED';
 
   return (
     <DashboardLayout role="FARMER">
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">{t('farmer.add_new_product')}</h1>
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          breadcrumbs={[
+            { label: t('nav.home'), to: '/' },
+            { label: t('farmer.manage_products'), to: '/farmer/products' },
+            { label: t('farmer.add_new_product') },
+          ]}
+          title={t('farmer.add_new_product')}
+          subtitle="List your newly harvested crops directly for local buyers with live mandi rate comparisons."
+        />
 
-        {profile?.approvalStatus !== 'APPROVED' ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex flex-col items-center justify-center text-center">
-            <AlertCircle className="text-red-500 w-12 h-12 mb-4" />
-            <h2 className="text-lg font-bold text-red-800 mb-2">{t('farmer.profile_status')}</h2>
-            <p className="text-red-600 mb-4">
-              {t('farmer.profile_not_submitted_msg')}. 
-              <strong> {t(`status.${profile?.approvalStatus || 'NOT_SUBMITTED'}`)}</strong>
-            </p>
-            <Link to="/farmer/profile" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+        {isLoading ? (
+          <div className="p-12 text-center text-neutral-400 font-medium">Loading form...</div>
+        ) : !isApproved ? (
+          <div className="bg-white border border-amber-200 rounded-3xl p-8 sm:p-10 flex flex-col items-center justify-center text-center max-w-xl mx-auto shadow-sm space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
+              <AlertCircle size={32} />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-extrabold text-neutral-900 tracking-tight">
+                Producer Approval Required
+              </h2>
+              <p className="text-sm text-neutral-600 leading-relaxed">
+                {t('farmer.profile_not_submitted_msg')}. Your current account status is{' '}
+                <strong className="text-neutral-900">
+                  {t(`status.${profile?.approvalStatus || 'NOT_SUBMITTED'}`)}
+                </strong>.
+              </p>
+            </div>
+            <Button
+              as={Link}
+              to="/farmer/profile"
+              variant="primary"
+              size="md"
+              rightIcon={<ArrowRight size={16} />}
+            >
               {t('farmer.my_profile')}
-            </Link>
+            </Button>
           </div>
         ) : (
-          <ProductForm 
-            onSubmit={handleSubmit} 
-            isLoading={isSubmitting} 
-            submitText={t('farmer.save_product_btn')} 
+          <ProductForm
+            onSubmit={handleSubmit}
+            isLoading={isSubmitting}
+            submitText={t('farmer.save_product_btn')}
           />
         )}
       </div>
     </DashboardLayout>
   );
-};
-
-export default AddProduct;
+}

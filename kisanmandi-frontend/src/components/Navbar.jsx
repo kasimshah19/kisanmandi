@@ -1,190 +1,515 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Leaf, Menu, X, LogOut, ShoppingCart, ClipboardList } from 'lucide-react';
+import React, { useState, useEffect, useRef, useId } from 'react';
+import { createPortal } from 'react-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import {
+  Leaf,
+  Menu,
+  X,
+  LogOut,
+  ShoppingCart,
+  ClipboardList,
+  ChevronDown,
+  LayoutDashboard,
+  Package,
+  MapPin,
+  TrendingUp,
+  UserCheck,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth, getDashboardPath } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { useState } from 'react';
 import LanguageSwitcher from './LanguageSwitcher';
+import Button from './ui/Button';
 
 export default function Navbar() {
   const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const userDropdownRef = useRef(null);
+  const userButtonRef = useRef(null);
+  const hamburgerButtonRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+  const userMenuId = useId();
+
+  // Scroll shadow effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 8);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setMenuOpen(false);
+    setUserDropdownOpen(false);
+  }, [location.pathname]);
+
+  // Handle outside click for user dropdown
+  useEffect(() => {
+    if (!userDropdownOpen) return;
+
+    const handleOutsideClick = (event) => {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target) &&
+        userButtonRef.current &&
+        !userButtonRef.current.contains(event.target)
+      ) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [userDropdownOpen]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+      // Focus mobile menu container
+      setTimeout(() => mobileMenuRef.current?.focus(), 50);
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
     setMenuOpen(false);
-  };
-
-  // Role badge colors
-  const roleBadge = {
-    FARMER:   'bg-green-100 text-green-800',
-    CUSTOMER: 'bg-blue-100 text-blue-800',
-    ADMIN:    'bg-red-100 text-red-800',
+    setUserDropdownOpen(false);
   };
 
   const isCustomer = user?.role === 'CUSTOMER';
+  const isFarmer = user?.role === 'FARMER';
+  const isAdmin = user?.role === 'ADMIN';
+
+  // Role badges
+  const roleBadge = {
+    FARMER: 'bg-green-100 text-green-800 border-green-200',
+    CUSTOMER: 'bg-blue-100 text-blue-800 border-blue-200',
+    ADMIN: 'bg-red-100 text-red-800 border-red-200',
+  };
+
+  const navLinkClass = ({ isActive }) =>
+    `px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 relative ${
+      isActive
+        ? 'text-green-800 bg-green-50/80 font-bold'
+        : 'text-gray-700 hover:text-green-700 hover:bg-gray-50'
+    }`;
+
+  const mobileNavLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-colors min-h-[48px] ${
+      isActive
+        ? 'text-green-800 bg-green-50 font-bold'
+        : 'text-gray-700 hover:text-green-800 hover:bg-gray-50'
+    }`;
 
   return (
-    <nav className="bg-white shadow-md relative z-50">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2 text-green-700 font-bold text-2xl">
-          <Leaf className="h-6 w-6" />
-          <span>KisanMandi</span>
+    <header
+      className={`
+        sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md transition-shadow duration-200
+        border-b ${scrolled ? 'shadow-sm border-gray-200/80' : 'border-gray-200/60'}
+      `}
+    >
+      <div className="page-container flex items-center justify-between h-14 md:h-16">
+        {/* Brand */}
+        <Link
+          to="/"
+          aria-label="KisanMandi Homepage"
+          className="flex items-center gap-2.5 text-green-800 font-extrabold text-xl md:text-2xl tracking-tight shrink-0 focus-visible:outline-none"
+        >
+          <span className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-green-700 text-white flex items-center justify-center shadow-xs">
+            <Leaf className="w-4 h-4 md:w-5 md:h-5" />
+          </span>
+          <span className="leading-none">KisanMandi</span>
         </Link>
 
-        {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-5">
-          <Link to="/" className="text-gray-600 hover:text-green-700 transition font-medium">
-            {t('nav.home')}
-          </Link>
-          <Link to="/mandi" className="text-gray-600 hover:text-green-700 transition font-medium">
-            {t('nav.mandi_rates')}
-          </Link>
-          <Link to="/products" className="text-gray-600 hover:text-green-700 transition font-medium">
-            {t('nav.browse')}
-          </Link>
+        {/* Desktop Navigation Links */}
+        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1 lg:gap-2">
+          <NavLink to="/" className={navLinkClass}>
+            {t('nav.home', 'Home')}
+          </NavLink>
+          <NavLink to="/mandi" className={navLinkClass}>
+            {t('nav.mandi_rates', 'Mandi Rates')}
+          </NavLink>
+          <NavLink to="/products" className={navLinkClass}>
+            {t('nav.browse', 'Buy Produce')}
+          </NavLink>
+        </nav>
 
-          {isAuthenticated ? (
-            <>
-              {/* Customer-specific links */}
-              {isCustomer && (
-                <>
-                  <Link to="/customer/orders" className="text-gray-600 hover:text-green-700 transition flex items-center gap-1 font-medium">
-                    <ClipboardList className="h-4 w-4" />
-                    <span>{t('nav.my_orders')}</span>
-                  </Link>
-                  <Link
-                    to="/customer/cart"
-                    aria-label={`Shopping cart with ${cartCount} items`}
-                    className="relative text-gray-600 hover:text-green-700 transition p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                  >
-                    <ShoppingCart className="h-5 w-5" />
-                    {cartCount > 0 && (
-                      <span className="absolute top-1 right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                        {cartCount > 9 ? '9+' : cartCount}
-                      </span>
-                    )}
-                  </Link>
-                </>
-              )}
-
-              <Link to={getDashboardPath(user.role)}
-                className="text-gray-600 hover:text-green-700 transition font-medium">
-                {t('nav.dashboard')}
-              </Link>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${roleBadge[user.role] || ''}`}>
-                {user.name} ({user.role})
-              </span>
-              <button onClick={handleLogout}
-                className="flex items-center space-x-1 text-red-600 hover:text-red-700 transition min-h-[44px] px-2 font-medium">
-                <LogOut className="h-4 w-4" />
-                <span>{t('nav.logout')}</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="text-gray-600 hover:text-green-700 transition font-medium">
-                {t('nav.login')}
-              </Link>
-              <Link to="/register"
-                className="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition font-medium">
-                {t('nav.register')}
-              </Link>
-            </>
-          )}
-
-          {/* Desktop Language Switcher */}
-          <LanguageSwitcher />
-        </div>
-
-        {/* Mobile: language + cart icon + hamburger */}
-        <div className="md:hidden flex items-center gap-1.5">
+        {/* Desktop Right items */}
+        <div className="hidden md:flex items-center gap-2.5 lg:gap-3">
+          {/* Customer Cart */}
           {isAuthenticated && isCustomer && (
             <Link
               to="/customer/cart"
               aria-label={`Shopping cart with ${cartCount} items`}
-              className="relative text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="relative p-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-green-600"
             >
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute top-1 right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute top-1 right-1 bg-red-600 text-white text-[11px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {cartCount > 9 ? '9+' : cartCount}
                 </span>
               )}
             </Link>
           )}
+
+          {/* Desktop Language Switcher (Dropdown) */}
+          <LanguageSwitcher variant="dropdown" />
+
+          {/* Logged Out / Logged In State */}
+          {!isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              <Button as={Link} to="/login" variant="ghost" size="md">
+                {t('nav.login', 'Login')}
+              </Button>
+              <Button as={Link} to="/register" variant="primary" size="md">
+                {t('nav.register', 'Register')}
+              </Button>
+            </div>
+          ) : (
+            /* User Dropdown */
+            <div className="relative">
+              <button
+                ref={userButtonRef}
+                type="button"
+                id="user-menu-button"
+                aria-haspopup="menu"
+                aria-expanded={userDropdownOpen}
+                aria-controls={userMenuId}
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setUserDropdownOpen(false);
+                }}
+                className="flex items-center gap-2 p-1.5 pl-2 rounded-xl border border-gray-200 bg-white hover:bg-green-50/70 hover:border-green-300 transition-colors cursor-pointer min-h-[44px] focus-visible:ring-2 focus-visible:ring-green-600"
+              >
+                {/* Avatar initial circle */}
+                <div className="w-8 h-8 rounded-lg bg-green-700 text-white font-bold text-sm flex items-center justify-center shrink-0">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="hidden lg:flex flex-col text-left text-xs leading-tight">
+                  <span className="font-semibold text-gray-900 max-w-[120px] truncate">
+                    {user?.name}
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-medium">
+                    {user?.role}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                    userDropdownOpen ? 'rotate-180 text-green-700' : ''
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {userDropdownOpen && (
+                <div
+                  ref={userDropdownRef}
+                  id={userMenuId}
+                  role="menu"
+                  aria-labelledby="user-menu-button"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setUserDropdownOpen(false);
+                      userButtonRef.current?.focus();
+                    }
+                  }}
+                  className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-gray-200 p-2 z-50 text-sm space-y-1 transition-all"
+                >
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <p className="font-bold text-gray-900 truncate">{user?.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                    <span
+                      className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        roleBadge[user?.role] || ''
+                      }`}
+                    >
+                      {user?.role}
+                    </span>
+                  </div>
+
+                  <Link
+                    to={getDashboardPath(user?.role)}
+                    role="menuitem"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                  >
+                    <LayoutDashboard size={16} className="text-green-700" />
+                    <span>{t('nav.dashboard', 'Dashboard')}</span>
+                  </Link>
+
+                  {/* Customer role links */}
+                  {isCustomer && (
+                    <>
+                      <Link
+                        to="/customer/orders"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                      >
+                        <ClipboardList size={16} className="text-gray-500" />
+                        <span>{t('nav.my_orders', 'My Orders')}</span>
+                      </Link>
+                      <Link
+                        to="/customer/addresses"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                      >
+                        <MapPin size={16} className="text-gray-500" />
+                        <span>{t('checkout.delivery_address', 'Delivery Address')}</span>
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Farmer role links */}
+                  {isFarmer && (
+                    <>
+                      <Link
+                        to="/farmer/products"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                      >
+                        <Package size={16} className="text-gray-500" />
+                        <span>{t('nav.my_products', 'My Products')}</span>
+                      </Link>
+                      <Link
+                        to="/farmer/orders"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                      >
+                        <ClipboardList size={16} className="text-gray-500" />
+                        <span>{t('nav.incoming_orders', 'Orders')}</span>
+                      </Link>
+                      <Link
+                        to="/farmer/mandi"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                      >
+                        <TrendingUp size={16} className="text-gray-500" />
+                        <span>{t('nav.mandi_rates', 'Mandi Rates')}</span>
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Admin role links */}
+                  {isAdmin && (
+                    <>
+                      <Link
+                        to="/admin/farmers"
+                        role="menuitem"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                      >
+                        <UserCheck size={16} className="text-gray-500" />
+                        <span>{t('nav.admin', 'Farmer Approvals')}</span>
+                      </Link>
+                    </>
+                  )}
+
+                  <div className="pt-1 border-t border-gray-100">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium min-h-[40px]"
+                    >
+                      <LogOut size={16} />
+                      <span>{t('nav.logout', 'Logout')}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile controls (Cart + Hamburger) */}
+        <div className="md:hidden flex items-center gap-2">
+          {isAuthenticated && isCustomer && (
+            <Link
+              to="/customer/cart"
+              aria-label={`Shopping cart with ${cartCount} items`}
+              className="relative p-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </Link>
+          )}
+
           <button
+            ref={hamburgerButtonRef}
+            type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={menuOpen ? t('nav.close_menu') : t('nav.menu')}
-            className="text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-600 rounded-md"
+            aria-label={menuOpen ? t('nav.close_menu', 'Close Menu') : t('nav.menu', 'Menu')}
+            aria-expanded={menuOpen}
+            className="p-2.5 rounded-xl text-gray-700 hover:text-green-800 hover:bg-gray-100 transition min-h-[44px] min-w-[44px] flex items-center justify-center focus-visible:ring-2 focus-visible:ring-green-600"
           >
-            {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      {menuOpen && (
-        <div className="md:hidden bg-white border-t shadow-lg px-4 py-4 space-y-3">
-          <div className="pb-2 border-b border-gray-100 flex justify-between items-center">
-            <span className="text-xs text-gray-500 font-medium">{t('nav.switch_language')}:</span>
-            <LanguageSwitcher />
-          </div>
+      {/* Mobile Drawer & Backdrop mounted to document.body via portal */}
+      {menuOpen && typeof document !== 'undefined' && createPortal(
+        <div className="md:hidden fixed inset-0 top-14 z-50 flex flex-col">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 top-14 bg-black/40 backdrop-blur-xs transition-opacity"
+            onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
+          />
 
-          <Link to="/" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-green-700 font-medium">
-            {t('nav.home')}
-          </Link>
-          <Link to="/mandi" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-green-700 font-medium">
-            {t('nav.mandi_rates')}
-          </Link>
-          <Link to="/products" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-green-700 font-medium">
-            {t('nav.browse')}
-          </Link>
+          {/* Drawer content */}
+          <div
+            ref={mobileMenuRef}
+            tabIndex={-1}
+            className="relative w-full bg-white border-b border-gray-200 shadow-xl px-5 py-6 space-y-5 max-h-[calc(100vh-3.5rem)] overflow-y-auto outline-none"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setMenuOpen(false);
+                hamburgerButtonRef.current?.focus();
+              }
+            }}
+          >
+            {/* Language Segmented Control Section */}
+            <div className="pb-4 border-b border-gray-100">
+              <LanguageSwitcher variant="segmented" />
+            </div>
 
-          {isAuthenticated ? (
-            <>
-              {isCustomer && (
+            {/* Navigation Links */}
+            <nav aria-label="Mobile Navigation" className="space-y-1">
+              <NavLink to="/" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
+                {t('nav.home', 'Home')}
+              </NavLink>
+              <NavLink to="/mandi" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
+                {t('nav.mandi_rates', 'Mandi Rates')}
+              </NavLink>
+              <NavLink to="/products" onClick={() => setMenuOpen(false)} className={mobileNavLinkClass}>
+                {t('nav.browse', 'Buy Produce')}
+              </NavLink>
+
+              {isAuthenticated && (
+                <NavLink
+                  to={getDashboardPath(user?.role)}
+                  onClick={() => setMenuOpen(false)}
+                  className={mobileNavLinkClass}
+                >
+                  <LayoutDashboard size={18} className="text-green-700" />
+                  <span>{t('nav.dashboard', 'Dashboard')}</span>
+                </NavLink>
+              )}
+
+              {isAuthenticated && isCustomer && (
                 <>
-                  <Link to="/customer/orders" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-green-700 font-medium">
-                    {t('nav.my_orders')}
-                  </Link>
-                  <Link to="/customer/addresses" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-green-700 font-medium">
-                    {t('checkout.delivery_address')}
-                  </Link>
+                  <NavLink
+                    to="/customer/orders"
+                    onClick={() => setMenuOpen(false)}
+                    className={mobileNavLinkClass}
+                  >
+                    <ClipboardList size={18} />
+                    <span>{t('nav.my_orders', 'My Orders')}</span>
+                  </NavLink>
+                  <NavLink
+                    to="/customer/addresses"
+                    onClick={() => setMenuOpen(false)}
+                    className={mobileNavLinkClass}
+                  >
+                    <MapPin size={18} />
+                    <span>{t('checkout.delivery_address', 'Delivery Address')}</span>
+                  </NavLink>
                 </>
               )}
-              <Link to={getDashboardPath(user.role)} onClick={() => setMenuOpen(false)}
-                className="block text-gray-600 hover:text-green-700 font-medium">
-                {t('nav.dashboard')}
-              </Link>
-              <div className="py-1">
-                <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge[user.role] || ''}`}>
-                  {user.name} ({user.role})
-                </span>
-              </div>
-              <button onClick={handleLogout}
-                className="block w-full text-left text-red-600 hover:text-red-700 font-medium py-1">
-                {t('nav.logout')}
-              </button>
-            </>
-          ) : (
-            <div className="pt-2 space-y-2 border-t border-gray-100">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="block text-gray-600 hover:text-green-700 font-medium py-1">
-                {t('nav.login')}
-              </Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)}
-                className="block bg-green-600 text-white text-center px-4 py-2 rounded-lg hover:bg-green-700 font-medium">
-                {t('nav.register')}
-              </Link>
+
+              {isAuthenticated && isFarmer && (
+                <>
+                  <NavLink
+                    to="/farmer/products"
+                    onClick={() => setMenuOpen(false)}
+                    className={mobileNavLinkClass}
+                  >
+                    <Package size={18} />
+                    <span>{t('nav.my_products', 'My Products')}</span>
+                  </NavLink>
+                  <NavLink
+                    to="/farmer/orders"
+                    onClick={() => setMenuOpen(false)}
+                    className={mobileNavLinkClass}
+                  >
+                    <ClipboardList size={18} />
+                    <span>{t('nav.incoming_orders', 'Orders')}</span>
+                  </NavLink>
+                </>
+              )}
+            </nav>
+
+            {/* Mobile Auth / Profile section */}
+            <div className="pt-4 border-t border-gray-100">
+              {isAuthenticated ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+                    <div className="w-10 h-10 rounded-lg bg-green-700 text-white font-bold flex items-center justify-center">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 leading-tight">{user?.name}</p>
+                      <p className="text-xs text-gray-500 leading-tight">{user?.email}</p>
+                      <span
+                        className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          roleBadge[user?.role] || ''
+                        }`}
+                      >
+                        {user?.role}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="danger"
+                    fullWidth
+                    leftIcon={<LogOut size={16} />}
+                    onClick={handleLogout}
+                  >
+                    {t('nav.logout', 'Logout')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <Button as={Link} to="/login" variant="outline" fullWidth onClick={() => setMenuOpen(false)}>
+                    {t('nav.login', 'Login')}
+                  </Button>
+                  <Button as={Link} to="/register" variant="primary" fullWidth onClick={() => setMenuOpen(false)}>
+                    {t('nav.register', 'Register')}
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        </div>,
+        document.body
       )}
-    </nav>
+    </header>
   );
 }

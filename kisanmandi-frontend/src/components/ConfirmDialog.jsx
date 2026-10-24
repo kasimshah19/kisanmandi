@@ -1,21 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Button from './ui/Button';
 
-const ConfirmDialog = ({ 
-  isOpen, 
-  title, 
-  message, 
-  confirmText, 
-  cancelText, 
-  confirmStyle = "danger",
-  onConfirm, 
+export default function ConfirmDialog({
+  isOpen,
+  title,
+  message,
+  confirmText,
+  cancelText,
+  confirmStyle = 'danger',
+  onConfirm,
   onCancel,
   showReasonInput = false,
-  reasonLabel
-}) => {
+  reasonLabel,
+}) {
   const { t } = useTranslation();
   const [reason, setReason] = useState('');
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setReason('');
+      return;
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onCancel();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onCancel]);
 
   if (!isOpen) return null;
 
@@ -31,64 +47,79 @@ const ConfirmDialog = ({
     }
   };
 
-  const btnColors = {
-    danger: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
-    success: "bg-green-600 hover:bg-green-700 focus:ring-green-500",
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-3">
-              <div className={`p-2 rounded-full ${confirmStyle === 'danger' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                <AlertTriangle size={24} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+    >
+      <div
+        ref={dialogRef}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-neutral-200/90 animate-in zoom-in-95 duration-150 flex flex-col"
+      >
+        <div className="p-6 sm:p-7 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3.5">
+              <div
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  confirmStyle === 'danger'
+                    ? 'bg-red-50 text-red-600 border-red-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}
+              >
+                <AlertTriangle size={22} />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+              <h3 id="confirm-dialog-title" className="text-lg font-bold text-neutral-900 tracking-tight">
+                {title}
+              </h3>
             </div>
-            <button onClick={onCancel} className="text-gray-400 hover:text-gray-500">
-              <X size={20} />
+            <button
+              onClick={onCancel}
+              className="p-1 rounded-full text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition"
+              aria-label={t('common.close')}
+            >
+              <X size={18} />
             </button>
           </div>
-          
-          <div className="mt-4">
-            <p className="text-sm text-gray-600">{message}</p>
+
+          <div>
+            <p className="text-sm text-neutral-600 leading-relaxed">{message}</p>
           </div>
 
           {showReasonInput && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{effectiveReasonLabel} *</label>
+            <div className="space-y-1.5 pt-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600">
+                {effectiveReasonLabel} <span className="text-red-500">*</span>
+              </label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
                 rows="3"
-                placeholder="..."
+                placeholder="Please state the justification..."
                 required
               />
             </div>
           )}
         </div>
-        
-        <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
+
+        <div className="bg-neutral-50 px-6 py-4 border-t border-neutral-100 flex items-center justify-end gap-3 rounded-b-3xl">
+          <Button variant="outline" size="md" onClick={onCancel}>
             {effectiveCancelText}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={confirmStyle === 'danger' ? 'danger' : 'primary'}
+            size="md"
             onClick={handleConfirm}
             disabled={showReasonInput && !reason.trim()}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${btnColors[confirmStyle]}`}
           >
             {effectiveConfirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
   );
-};
-
-export default ConfirmDialog;
+}

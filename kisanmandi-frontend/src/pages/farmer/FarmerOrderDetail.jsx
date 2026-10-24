@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MapPin, Receipt, Phone, User, Info } from 'lucide-react';
+import { ArrowLeft, MapPin, Receipt, Phone, User, Info, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { farmerOrderService } from '../../services/farmerOrderService';
 import DashboardLayout from '../../components/DashboardLayout';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
+import OrderTimeline from '../../components/OrderTimeline';
+import PageHeader from '../../components/ui/PageHeader';
+import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
 import { SkeletonCard } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
@@ -18,7 +22,7 @@ export default function FarmerOrderDetail() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Status update state
   const [updating, setUpdating] = useState(false);
   const [updateNote, setUpdateNote] = useState('');
@@ -56,14 +60,24 @@ export default function FarmerOrderDetail() {
       toast.success(t(`status.${newStatus}`));
       setUpdateNote('');
       loadOrder();
-    } catch (error) {
-      toast.error(error.response?.data?.message || t('errors.generic_retry'));
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('errors.generic_retry'));
     } finally {
       setUpdating(false);
     }
   };
 
-  if (loading) return <DashboardLayout role="FARMER"><SkeletonCard /></DashboardLayout>;
+  if (loading) {
+    return (
+      <DashboardLayout role="FARMER">
+        <div className="space-y-6">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!order) {
     return (
       <DashboardLayout role="FARMER">
@@ -76,172 +90,195 @@ export default function FarmerOrderDetail() {
     );
   }
 
-  // Determine available next actions
+  // Determine available next actions for this farmer
   const actions = [];
   const s = order.status;
   if (s === 'PLACED') {
-    actions.push({ label: t('farmer.accept_order'), status: 'ACCEPTED', color: 'bg-indigo-600 hover:bg-indigo-700' });
-    actions.push({ label: t('farmer.reject_order'), status: 'REJECTED', color: 'bg-red-600 hover:bg-red-700 outline' });
+    actions.push({ label: t('farmer.accept_order'), status: 'ACCEPTED', variant: 'primary' });
+    actions.push({ label: t('farmer.reject_order'), status: 'REJECTED', variant: 'danger' });
   } else if (s === 'ACCEPTED') {
-    actions.push({ label: t('farmer.mark_packed'), status: 'PACKED', color: 'bg-purple-600 hover:bg-purple-700' });
+    actions.push({ label: t('farmer.mark_packed'), status: 'PACKED', variant: 'primary' });
   } else if (s === 'PACKED') {
-    actions.push({ label: t('farmer.mark_shipped'), status: 'OUT_FOR_DELIVERY', color: 'bg-orange-600 hover:bg-orange-700' });
+    actions.push({ label: t('farmer.mark_shipped'), status: 'OUT_FOR_DELIVERY', variant: 'harvest' });
   } else if (s === 'OUT_FOR_DELIVERY') {
-    actions.push({ label: t('farmer.mark_delivered'), status: 'DELIVERED', color: 'bg-green-600 hover:bg-green-700' });
+    actions.push({ label: t('farmer.mark_delivered'), status: 'DELIVERED', variant: 'primary' });
   }
 
   return (
     <DashboardLayout role="FARMER">
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Link to="/farmer/orders" className="p-2 hover:bg-gray-100 rounded-full transition">
-            <ArrowLeft size={20} className="text-gray-600" />
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-800">{orderNumber(order.id)}</h1>
-        </div>
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          breadcrumbs={[
+            { label: t('nav.home'), to: '/' },
+            { label: t('farmer.manage_orders'), to: '/farmer/orders' },
+            { label: orderNumber(order.id) },
+          ]}
+          title={orderNumber(order.id)}
+          subtitle={t('orders.order_date', { date: formatDateTime(order.createdAt) })}
+          actions={<OrderStatusBadge status={order.status} size="lg" />}
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Main Content (Left) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-start">
+          {/* Main Left Column (2 cols) */}
           <div className="lg:col-span-2 space-y-6">
-            
-            {/* Header info */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex flex-wrap justify-between items-start gap-4 border-b pb-4 mb-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h2 className="text-xl font-bold text-gray-900">{orderNumber(order.id)}</h2>
-                    <OrderStatusBadge status={order.status} />
-                  </div>
-                  <p className="text-sm text-gray-500">{t('orders.order_date', { date: formatDateTime(order.createdAt) })}</p>
+            {/* Status Update Actions Box */}
+            {actions.length > 0 && (
+              <div className="bg-brand-50/70 border border-brand-200 rounded-3xl p-6 sm:p-7 space-y-4 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-lg bg-brand-200 text-brand-900 flex items-center justify-center font-bold text-xs">
+                    ⚡
+                  </span>
+                  <h3 className="font-extrabold text-base text-neutral-900">
+                    {t('farmer.action_required')}
+                  </h3>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500 mb-1">{t('orders.total_amount')}</p>
-                  <p className="text-2xl font-bold text-green-700">{formatINR(order.totalAmount)}</p>
+
+                {actions.some((a) => a.status === 'REJECTED') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+                      Rejection Reason (required if rejecting)
+                    </label>
+                    <input
+                      type="text"
+                      value={updateNote}
+                      onChange={(e) => setUpdateNote(e.target.value)}
+                      placeholder={t('farmer.rejection_note_placeholder')}
+                      className="w-full px-3.5 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  {actions.map((a) => (
+                    <Button
+                      key={a.status}
+                      variant={a.variant}
+                      size="md"
+                      loading={updating}
+                      onClick={() => handleUpdateStatus(a.status)}
+                      className="min-h-[48px] flex-1 sm:flex-initial"
+                    >
+                      {a.label}
+                    </Button>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Status Update Actions */}
-              {actions.length > 0 && (
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 flex items-center gap-2 mb-3">
-                    <Info size={18} /> {t('farmer.action_required')}
-                  </h3>
-                  
-                  {actions.some(a => a.status === 'REJECTED') && (
-                    <div className="mb-3">
-                      <input 
-                        type="text" 
-                        value={updateNote}
-                        onChange={e => setUpdateNote(e.target.value)}
-                        placeholder={t('farmer.rejection_note_placeholder')}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                    </div>
-                  )}
+            {!isActiveStatus(order.status) && (
+              <div className="bg-neutral-100 rounded-2xl p-4 text-xs sm:text-sm text-neutral-600 font-semibold border border-neutral-200">
+                {t('farmer.cannot_modify_order')}
+              </div>
+            )}
 
-                  <div className="flex gap-3">
-                    {actions.map(a => (
-                      <button
-                        key={a.status}
-                        disabled={updating}
-                        onClick={() => handleUpdateStatus(a.status)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition disabled:opacity-50 ${
-                          a.color.includes('outline') 
-                            ? 'bg-white border border-red-200 text-red-600 hover:bg-red-50' 
-                            : `text-white ${a.color}`
-                        }`}
-                      >
-                        {a.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {!isActiveStatus(order.status) && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-600 font-medium">
-                  {t('farmer.cannot_modify_order')}
-                </div>
-              )}
-            </div>
-
-            {/* Order Items */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Receipt size={20} className="text-green-600" /> {t('farmer.items_to_fulfill')}
+            {/* Order Items List */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-neutral-200/90 shadow-xs space-y-4">
+              <h3 className="font-bold text-neutral-900 text-base pb-3 border-b border-neutral-100 flex items-center gap-2">
+                <Receipt size={18} className="text-brand-700" />
+                {t('farmer.items_to_fulfill')}
               </h3>
-              
-              <div className="divide-y border rounded-lg">
-                {order.items.map(item => (
-                  <div key={item.id} className="flex gap-4 p-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded border shrink-0">
-                      {item.imageUrl && <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover rounded" />}
+
+              <div className="divide-y divide-neutral-100">
+                {order.items?.map((item) => (
+                  <div key={item.id} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.productName}
+                          className="w-14 h-14 rounded-xl object-cover border border-neutral-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0">
+                          <Receipt size={22} />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-extrabold text-sm text-neutral-900 truncate">
+                          {item.productName}
+                        </p>
+                        <p className="text-xs text-neutral-500 mt-0.5 font-medium">
+                          {formatINR(item.priceAtOrder)} / {unitLabel(item.unit, t)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{item.productName}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {t('common.price')}: {formatINR(item.priceAtOrder)} / {unitLabel(item.unit, t)}
+
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-neutral-500">
+                        Qty: <strong className="text-neutral-900 font-mono">{item.quantity}</strong>
                       </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500 mb-1">{t('common.quantity_label')}: <span className="font-bold text-gray-900">{item.quantity}</span></p>
-                      <p className="font-bold text-green-700">{formatINR(item.lineTotal)}</p>
+                      <p className="text-sm font-extrabold text-brand-900 font-mono mt-0.5">
+                        {formatINR(item.lineTotal)}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/* Total Summary */}
+              <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-sm font-bold text-neutral-600">
+                  {t('orders.total_amount')} (Cash on Delivery)
+                </span>
+                <span className="text-xl sm:text-2xl font-extrabold text-brand-900 font-mono">
+                  {formatINR(order.totalAmount)}
+                </span>
+              </div>
             </div>
 
+            {/* Order Timeline */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-neutral-200/90 shadow-xs space-y-4">
+              <h3 className="font-bold text-neutral-900 text-base pb-3 border-b border-neutral-100">
+                Fulfillment Timeline
+              </h3>
+              <OrderTimeline status={order.status} history={order.history || []} />
+            </div>
           </div>
 
-          {/* Sidebar (Right) */}
+          {/* Right Sidebar (1 col) */}
           <div className="space-y-6">
-            
             {/* Customer Details */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <User size={18} className="text-blue-600" /> {t('orders.customer_contact')}
-              </h3>
-              <div className="space-y-3 text-sm">
-                <p className="font-medium text-gray-900">{order.customerName}</p>
-                <p className="text-gray-600 flex items-center gap-2">
-                  <Phone size={14} /> {order.customerPhone}
+            <div className="bg-white rounded-3xl p-6 border border-neutral-200/90 shadow-xs space-y-3">
+              <h4 className="font-bold text-neutral-900 text-sm flex items-center gap-2 pb-2 border-b border-neutral-100">
+                <User size={16} className="text-brand-700" />
+                {t('orders.customer_contact')}
+              </h4>
+              <div className="space-y-2 text-xs sm:text-sm">
+                <p className="font-extrabold text-neutral-900 text-base">
+                  {order.customerName || 'Buyer'}
                 </p>
+                {order.customerPhone && (
+                  <a
+                    href={`tel:${order.customerPhone}`}
+                    className="inline-flex items-center gap-2 text-brand-800 font-bold bg-brand-50 hover:bg-brand-100 px-3 py-2 rounded-xl border border-brand-200 transition w-full"
+                  >
+                    <Phone size={14} className="text-brand-700" />
+                    <span>Call Customer: {order.customerPhone}</span>
+                  </a>
+                )}
               </div>
             </div>
 
             {/* Delivery Address */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <MapPin size={18} className="text-orange-600" /> {t('orders.delivery_to')}
-              </h3>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p className="font-medium text-gray-900 mb-1">{order.shipName}</p>
+            <div className="bg-white rounded-3xl p-6 border border-neutral-200/90 shadow-xs space-y-3">
+              <h4 className="font-bold text-neutral-900 text-sm flex items-center gap-2 pb-2 border-b border-neutral-100">
+                <MapPin size={16} className="text-amber-600" />
+                {t('orders.delivery_to')}
+              </h4>
+              <div className="text-xs sm:text-sm text-neutral-600 space-y-1">
+                <p className="font-bold text-neutral-900">{order.shipName}</p>
                 <p>{order.shipLine1}</p>
-                <p>{order.shipCity}, {order.shipState}</p>
-                <p className="font-medium text-gray-900 mt-1">PIN: {order.shipPincode}</p>
-                <p className="flex items-center gap-2 mt-2 pt-2 border-t text-gray-500">
-                  <Phone size={14} /> {order.shipPhone}
+                <p>
+                  {order.shipCity}, {order.shipState}
                 </p>
+                <p className="font-mono font-semibold text-neutral-900">PIN: {order.shipPincode}</p>
+                {order.shipPhone && (
+                  <p className="pt-2 border-t border-neutral-100 text-neutral-500 font-medium">
+                    Phone: {order.shipPhone}
+                  </p>
+                )}
               </div>
             </div>
-            
-            {/* History Log */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="font-bold text-gray-900 mb-4">{t('farmer.status_history')}</h3>
-              <div className="space-y-4 border-l-2 border-gray-100 ml-2 pl-4">
-                {(order.history || []).map((h, i) => (
-                  <div key={i} className="relative">
-                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
-                    <p className="text-sm font-medium text-gray-900">{t(`status.${h.status}`) !== `status.${h.status}` ? t(`status.${h.status}`) : h.status}</p>
-                    <p className="text-xs text-gray-500">{formatDateTime(h.changedAt)}</p>
-                    {h.note && <p className="text-xs text-gray-600 mt-1 bg-gray-50 p-1.5 rounded">{h.note}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { reviewService, farmerStatsService } from '../../services/phase5Services';
 import RatingSummary from '../../components/RatingSummary';
 import ReviewList from '../../components/ReviewList';
+import PageHeader from '../../components/ui/PageHeader';
 import { SkeletonCard } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
@@ -47,8 +48,16 @@ export default function Reviews() {
 
   return (
     <DashboardLayout role="FARMER">
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('reviews.my_reviews')}</h1>
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          breadcrumbs={[
+            { label: t('nav.home'), to: '/' },
+            { label: t('nav.dashboard'), to: '/farmer/dashboard' },
+            { label: t('reviews.my_reviews') },
+          ]}
+          title={t('reviews.my_reviews')}
+          subtitle="Customer testimonials, verified buyer feedback, and rating distribution for your farm."
+        />
 
         {loading ? (
           <div className="space-y-4">
@@ -62,7 +71,7 @@ export default function Reviews() {
             onRetry={loadReviews}
           />
         ) : (
-          <>
+          <div className="space-y-6 sm:space-y-8">
             {stats && stats.totalReviews > 0 && (
               <RatingSummary
                 average={stats.averageRating}
@@ -71,10 +80,10 @@ export default function Reviews() {
               />
             )}
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-xs border border-neutral-200/90">
               <ReviewList reviews={reviews} page={page} totalPages={totalPages} setPage={setPage} />
             </div>
-          </>
+          </div>
         )}
       </div>
     </DashboardLayout>

@@ -1,72 +1,171 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ImageOff, Star } from 'lucide-react';
+import { ImageOff, MapPin, Sparkles } from 'lucide-react';
 import { formatINR, unitLabel } from '../utils/format';
 import { getOptimizedImageUrl } from '../utils/image';
 import StarRating from './StarRating';
 import DistanceBadge from './DistanceBadge';
 
-// Product card used in BrowseProducts grid
+/**
+ * ProductCard
+ * 4:3 image box, gentle hover zoom, stock badges, farm location, rating, and distance.
+ */
 export default function ProductCard({ product }) {
   const { t } = useTranslation();
+
+  if (!product) {
+    return <ProductCardSkeleton />;
+  }
+
   const price = Number(product.pricePerUnit);
   const stock = Number(product.quantityAvailable);
   const isOutOfStock = stock <= 0;
+  const isLowStock = stock > 0 && stock <= 5;
+  const unitText = unitLabel(product.unit, t);
 
   return (
-    <Link to={`/products/${product.id}`} className="block group">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow relative">
-        {/* Out of stock ribbon */}
-        {isOutOfStock && (
-          <div className="absolute top-3 left-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-r-lg z-10">
-            {t('products.out_of_stock')}
+    <Link
+      to={`/products/${product.id}`}
+      aria-label={`${product.name}, ${formatINR(price)} per ${unitText}`}
+      className={`group flex flex-col h-full bg-white rounded-2xl border border-neutral-200/80 shadow-2xs hover:shadow-card-hover hover:border-brand-500/50 transition-all duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 relative ${
+        isOutOfStock ? 'opacity-75' : ''
+      }`}
+    >
+      {/* 4:3 Image Container with Hover Zoom */}
+      <div className="aspect-[4/3] w-full bg-neutral-100 overflow-hidden relative shrink-0">
+        {product.imageUrl ? (
+          <img
+            src={getOptimizedImageUrl(product.imageUrl, 400)}
+            alt={product.name || 'Produce item'}
+            loading="lazy"
+            width="400"
+            height="300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              if (e.target.nextElementSibling) {
+                e.target.nextElementSibling.style.display = 'flex';
+              }
+            }}
+          />
+        ) : null}
+
+        {/* Fallback placeholder when no image */}
+        <div
+          className={`w-full h-full flex flex-col items-center justify-center text-neutral-400 bg-neutral-100 ${
+            product.imageUrl ? 'hidden' : 'flex'
+          }`}
+        >
+          <ImageOff size={36} className="text-neutral-300" />
+          <span className="text-[11px] font-medium text-neutral-400 mt-1">No photo</span>
+        </div>
+
+        {/* Subtle gradient vignette at top for badges */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+
+        {/* Category Pill (Top-Left) */}
+        {product.categoryName && (
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white/95 text-neutral-800 shadow-2xs backdrop-blur-xs border border-white/40">
+              {product.categoryName}
+            </span>
           </div>
         )}
 
-        {/* Product image */}
-        <div className="aspect-square bg-gray-100 overflow-hidden relative">
-          {product.imageUrl ? (
-            <img
-              src={getOptimizedImageUrl(product.imageUrl, 400)}
-              alt={product.name || 'Produce item'}
-              loading="lazy"
-              width="400"
-              height="400"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; }}
-            />
-          ) : null}
-          {/* Fallback placeholder */}
-          <div className={`w-full h-full flex flex-col items-center justify-center text-gray-400 ${product.imageUrl ? 'hidden' : ''}`}>
-            <ImageOff size={40} />
-            <span className="text-xs mt-1">No image</span>
+        {/* Distance Badge (Top-Right) */}
+        {product.distanceKm != null && (
+          <div className="absolute top-2.5 right-2.5 z-10">
+            <DistanceBadge distanceKm={product.distanceKm} />
           </div>
-        </div>
+        )}
 
-        {/* Product info */}
-        <div className="p-3">
-          <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
-          <p className="text-green-700 font-bold text-lg mt-1">
-            {formatINR(price)} <span className="text-sm text-gray-500 font-normal">/ {unitLabel(product.unit)}</span>
-          </p>
-          {product.farmName && (
-            <p className="text-xs text-gray-500 mt-1 truncate">
-              {product.farmName}{product.village ? `, ${product.village}` : ''}
+        {/* Stock Ribbon (Bottom-Left of Image) */}
+        {isOutOfStock ? (
+          <div className="absolute bottom-2.5 left-2.5 z-10">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-red-600 text-white shadow-xs">
+              {t('products.out_of_stock', 'Out of Stock')}
+            </span>
+          </div>
+        ) : isLowStock ? (
+          <div className="absolute bottom-2.5 left-2.5 z-10">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-500 text-neutral-950 shadow-xs">
+              <Sparkles size={11} />
+              {t('products.low_stock_hint', { count: stock, unit: unitText })}
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Product Content Details */}
+      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between gap-2.5">
+        <div>
+          {/* Product Name (2 lines clamped) */}
+          <h3 className="font-bold text-neutral-900 text-base leading-snug line-clamp-2 group-hover:text-brand-700 transition-colors">
+            {product.name}
+          </h3>
+
+          {/* Farm Name & Location */}
+          {(product.farmName || product.village) && (
+            <p className="flex items-center gap-1 text-xs text-neutral-500 mt-1 truncate">
+              <MapPin size={12} className="text-brand-700 shrink-0" />
+              <span className="truncate">
+                {product.farmName}
+                {product.village ? `, ${product.village}` : ''}
+              </span>
             </p>
           )}
-          <div className="flex items-center gap-2 mt-2">
+        </div>
+
+        {/* Footer: Price + Rating */}
+        <div className="pt-2 border-t border-neutral-100 flex items-baseline justify-between gap-2">
+          {/* Price */}
+          <div className="text-brand-700 font-extrabold text-lg sm:text-xl tracking-tight">
+            {formatINR(price)}
+            <span className="text-xs sm:text-sm font-normal text-neutral-500 ml-0.5">
+              / {unitText}
+            </span>
+          </div>
+
+          {/* Rating */}
+          <div className="shrink-0 flex items-center gap-1">
             {product.farmerRatingCount > 0 ? (
               <div className="flex items-center gap-1">
-                <StarRating value={product.farmerRatingAvg} size={12} />
-                <span className="text-xs text-gray-500">({product.farmerRatingCount})</span>
+                <StarRating value={product.farmerRatingAvg} size={13} />
+                <span className="text-xs font-medium text-neutral-500 tabular-nums">
+                  ({product.farmerRatingCount})
+                </span>
               </div>
             ) : (
-              <span className="text-xs text-gray-400 bg-gray-100 px-1 rounded">New</span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-neutral-100 text-neutral-600">
+                {t('products.new_rating', 'New')}
+              </span>
             )}
-            <DistanceBadge distanceKm={product.distanceKm} />
           </div>
         </div>
       </div>
     </Link>
+  );
+}
+
+/**
+ * ProductCardSkeleton
+ * Skeleton placeholder matching exact ProductCard dimensions to prevent layout shifts.
+ */
+export function ProductCardSkeleton() {
+  return (
+    <div className="flex flex-col h-full bg-white rounded-2xl border border-neutral-200/60 overflow-hidden shadow-2xs animate-pulse">
+      <div className="aspect-[4/3] w-full bg-neutral-200" />
+      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-3">
+        <div className="space-y-2">
+          <div className="h-4 bg-neutral-200 rounded w-4/5" />
+          <div className="h-3 bg-neutral-200 rounded w-1/2" />
+        </div>
+        <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
+          <div className="h-5 bg-neutral-200 rounded w-1/3" />
+          <div className="h-3 bg-neutral-200 rounded w-1/4" />
+        </div>
+      </div>
+    </div>
   );
 }

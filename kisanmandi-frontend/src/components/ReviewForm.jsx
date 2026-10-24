@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StarRating from './StarRating';
+import Button from './ui/Button';
 import toast from 'react-hot-toast';
 import reviewService from '../services/reviewService';
 
@@ -29,42 +30,63 @@ export default function ReviewForm({ orderId, onSuccess, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col gap-4">
-      <h3 className="text-lg font-semibold text-gray-900">{t('reviews.rate_experience')}</h3>
-      
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-neutral-200/90 flex flex-col gap-4"
+    >
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">{t('reviews.your_rating')}</label>
-        <StarRating value={rating} onChange={setRating} size={32} readOnly={false} />
+        <h3 className="text-base font-bold text-neutral-900">{t('reviews.rate_experience')}</h3>
+        <p className="text-xs text-neutral-500 mt-0.5">{t('reviews.comment_placeholder')}</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">{t('reviews.comment_optional')}</label>
+        <label className="block text-xs font-bold uppercase tracking-wider text-neutral-600 mb-2">
+          {t('reviews.your_rating')} *
+        </label>
+        <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200/80 inline-flex items-center gap-3">
+          <StarRating value={rating} onChange={setRating} size={28} readOnly={false} />
+          {rating > 0 && (
+            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              {rating} / 5
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+            {t('reviews.comment_optional')}
+          </label>
+          <span className="text-xs font-semibold text-neutral-400 tabular-nums">
+            {comment.length} / 500
+          </span>
+        </div>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           maxLength={500}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+          className="w-full px-3.5 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition leading-relaxed"
           placeholder={t('reviews.comment_placeholder')}
         />
-        <div className="text-right text-xs text-gray-500 mt-1">
-          {comment.length}/500
-        </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-2">
+      <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
         {onCancel && (
-          <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
             {t('common.cancel')}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="sm"
+          loading={loading}
           disabled={loading || rating === 0}
-          className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md shadow-sm"
         >
-          {loading ? t('reviews.submitting') : t('reviews.submit_review')}
-        </button>
+          {t('reviews.submit_review')}
+        </Button>
       </div>
     </form>
   );

@@ -1,6 +1,7 @@
-import { Component } from 'react';
+import React, { Component } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import i18n from '../i18n';
+import Button from './ui/Button';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -29,38 +30,39 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-lg border border-gray-100 text-center space-y-4">
-            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle size={32} />
+        <div className="min-h-screen bg-[#fafaf7] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-10 max-w-md w-full shadow-xl border border-neutral-200/80 text-center space-y-5">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto border border-red-100">
+              <AlertTriangle size={30} />
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              {i18n.t('common.something_went_wrong')}
-            </h1>
-
-            <p className="text-sm text-gray-600">
-              {i18n.t('common.error_boundary_desc')}
-            </p>
+            <div className="space-y-2">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-neutral-900 tracking-tight">
+                {i18n.t('common.something_went_wrong')}
+              </h1>
+              <p className="text-sm text-neutral-600 leading-relaxed">
+                {i18n.t('common.error_boundary_desc')}
+              </p>
+            </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="md"
                 onClick={this.handleReload}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-700 text-white rounded-xl font-medium hover:bg-green-800 transition active:scale-95"
+                leftIcon={<RefreshCw size={16} />}
               >
-                <RefreshCw size={18} />
                 {i18n.t('common.reload_page')}
-              </button>
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="md"
                 onClick={this.handleHome}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition active:scale-95"
+                leftIcon={<Home size={16} />}
               >
-                <Home size={18} />
                 {i18n.t('common.go_home')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

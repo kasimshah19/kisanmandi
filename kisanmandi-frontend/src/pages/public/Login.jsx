@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Navigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth, getDashboardPath } from '../../context/AuthContext';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Leaf, Eye, EyeOff, Check, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { FormField, Input } from '../../components/ui/FormField';
+import Button from '../../components/ui/Button';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -25,15 +27,14 @@ export default function Login() {
     const defaultPath = getDashboardPath(role);
     if (!rawFrom) return defaultPath;
     const fromPath = typeof rawFrom === 'string' ? rawFrom : rawFrom.pathname || defaultPath;
-    
-    // Check if target requires a role different from current user's role
+
     if (fromPath.startsWith('/farmer') && role !== 'ROLE_FARMER' && role !== 'FARMER') return defaultPath;
     if (fromPath.startsWith('/customer') && role !== 'ROLE_CUSTOMER' && role !== 'CUSTOMER') return defaultPath;
     if (fromPath.startsWith('/admin') && role !== 'ROLE_ADMIN' && role !== 'ADMIN') return defaultPath;
     return fromPath;
   };
 
-  // If already logged in, redirect to previous page or role dashboard
+  // If already logged in, redirect to target or dashboard
   if (isAuthenticated && user) {
     return <Navigate to={resolveTarget(user.role)} replace />;
   }
@@ -67,85 +68,160 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-6 sm:mt-10 px-4">
-      <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{t('auth.login_title')}</h1>
-          <LanguageSwitcher />
-        </div>
+    <div className="min-h-[calc(100vh-128px)] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-card border border-neutral-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+        {/* Left Brand Panel (visible on lg) */}
+        <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#052e16] via-[#14532d] to-[#064e3b] text-white p-10 flex-col justify-between relative overflow-hidden">
+          {/* Subtle decorative glow */}
+          <div
+            className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 bg-amber-400/10 blur-3xl rounded-full"
+            aria-hidden="true"
+          />
 
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          {/* Email */}
-          <div>
-            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">
-              {t('auth.email_label')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              autoComplete="email"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition text-base"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+          <div className="relative z-10 space-y-6">
+            <Link to="/" className="inline-flex items-center gap-2.5 text-white font-extrabold text-2xl tracking-tight">
+              <span className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center text-white shadow-xs">
+                <Leaf className="w-5 h-5" />
+              </span>
+              <span>KisanMandi</span>
+            </Link>
 
-          {/* Password with show/hide toggle */}
-          <div>
-            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">
-              {t('auth.password_label')} <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="login-password"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                autoComplete="current-password"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition pr-12 text-base"
-                placeholder="••••••••"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600 rounded-md min-h-[44px] min-w-[44px] flex items-center justify-center"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
+            <p className="text-green-100/80 text-sm leading-relaxed">
+              {t('auth.brand_tagline')}
+            </p>
+
+            <div className="pt-4 space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={12} strokeWidth={3} />
+                </span>
+                <span className="text-xs sm:text-sm text-green-50/90 leading-snug">
+                  {t('auth.buyer_benefit_1')}
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={12} strokeWidth={3} />
+                </span>
+                <span className="text-xs sm:text-sm text-green-50/90 leading-snug">
+                  {t('auth.buyer_benefit_2')}
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="w-5 h-5 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={12} strokeWidth={3} />
+                </span>
+                <span className="text-xs sm:text-sm text-green-50/90 leading-snug">
+                  {t('auth.buyer_benefit_3')}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={isLoading || !form.email || !form.password}
-            className="w-full bg-green-700 text-white py-3 rounded-lg font-semibold hover:bg-green-800 transition disabled:opacity-50 flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.99]"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>{t('auth.logging_in')}</span>
-              </>
-            ) : (
-              t('auth.sign_in_btn')
-            )}
-          </button>
-        </form>
+          <div className="relative z-10 pt-8 border-t border-green-800/60 text-xs text-green-200/70">
+            &copy; {new Date().getFullYear()} KisanMandi
+          </div>
+        </div>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          {t('auth.dont_have_account')}{' '}
-          <Link to="/register" className="text-green-700 font-semibold hover:underline">
-            {t('nav.register')}
-          </Link>
-        </p>
+        {/* Right Form Panel */}
+        <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+          <div>
+            {/* Top Bar: Language switcher visible without scroll at 360px */}
+            <div className="flex items-center justify-between pb-6 mb-6 border-b border-neutral-100">
+              {/* Mobile-only compact brand logo */}
+              <Link to="/" className="lg:hidden inline-flex items-center gap-2 text-neutral-900 font-extrabold text-lg">
+                <span className="w-7 h-7 rounded-lg bg-brand-700 flex items-center justify-center text-white">
+                  <Leaf className="w-4 h-4" />
+                </span>
+                <span>KisanMandi</span>
+              </Link>
+              <div className="ml-auto">
+                <LanguageSwitcher variant="segmented" />
+              </div>
+            </div>
+
+            {/* Title & Subtitle */}
+            <div className="mb-6">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+                {t('auth.login_title')}
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+                {t('auth.login_subtitle')}
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <FormField
+                id="login-email"
+                label={t('auth.email_label')}
+                required
+              >
+                <Input
+                  id="login-email"
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  required
+                />
+              </FormField>
+
+              <FormField
+                id="login-password"
+                label={t('auth.password_label')}
+                required
+              >
+                <div className="relative">
+                  <Input
+                    id="login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="pr-12"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 text-neutral-400 hover:text-neutral-700 focus:outline-none focus:ring-2 focus:ring-brand-600 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </FormField>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  size="lg"
+                  variant="primary"
+                  fullWidth
+                  loading={isLoading}
+                  disabled={isLoading || !form.email || !form.password}
+                  rightIcon={<ArrowRight size={18} />}
+                >
+                  {isLoading ? t('auth.logging_in') : t('auth.sign_in_btn')}
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          {/* Footer Link to Register */}
+          <div className="pt-6 mt-6 border-t border-neutral-100 text-center text-sm text-neutral-600">
+            <span>{t('auth.dont_have_account')} </span>
+            <Link to="/register" className="font-bold text-brand-700 hover:text-brand-800 hover:underline">
+              {t('nav.register')}
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-

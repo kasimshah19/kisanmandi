@@ -2,14 +2,16 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 // Pagination with Prev/Next and page numbers, hides when only 1 page
-export default function Pagination({ page, totalPages, onPageChange }) {
+export default function Pagination({ page, currentPage, totalPages, onPageChange }) {
   const { t } = useTranslation();
   if (totalPages <= 1) return null;
 
+  const activePage = page !== undefined ? page : (currentPage !== undefined ? currentPage : 0);
+
   // Show at most 5 page numbers centered around current
   const pages = [];
-  let start = Math.max(0, page - 2);
-  let end = Math.min(totalPages - 1, page + 2);
+  let start = Math.max(0, activePage - 2);
+  let end = Math.min(totalPages - 1, activePage + 2);
   if (end - start < 4) {
     if (start === 0) end = Math.min(totalPages - 1, start + 4);
     else start = Math.max(0, end - 4);
@@ -19,8 +21,8 @@ export default function Pagination({ page, totalPages, onPageChange }) {
   return (
     <div className="flex items-center justify-center gap-1 mt-6">
       <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 0}
+        onClick={() => onPageChange(activePage - 1)}
+        disabled={activePage === 0}
         aria-label={t('common.previous')}
         className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
       >
@@ -32,15 +34,15 @@ export default function Pagination({ page, totalPages, onPageChange }) {
           key={p}
           onClick={() => onPageChange(p)}
           className={`w-9 h-9 rounded-lg text-sm font-medium transition
-            ${p === page ? 'bg-green-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
+            ${p === activePage ? 'bg-green-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
         >
           {p + 1}
         </button>
       ))}
 
       <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page >= totalPages - 1}
+        onClick={() => onPageChange(activePage + 1)}
+        disabled={activePage >= totalPages - 1}
         aria-label={t('common.next')}
         className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
       >

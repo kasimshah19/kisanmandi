@@ -3,11 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import DashboardLayout from '../../components/DashboardLayout';
 import ProductForm from '../../components/ProductForm';
+import PageHeader from '../../components/ui/PageHeader';
 import { productService } from '../../services/productService';
 import toast from 'react-hot-toast';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 
-const EditProduct = () => {
+export default function EditProduct() {
   const { t } = useTranslation();
   useDocumentTitle(`${t('farmer.edit_product_title')} | KisanMandi`);
 
@@ -37,11 +38,11 @@ const EditProduct = () => {
     setIsSubmitting(true);
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      Object.keys(formData).forEach((key) => data.append(key, formData[key]));
       if (imageFile) {
         data.append('image', imageFile);
       }
-      
+
       await productService.updateProduct(id, data);
       toast.success(t('common.save'));
       navigate('/farmer/products');
@@ -52,21 +53,34 @@ const EditProduct = () => {
     }
   };
 
-  if (isLoading) return <DashboardLayout role="FARMER"><div className="p-8">{t('common.loading')}</div></DashboardLayout>;
+  if (isLoading) {
+    return (
+      <DashboardLayout role="FARMER">
+        <div className="p-12 text-center text-neutral-400 font-medium">Loading produce details...</div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="FARMER">
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">{t('farmer.edit_product_title')}</h1>
-        <ProductForm 
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader
+          breadcrumbs={[
+            { label: t('nav.home'), to: '/' },
+            { label: t('farmer.manage_products'), to: '/farmer/products' },
+            { label: t('farmer.edit_product_title') },
+          ]}
+          title={t('farmer.edit_product_title')}
+          subtitle={`Updating details for "${product?.name || 'Produce'}"`}
+        />
+
+        <ProductForm
           initialData={product}
-          onSubmit={handleSubmit} 
-          isLoading={isSubmitting} 
-          submitText={t('common.save')} 
+          onSubmit={handleSubmit}
+          isLoading={isSubmitting}
+          submitText={t('common.save')}
         />
       </div>
     </DashboardLayout>
   );
-};
-
-export default EditProduct;
+}

@@ -17,7 +17,25 @@ createRoot(document.getElementById('root')).render(
         <ServerStatusProvider>
           <AuthProvider>
             <CartProvider>
-              <Toaster position="top-right" />
+              <Toaster
+                position={typeof window !== 'undefined' && window.innerWidth < 768 ? 'top-center' : 'top-right'}
+                toastOptions={{
+                  duration: 4000,
+                  className: '!rounded-xl !shadow-card !border !border-neutral-200 !text-neutral-800 !bg-white !text-sm !font-medium',
+                  success: {
+                    iconTheme: {
+                      primary: '#15803d',
+                      secondary: '#f0fdf4',
+                    },
+                  },
+                  error: {
+                    iconTheme: {
+                      primary: '#dc2626',
+                      secondary: '#fef2f2',
+                    },
+                  },
+                }}
+              />
               <App />
             </CartProvider>
           </AuthProvider>
