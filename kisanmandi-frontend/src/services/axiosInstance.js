@@ -1,6 +1,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { triggerServerWaking } from '../context/ServerStatusContext';
+import { showReferenceToast } from '../components/ui/ReferenceToast';
+import { captureException } from '../utils/sentry';
 
 const TOKEN_KEY = 'kisanmandi_token';
 
@@ -94,6 +96,15 @@ axiosInstance.interceptors.response.use(
       error.friendlyMessage = 'Cannot connect to the server. Please check your internet connection.';
     }
 
+    // Attach X-Request-Id from response headers or error response body
+    const requestId =
+      error.response?.headers?.['x-request-id'] ||
+      error.response?.headers?.['X-Request-Id'] ||
+      error.response?.data?.requestId;
+    if (requestId) {
+      error.requestId = requestId;
+    }
+
     // Handle HTTP status codes
     if (error.response) {
       const { status } = error.response;
@@ -110,6 +121,9 @@ axiosInstance.interceptors.response.use(
         }
       } else if (status === 403) {
         toast.error('You do not have permission to perform this action.');
+      } else if (status >= 500) {
+        showReferenceToast(requestId);
+        captureException(error, { tags: { requestId } });
       }
     }
 

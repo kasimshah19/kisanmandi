@@ -56,11 +56,14 @@ public class MandiSyncService {
     @Value("${mandi.sync.run-on-startup}")
     private boolean runOnStartup;
 
-    public MandiSyncService(MandiApiClient apiClient, MandiPersistenceService persistenceService, MandiSyncLogRepository logRepository, MandiPriceRepository priceRepository) {
+    private final AppMetricsService appMetricsService;
+
+    public MandiSyncService(MandiApiClient apiClient, MandiPersistenceService persistenceService, MandiSyncLogRepository logRepository, MandiPriceRepository priceRepository, AppMetricsService appMetricsService) {
         this.apiClient = apiClient;
         this.persistenceService = persistenceService;
         this.logRepository = logRepository;
         this.priceRepository = priceRepository;
+        this.appMetricsService = appMetricsService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -191,6 +194,7 @@ public class MandiSyncService {
             syncLog.setDetails(details.toString());
             logRepository.save(syncLog);
             
+            appMetricsService.recordMandiSync(syncLog.getDurationMs(), syncLog.getStatus().name());
             isRunning.set(false);
         }
     }

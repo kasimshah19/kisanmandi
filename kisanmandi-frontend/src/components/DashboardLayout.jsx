@@ -22,7 +22,8 @@ import {
   MoreHorizontal,
   Sprout,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Cpu
 } from 'lucide-react';
 import { farmerOrderService } from '../services/farmerOrderService';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -94,6 +95,7 @@ export default function DashboardLayout({ children, role }) {
     { name: 'Reviews', path: '/admin/reviews', icon: MessageSquare },
     { name: 'Categories', path: '/admin/categories', icon: Tags },
     { name: 'Mandi Sync Logs', path: '/admin/mandi-sync', icon: Database },
+    { name: 'System', path: '/admin/system', icon: Cpu },
   ];
 
   const links = role === 'ADMIN' ? adminLinks : farmerLinks;

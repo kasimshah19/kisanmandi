@@ -54,6 +54,24 @@ public class Order {
     @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
+    @Column(name = "razorpay_order_id", length = 100)
+    private String razorpayOrderId;
+
+    @Column(name = "razorpay_payment_id", length = 100)
+    private String razorpayPaymentId;
+
+    @Column(name = "razorpay_signature", length = 255)
+    private String razorpaySignature;
+
+    @Column(name = "refund_id", length = 100)
+    private String refundId;
+
+    @Column(name = "refund_amount", precision = 12, scale = 2)
+    private BigDecimal refundAmount;
+
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
+
     // Address Snapshot
     @Column(nullable = false, length = 100)
     private String shipName;

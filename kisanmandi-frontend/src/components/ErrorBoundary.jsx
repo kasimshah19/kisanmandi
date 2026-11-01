@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, Copy, Check } from 'lucide-react';
 import i18n from '../i18n';
 import Button from './ui/Button';
+import { captureException } from '../utils/sentry';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, copied: false };
   }
 
   static getDerivedStateFromError(error) {
@@ -17,7 +18,22 @@ export default class ErrorBoundary extends Component {
     if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught an unhandled exception:', error, errorInfo);
     }
+    // Forward to Sentry if initialized
+    captureException(error, { extra: errorInfo });
   }
+
+  handleCopyReference = (code) => {
+    if (!code) return;
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(code);
+      }
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
   handleReload = () => {
     window.location.reload();
@@ -95,6 +111,41 @@ export default class ErrorBoundary extends Component {
                 )}
               </p>
             </div>
+
+            {(() => {
+              const reqId = this.state.error?.requestId;
+              const shortRef = reqId ? reqId.substring(0, 8) : null;
+              if (!shortRef) return null;
+              return (
+                <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 max-w-sm mx-auto text-left space-y-1">
+                  <p className="text-xs text-stone-600">
+                    {i18n.t('common.server_error_with_ref', 'Something went wrong. If it keeps happening, tell us this reference: {{id}}', { id: shortRef })}
+                  </p>
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="font-mono font-bold text-xs bg-white px-2 py-1 rounded border border-stone-200 text-stone-800">
+                      {shortRef}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => this.handleCopyReference(shortRef)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-white hover:bg-stone-100 border border-stone-300 text-stone-700 transition cursor-pointer"
+                    >
+                      {this.state.copied ? (
+                        <>
+                          <Check size={12} className="text-emerald-600" />
+                          <span className="text-emerald-700">{i18n.t('common.copied', 'Copied!')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={12} />
+                          <span>{i18n.t('common.copy_reference', 'Copy')}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
               <Button

@@ -46,10 +46,13 @@ public class DataSeeder implements CommandLineRunner {
                     .email(adminEmail.toLowerCase().trim())
                     .password(passwordEncoder.encode(adminPassword))
                     .role(Role.ADMIN)
+                    .emailVerified(true)
+                    .tokenVersion(1)
+                    .failedLoginAttempts(0)
                     .build();
 
             userRepository.save(admin);
-            log.info("✅ Default admin user created with email: {}", adminEmail);
+            log.info("✅ Default admin user created successfully");
             // Never log the password!
         } else {
             log.info("ℹ Admin user already exists. Skipping creation.");

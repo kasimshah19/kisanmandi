@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { login as loginApi, register as registerApi, getMe } from '../services/authService';
+import { login as loginApi, register as registerApi, getMe, logout as logoutApi } from '../services/authService';
 
 const TOKEN_KEY = 'kisanmandi_token';
 const USER_KEY = 'kisanmandi_user';
@@ -61,8 +61,19 @@ export function AuthProvider({ children }) {
     return result;
   };
 
-  // Logout: clear everything
+  // Update user state partially
+  const updateUser = (patch) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...patch };
+      localStorage.setItem(USER_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Logout: notify server & clear everything locally
   const logout = () => {
+    logoutApi();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setToken(null);
@@ -72,7 +83,7 @@ export function AuthProvider({ children }) {
   const isAuthenticated = !!token && !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated, getDashboardPath }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser, isAuthenticated, getDashboardPath }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { cartService } from '../services/cartService';
 import { useAuth } from './AuthContext';
 
-const CartContext = createContext(null);
+export const CartContext = createContext(null);
 
 // Provides cart count to the whole app (only loads for CUSTOMER role)
 export function CartProvider({ children }) {

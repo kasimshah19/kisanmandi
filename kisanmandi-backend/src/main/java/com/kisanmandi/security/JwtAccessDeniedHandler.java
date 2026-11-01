@@ -29,6 +29,8 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", 403);
         body.put("message", "You do not have permission to access this resource");
+        String reqId = org.slf4j.MDC.get("requestId");
+        body.put("requestId", reqId != null && !reqId.isBlank() ? reqId : "unknown");
 
         new ObjectMapper().writeValue(response.getOutputStream(), body);
     }

@@ -38,6 +38,7 @@ public class GlobalExceptionHandler {
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", 400);
         body.put("message", "Validation failed");
+        body.put("requestId", resolveRequestId());
         body.put("errors", errors);
         return ResponseEntity.badRequest().body(body);
     }
@@ -54,10 +55,19 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password");
     }
 
-    // ─── Account blocked → 403 ───
-    @ExceptionHandler({DisabledException.class, LockedException.class})
-    public ResponseEntity<Map<String, Object>> handleDisabled(Exception ex) {
+    // ─── Account disabled (blocked) → 403 ───
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<Map<String, Object>> handleDisabled(DisabledException ex) {
         return buildResponse(HttpStatus.FORBIDDEN, "Your account is blocked");
+    }
+
+    // ─── Account locked (brute-force lockout) → 423 ───
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<Map<String, Object>> handleLocked(LockedException ex) {
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? ex.getMessage()
+                : "Your account is temporarily locked. Please try again later or reset your password.";
+        return buildResponse(HttpStatus.LOCKED, message);
     }
 
     // ─── Access denied (wrong role) → 403 ───
@@ -173,6 +183,12 @@ public class GlobalExceptionHandler {
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", status.value());
         body.put("message", message);
+        body.put("requestId", resolveRequestId());
         return new ResponseEntity<>(body, status);
+    }
+
+    private String resolveRequestId() {
+        String reqId = org.slf4j.MDC.get("requestId");
+        return reqId != null && !reqId.isBlank() ? reqId : "unknown";
     }
 }

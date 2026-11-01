@@ -89,6 +89,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             body.put("status", 429);
             body.put("error", "Too Many Requests");
             body.put("message", "Too many requests. Please try again later.");
+            String reqId = org.slf4j.MDC.get("requestId");
+            body.put("requestId", reqId != null && !reqId.isBlank() ? reqId : "unknown");
 
             objectMapper.writeValue(response.getOutputStream(), body);
             return true;

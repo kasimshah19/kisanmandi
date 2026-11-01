@@ -38,6 +38,8 @@ class OrderServiceTest {
     private UserRepository userRepository;
     @Mock
     private ReviewRepository reviewRepository;
+    @Mock
+    private AppMetricsService appMetricsService;
 
     @InjectMocks
     private OrderService orderService;

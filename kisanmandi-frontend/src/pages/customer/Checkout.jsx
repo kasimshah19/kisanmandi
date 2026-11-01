@@ -10,12 +10,17 @@ import {
   Plus,
   ShieldCheck,
   PackageCheck,
-  Phone
+  Phone,
+  CreditCard,
+  X
 } from 'lucide-react';
 import { addressService } from '../../services/addressService';
 import { cartService } from '../../services/cartService';
 import { orderService } from '../../services/orderService';
+import { getPublicConfig } from '../../services/configService';
+import { createPaymentOrder, verifyPayment } from '../../services/paymentService';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import AddressForm from '../../components/AddressForm';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
@@ -31,15 +36,19 @@ export default function Checkout() {
   useDocumentTitle(`${t('checkout.title')} | KisanMandi`);
 
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { refreshCart } = useCart();
 
   const [cart, setCart] = useState(null);
   const [addresses, setAddresses] = useState([]);
+  const [paymentConfig, setPaymentConfig] = useState({ paymentEnabled: false, razorpayKeyId: '' });
+  const [paymentMode, setPaymentMode] = useState('COD');
   const [loading, setLoading] = useState(true);
 
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [simulatedModal, setSimulatedModal] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -47,9 +56,10 @@ export default function Checkout() {
 
   const loadData = async () => {
     try {
-      const [cartRes, addrRes] = await Promise.all([
+      const [cartRes, addrRes, configRes] = await Promise.all([
         cartService.get(),
-        addressService.getAll()
+        addressService.getAll(),
+        getPublicConfig().catch(() => ({ paymentEnabled: false }))
       ]);
 
       const cartData = cartRes.data;
@@ -65,6 +75,7 @@ export default function Checkout() {
 
       setCart(cartData);
       setAddresses(addrRes.data || []);
+      setPaymentConfig(configRes || { paymentEnabled: false });
 
       // Auto-select default or first address
       if (addrRes.data && addrRes.data.length > 0) {
@@ -100,11 +111,54 @@ export default function Checkout() {
     }
     setPlacingOrder(true);
     try {
-      const res = await orderService.checkout(selectedAddressId, 'COD');
-      toast.success(t('checkout.order_success_title'));
-      refreshCart();
+      const res = await orderService.checkout(selectedAddressId, paymentMode);
       const placed = Array.isArray(res.data) ? res.data[0] : res.data;
-      navigate('/customer/orders', { state: { justPlacedOrder: placed || { id: Date.now() } } });
+
+      if (paymentMode === 'ONLINE') {
+        const paymentOrder = await createPaymentOrder(placed.id);
+
+        if (window.Razorpay && paymentConfig?.razorpayKeyId && !paymentConfig.razorpayKeyId.includes('simulated')) {
+          const rzpOptions = {
+            key: paymentConfig.razorpayKeyId,
+            amount: paymentOrder.amount * 100,
+            currency: 'INR',
+            name: 'KisanMandi',
+            description: `Order #${placed.id}`,
+            order_id: paymentOrder.razorpayOrderId,
+            handler: async function (response) {
+              try {
+                await verifyPayment({
+                  orderId: placed.id,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature
+                });
+                toast.success(t('checkout.payment_success', 'Payment successful!'));
+                refreshCart();
+                navigate('/customer/orders', { state: { justPlacedOrder: placed } });
+              } catch (err) {
+                toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
+                navigate('/customer/orders');
+              }
+            },
+            prefill: {
+              name: user?.name,
+              email: user?.email,
+              contact: user?.phone
+            },
+            theme: { color: '#15803d' }
+          };
+          const rzp = new window.Razorpay(rzpOptions);
+          rzp.open();
+        } else {
+          // Fallback simulation modal for test/local development
+          setSimulatedModal({ order: placed, paymentOrder });
+        }
+      } else {
+        toast.success(t('checkout.order_success_title'));
+        refreshCart();
+        navigate('/customer/orders', { state: { justPlacedOrder: placed || { id: Date.now() } } });
+      }
     } catch (error) {
       if (error.response?.status === 409) {
         toast.error(error.response?.data?.message || 'Price or stock changed. Please review your cart.');
@@ -113,6 +167,27 @@ export default function Checkout() {
         toast.error(error.response?.data?.message || t('errors.generic_retry'));
       }
       setPlacingOrder(false);
+    }
+  };
+
+  const handleSimulatePaymentSuccess = async () => {
+    if (!simulatedModal) return;
+    try {
+      await verifyPayment({
+        orderId: simulatedModal.order.id,
+        razorpayOrderId: simulatedModal.paymentOrder.razorpayOrderId,
+        razorpayPaymentId: `pay_sim_${Date.now()}`,
+        razorpaySignature: 'mock_sig_valid'
+      });
+      toast.success(t('checkout.payment_success', 'Payment successful!'));
+      refreshCart();
+      const placed = simulatedModal.order;
+      setSimulatedModal(null);
+      navigate('/customer/orders', { state: { justPlacedOrder: placed } });
+    } catch (err) {
+      toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
+      setSimulatedModal(null);
+      navigate('/customer/orders');
     }
   };
 
@@ -148,7 +223,7 @@ export default function Checkout() {
         {/* 3-Step Visual Stepper for low-literacy users */}
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-neutral-200/90 shadow-xs">
           <div className="flex items-center justify-between max-w-lg mx-auto">
-            {steps.map((st, idx) => (
+            {steps.map((st) => (
               <div key={st.num} className="flex items-center gap-2 sm:gap-3">
                 <div
                   className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-sm transition ${
@@ -168,19 +243,15 @@ export default function Checkout() {
                     {st.label}
                   </span>
                 </div>
-                {idx < steps.length - 1 && (
-                  <div className="w-8 sm:w-16 h-0.5 bg-neutral-200 mx-1 sm:mx-2" />
-                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Checkout Main 2-Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Left 2 Cols: Delivery Address & Payment Method */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left 2 Columns: Steps 1 & 2 */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Step 1: Delivery Address */}
+            {/* Step 1: Delivery Address Selection */}
             <div className="bg-white rounded-3xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                 <div className="flex items-center gap-2.5">
@@ -192,7 +263,9 @@ export default function Checkout() {
                       1. {t('checkout.delivery_address')}
                     </h2>
                     <p className="text-xs text-neutral-500">
-                      {t('checkout.select_address')}
+                      {addresses.length > 0
+                        ? t('checkout.choose_saved_address')
+                        : t('checkout.no_addresses_yet')}
                     </p>
                   </div>
                 </div>
@@ -205,30 +278,21 @@ export default function Checkout() {
                     className="text-xs font-bold"
                   >
                     <Plus size={14} className="mr-1" />
-                    {t('checkout.add_new_address')}
+                    {t('common.add')}
                   </Button>
                 )}
               </div>
 
               {showAddForm ? (
-                <div className="bg-neutral-50 p-4 sm:p-5 rounded-2xl border border-neutral-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-700">
-                      {t('checkout.add_new_address')}
-                    </h3>
-                    {addresses.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAddForm(false)}
-                        className="text-xs font-semibold text-neutral-500 hover:text-neutral-800"
-                      >
-                        {t('common.cancel')}
-                      </button>
-                    )}
-                  </div>
+                <div className="bg-neutral-50 p-4 sm:p-5 rounded-2xl border border-neutral-200/80">
+                  <h3 className="font-bold text-neutral-900 text-sm mb-3">
+                    {t('checkout.add_new_address')}
+                  </h3>
                   <AddressForm
                     onSubmit={handleAddAddress}
-                    onCancel={addresses.length > 0 ? () => setShowAddForm(false) : null}
+                    onCancel={() => {
+                      if (addresses.length > 0) setShowAddForm(false);
+                    }}
                   />
                 </div>
               ) : (
@@ -306,30 +370,90 @@ export default function Checkout() {
                     2. {t('checkout.payment_method')}
                   </h2>
                   <p className="text-xs text-neutral-500">
-                    {t('checkout.pay_on_delivery')}
+                    {paymentConfig?.paymentEnabled
+                      ? t('checkout.choose_payment_method', 'Choose your preferred payment method')
+                      : t('checkout.pay_on_delivery')}
                   </p>
                 </div>
               </div>
 
-              {/* One Big Selected Card: Pay Cash When You Receive */}
-              <div className="p-5 rounded-2xl border-2 border-green-600 bg-green-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-7 h-7 rounded-full bg-green-700 text-white flex items-center justify-center mt-0.5 shrink-0 shadow-xs">
-                    <CheckCircle2 size={18} />
+              {/* Payment Mode Options */}
+              <div className="space-y-3">
+                {/* Cash on Delivery (COD) Card */}
+                <label
+                  className={`p-5 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs cursor-pointer transition ${
+                    paymentMode === 'COD'
+                      ? 'border-green-600 bg-green-50/50'
+                      : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <input
+                      type="radio"
+                      name="payment_mode"
+                      value="COD"
+                      checked={paymentMode === 'COD'}
+                      onChange={() => setPaymentMode('COD')}
+                      className="mt-1 w-5 h-5 text-green-600 focus:ring-green-500"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Banknote size={18} className="text-green-700" />
+                        <span className="font-black text-neutral-900 text-base">
+                          {t('checkout.cash_on_delivery')}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-neutral-600 mt-1 leading-relaxed">
+                        {t('checkout.cod_explanation')}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-black text-neutral-900 text-base block">
-                      {t('checkout.cash_on_delivery')}
+                  {paymentMode === 'COD' && (
+                    <span className="inline-flex items-center gap-1 bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full shrink-0 self-start sm:self-center">
+                      <CheckCircle2 size={13} />
+                      {t('checkout.selected')}
                     </span>
-                    <p className="text-xs sm:text-sm text-neutral-600 mt-0.5 leading-relaxed">
-                      {t('checkout.cod_explanation')}
-                    </p>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1 bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full shrink-0 self-start sm:self-center">
-                  <CheckCircle2 size={13} />
-                  {t('checkout.selected')}
-                </span>
+                  )}
+                </label>
+
+                {/* Online Payment Card (Visible if paymentEnabled) */}
+                {paymentConfig?.paymentEnabled && (
+                  <label
+                    className={`p-5 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs cursor-pointer transition ${
+                      paymentMode === 'ONLINE'
+                        ? 'border-green-600 bg-green-50/50'
+                        : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <input
+                        type="radio"
+                        name="payment_mode"
+                        value="ONLINE"
+                        checked={paymentMode === 'ONLINE'}
+                        onChange={() => setPaymentMode('ONLINE')}
+                        className="mt-1 w-5 h-5 text-green-600 focus:ring-green-500"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <CreditCard size={18} className="text-green-700" />
+                          <span className="font-black text-neutral-900 text-base">
+                            {t('checkout.online_payment', 'Online Payment (UPI, Cards, NetBanking)')}
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-neutral-600 mt-1 leading-relaxed">
+                          {t('checkout.online_explanation', 'Pay securely via UPI, Debit/Credit Card, or NetBanking.')}
+                        </p>
+                      </div>
+                    </div>
+                    {paymentMode === 'ONLINE' && (
+                      <span className="inline-flex items-center gap-1 bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full shrink-0 self-start sm:self-center">
+                        <CheckCircle2 size={13} />
+                        {t('checkout.selected')}
+                      </span>
+                    )}
+                  </label>
+                )}
               </div>
 
               {/* Multi-Farmer Notice */}
@@ -349,71 +473,148 @@ export default function Checkout() {
                   <h2 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight">
                     3. {t('checkout.step_review')}
                   </h2>
-                  <p className="text-xs text-neutral-500">{t('checkout.order_summary')}</p>
+                  <p className="text-xs text-neutral-500">
+                    {t('checkout.review_order')}
+                  </p>
                 </div>
               </div>
 
-              {/* Scrollable Items */}
-              <div className="space-y-3 max-h-56 overflow-y-auto pr-1 divide-y divide-neutral-100">
-                {cart.items.map((item) => (
-                  <div key={item.id} className="pt-2 first:pt-0 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-neutral-100 overflow-hidden border border-neutral-200/80 shrink-0">
-                      <img
-                        src={getOptimizedImageUrl(item.imageUrl, 120)}
-                        alt={item.name || 'Produce item'}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 text-xs">
-                      <p className="font-bold text-neutral-900 truncate">{item.name}</p>
-                      <p className="text-neutral-500">
-                        {item.quantity} × {formatINR(item.pricePerUnit)}
+              {/* Items List in Summary */}
+              <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                {cart?.items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 text-xs sm:text-sm">
+                    <img
+                      src={getOptimizedImageUrl(item.productImage)}
+                      alt={item.productName}
+                      className="w-11 h-11 rounded-xl object-cover bg-neutral-100 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-neutral-900 truncate">
+                        {item.productName}
+                      </p>
+                      <p className="text-neutral-500 text-xs">
+                        {item.quantity} {item.unit} &times; {formatINR(item.pricePerUnit)}
                       </p>
                     </div>
-                    <span className="font-extrabold text-neutral-900 text-xs tabular-nums">
+                    <span className="font-black text-neutral-900 tabular-nums">
                       {formatINR(item.lineTotal)}
                     </span>
                   </div>
                 ))}
               </div>
 
-              {/* Totals */}
-              <div className="border-t border-neutral-200 pt-3 space-y-2 text-xs sm:text-sm">
+              {/* Price Breakdown */}
+              <div className="pt-3 border-t border-neutral-100 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-neutral-600">
-                  <span>{t('cart.item_count', { count: cart.itemCount })}</span>
-                  <span className="font-bold text-neutral-900 tabular-nums">
-                    {formatINR(cart.totalAmount)}
+                  <span>{t('cart.item_total')}</span>
+                  <span className="font-bold tabular-nums text-neutral-900">
+                    {formatINR(cart?.totalAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between text-neutral-600">
-                  <span>{t('checkout.delivery_charges')}</span>
-                  <span className="text-green-700 font-bold">{t('checkout.free_delivery')}</span>
+                  <span>{t('cart.delivery_fee')}</span>
+                  <span className="font-bold text-green-700 uppercase tracking-wider text-xs">
+                    {t('cart.free')}
+                  </span>
                 </div>
-                <div className="border-t border-neutral-200 pt-3 flex justify-between items-baseline font-black text-lg text-neutral-900">
-                  <span>{t('checkout.grand_total')}</span>
-                  <span className="text-2xl text-green-800 tabular-nums">
-                    {formatINR(cart.totalAmount)}
+                <div className="pt-3 border-t-2 border-neutral-200 flex justify-between items-baseline">
+                  <span className="font-black text-neutral-900 text-sm sm:text-base">
+                    {t('common.total')}
+                  </span>
+                  <span className="text-2xl font-black text-green-800 tabular-nums">
+                    {formatINR(cart?.totalAmount)}
                   </span>
                 </div>
               </div>
 
-              {/* Huge Place Order CTA with Double-Click Protection */}
+              {/* Big Green Primary CTA */}
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full min-h-[56px] text-base sm:text-lg font-black shadow-lg rounded-2xl"
-                disabled={placingOrder || !selectedAddressId || showAddForm}
+                fullWidth
                 loading={placingOrder}
                 onClick={handleCheckout}
+                disabled={!selectedAddressId}
+                className="py-4 text-base font-black shadow-md shadow-green-700/20"
               >
-                <span>{placingOrder ? t('checkout.placing_order') : t('checkout.place_order_btn')}</span>
-                {!placingOrder && <ArrowRight size={19} className="ml-2" />}
+                <span>{paymentMode === 'ONLINE' ? t('checkout.pay_and_place', 'Pay & Place Order') : t('checkout.place_order_button')}</span>
+                <ArrowRight size={18} className="ml-1.5" />
               </Button>
+
+              {/* Trust Badge */}
+              <div className="flex items-center justify-center gap-2 text-xs text-neutral-600 pt-1">
+                <ShieldCheck size={16} className="text-green-700 shrink-0" />
+                <span>{t('checkout.direct_from_farmers_trust')}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Test / Simulated Payment Modal */}
+      {simulatedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5 border border-gray-100">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-black text-lg text-gray-900 dark:text-gray-100">
+                  {t('checkout.gateway_simulation', 'Razorpay Gateway (Test Mode)')}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSimulatedModal(null);
+                  navigate('/customer/orders');
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl text-sm">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>{t('orders.order_id', 'Order ID')}</span>
+                <span className="font-mono font-bold text-gray-900 dark:text-gray-200">
+                  #{simulatedModal.order.id}
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                <span>{t('checkout.gateway_order_id', 'Gateway Order ID')}</span>
+                <span className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate max-w-[200px]">
+                  {simulatedModal.paymentOrder.razorpayOrderId}
+                </span>
+              </div>
+              <div className="flex justify-between font-bold text-base text-gray-900 dark:text-gray-100 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <span>{t('common.total', 'Total Amount')}</span>
+                <span className="text-emerald-700">{formatINR(simulatedModal.paymentOrder.amount)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                fullWidth
+                onClick={() => {
+                  setSimulatedModal(null);
+                  navigate('/customer/orders');
+                }}
+              >
+                {t('common.cancel', 'Cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                fullWidth
+                onClick={handleSimulatePaymentSuccess}
+              >
+                {t('checkout.simulate_success', 'Simulate Success')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

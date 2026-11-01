@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ServerStatusBanner from './components/ServerStatusBanner';
+import EmailVerificationBanner from './components/EmailVerificationBanner';
 import LanguageWelcomeModal from './components/LanguageWelcomeModal';
 import PageLoader from './components/PageLoader';
 import ScrollToTop from './components/ScrollToTop';
@@ -23,6 +24,9 @@ const MandiDashboard = lazy(() => import('./pages/public/MandiDashboard'));
 const FarmerPublicProfile = lazy(() => import('./pages/public/FarmerPublicProfile'));
 const About = lazy(() => import('./pages/public/About'));
 const Help = lazy(() => import('./pages/public/Help'));
+const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
+const VerifyEmail = lazy(() => import('./pages/public/VerifyEmail'));
 
 // Farmer routes
 const FarmerDashboard = lazy(() => import('./pages/farmer/FarmerDashboard'));
@@ -53,6 +57,7 @@ const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
 const ManageProducts = lazy(() => import('./pages/admin/ManageProducts'));
 const AllOrders = lazy(() => import('./pages/admin/AllOrders'));
 const ManageReviews = lazy(() => import('./pages/admin/ManageReviews'));
+const AdminSystem = lazy(() => import('./pages/admin/AdminSystem'));
 
 function App() {
   const location = useLocation();
@@ -72,7 +77,10 @@ function App() {
     isDashboardRoute ||
     location.pathname === '/' ||
     location.pathname === '/login' ||
-    location.pathname === '/register';
+    location.pathname === '/register' ||
+    location.pathname === '/forgot-password' ||
+    location.pathname === '/reset-password' ||
+    location.pathname === '/verify-email';
 
   // Silent health ping on initial load to wake the Render server early
   useEffect(() => {
@@ -85,6 +93,7 @@ function App() {
     <div className="flex flex-col min-h-screen bg-warm-50 text-gray-900">
       <ScrollToTop />
       <ServerStatusBanner />
+      <EmailVerificationBanner />
       <LanguageWelcomeModal />
       {!isDashboardRoute && <Navbar />}
       <main className={`flex-grow ${isFullBleed ? '' : 'container mx-auto px-4 py-8'}`}>
@@ -94,6 +103,9 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/products" element={<BrowseProducts />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/mandi" element={<MandiDashboard />} />
@@ -297,6 +309,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ADMIN']}>
                   <ManageReviews />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/system"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminSystem />
                 </ProtectedRoute>
               }
             />

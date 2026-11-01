@@ -10,6 +10,10 @@ import { TextSizeProvider } from './context/TextSizeContext'
 import './i18n'
 import './index.css'
 import App from './App.jsx'
+import { initSentry } from './utils/sentry'
+
+// Lazy-load Sentry only when VITE_SENTRY_DSN is configured
+initSentry();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

@@ -174,7 +174,14 @@ flowchart LR
 - **Flexible Cart & Multi-Address Book**:
   - Save multiple delivery addresses (Home, Office, Alternate) with default selection.
   - Cart state machine recalculates item totals, validates live stock limits, and handles single-farmer order clarity.
-- **Transparent Cash on Delivery (COD) Checkout**: Built for mainstream Indian household convenience—no upfront card payments or payment gateway drop-offs. Pay upon physical delivery and inspection.
+- **Flexible Payment Modes (Razorpay Online & Cash on Delivery)**:
+  - Online payment via Razorpay supporting UPI, Debit/Credit Cards, and NetBanking with constant-time HMAC-SHA256 signature verification (`MessageDigest.isEqual`).
+  - Graceful degradation: If payment gateway keys are missing, the frontend automatically falls back to 100% Cash on Delivery (COD) via public configuration (`GET /api/config/public`).
+  - Automated refund recording upon customer cancellation or farmer order rejection.
+- **In-App Milestone Notifications**:
+  - Navbar bell with live unread badge count and interactive popover dropdown.
+  - Automated alerts across order milestones: Order Placed, Accepted, Packed, Dispatched, Delivered, Cancelled, and Refunded.
+  - One-click "Mark all read" and individual read toggles with direct deep-linking to order tracking.
 - **Interactive 5-Stage Visual Order Stepper**: Monitor order progression in real time with a color-coded visual tracking pipeline:
   $$\text{PLACED} \longrightarrow \text{ACCEPTED} \longrightarrow \text{PACKED} \longrightarrow \text{OUT\_FOR\_DELIVERY} \longrightarrow \text{DELIVERED}$$
   Customers retain the ability to cancel an order before the farmer accepts and begins packing.

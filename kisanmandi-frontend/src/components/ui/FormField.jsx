@@ -23,8 +23,8 @@ export function FormField({
         </label>
       )}
 
-      {/* Clone child to attach id and aria-describedby automatically if valid element */}
-      {React.isValidElement(children)
+      {/* Clone child to attach id and aria-describedby automatically if valid element and not a wrapper div */}
+      {React.isValidElement(children) && children.type !== 'div'
         ? React.cloneElement(children, {
             id: children.props.id || fieldId,
             'aria-describedby': children.props['aria-describedby'] || describedBy,

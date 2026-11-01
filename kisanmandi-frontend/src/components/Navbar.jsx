@@ -25,6 +25,7 @@ import { useCart } from '../context/CartContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import TextSizeControl from './ui/TextSizeControl';
 import Button from './ui/Button';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -187,6 +188,9 @@ export default function Navbar() {
               )}
             </Link>
           )}
+
+          {/* Notifications Bell */}
+          <NotificationBell />
 
           {/* Desktop Language Switcher (Dropdown) */}
           <LanguageSwitcher variant="dropdown" />
@@ -388,6 +392,9 @@ export default function Navbar() {
               )}
             </Link>
           )}
+
+          {/* Mobile Notifications Bell */}
+          <NotificationBell />
 
           <button
             ref={hamburgerButtonRef}

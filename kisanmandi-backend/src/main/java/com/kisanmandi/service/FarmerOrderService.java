@@ -23,6 +23,9 @@ public class FarmerOrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final AppMetricsService appMetricsService;
+    private final NotificationService notificationService;
+    private final PaymentService paymentService;
 
     @Transactional(readOnly = true)
     public PageResponse<OrderSummaryResponse> list(Long farmerId, OrderStatus status, int page, int size) {
@@ -133,6 +136,58 @@ public class FarmerOrderService {
         
         order.addHistory(history);
         orderRepository.save(order);
+        if (appMetricsService != null) {
+            appMetricsService.incrementOrderStatusChanges(target.name());
+        }
+
+        if (target == OrderStatus.REJECTED) {
+            if (paymentService != null) {
+                paymentService.processRefund(order, request.getNote());
+            }
+            if (notificationService != null) {
+                notificationService.createNotification(
+                        order.getCustomer(),
+                        "Order Rejected",
+                        "Your Order #" + order.getId() + " was rejected by the farmer. Reason: " + request.getNote(),
+                        "ORDER_REJECTED",
+                        String.valueOf(order.getId())
+                );
+            }
+        } else if (notificationService != null) {
+            if (target == OrderStatus.ACCEPTED) {
+                notificationService.createNotification(
+                        order.getCustomer(),
+                        "Order Accepted",
+                        "Your Order #" + order.getId() + " has been accepted by the farmer.",
+                        "ORDER_ACCEPTED",
+                        String.valueOf(order.getId())
+                );
+            } else if (target == OrderStatus.PACKED) {
+                notificationService.createNotification(
+                        order.getCustomer(),
+                        "Order Packed",
+                        "Your Order #" + order.getId() + " is packed and ready for dispatch.",
+                        "ORDER_PACKED",
+                        String.valueOf(order.getId())
+                );
+            } else if (target == OrderStatus.OUT_FOR_DELIVERY) {
+                notificationService.createNotification(
+                        order.getCustomer(),
+                        "Out for Delivery",
+                        "Your Order #" + order.getId() + " is out for delivery.",
+                        "ORDER_OUT_FOR_DELIVERY",
+                        String.valueOf(order.getId())
+                );
+            } else if (target == OrderStatus.DELIVERED) {
+                notificationService.createNotification(
+                        order.getCustomer(),
+                        "Order Delivered",
+                        "Your Order #" + order.getId() + " has been delivered! Please review your items.",
+                        "ORDER_DELIVERED",
+                        String.valueOf(order.getId())
+                );
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -196,6 +251,9 @@ public class FarmerOrderService {
                 .status(order.getStatus())
                 .paymentMode(order.getPaymentMode())
                 .paymentStatus(order.getPaymentStatus())
+                .razorpayOrderId(order.getRazorpayOrderId())
+                .refundAmount(order.getRefundAmount())
+                .refundedAt(order.getRefundedAt())
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .shipName(order.getShipName())

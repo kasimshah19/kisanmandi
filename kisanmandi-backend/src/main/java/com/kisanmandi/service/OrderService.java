@@ -37,11 +37,15 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final com.kisanmandi.repository.ReviewRepository reviewRepository;
+    private final AppMetricsService appMetricsService;
+    private final NotificationService notificationService;
+    private final PaymentService paymentService;
 
     @Transactional
     public List<OrderSummaryResponse> checkout(Long customerId, CheckoutRequest request) {
         List<CartItem> cartItems = cartItemRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
         if (cartItems.isEmpty()) {
+            appMetricsService.incrementCheckoutFailures("cart_empty");
             throw new CartEmptyException("Cart is empty");
         }
 
@@ -84,12 +88,14 @@ public class OrderService {
                 Product p = cItem.getProduct();
                 
                 if (!p.isPubliclyVisible()) {
+                    appMetricsService.incrementCheckoutFailures("product_unavailable");
                     throw new ProductUnavailableException(p.getName() + " is no longer available.");
                 }
 
                 // Atomic stock check and decrease
                 int updatedRows = productRepository.decreaseStock(p.getId(), cItem.getQuantity());
                 if (updatedRows == 0) {
+                    appMetricsService.incrementCheckoutFailures("insufficient_stock");
                     throw new InsufficientStockException(p.getName() + ": not enough stock or product unavailable");
                 }
 
@@ -118,7 +124,22 @@ public class OrderService {
                     .build();
             order.addHistory(history);
 
-            createdOrders.add(orderRepository.save(order));
+            Order savedOrder = orderRepository.save(order);
+            createdOrders.add(savedOrder);
+            if (appMetricsService != null) {
+                appMetricsService.incrementOrdersPlaced(savedOrder.getPaymentMode().name());
+                appMetricsService.incrementOrderStatusChanges(OrderStatus.PLACED.name());
+            }
+
+            if (notificationService != null) {
+                notificationService.createNotification(
+                        farmer,
+                        "New Order Received",
+                        "Order #" + savedOrder.getId() + " placed by " + customer.getName() + " for \u20B9" + savedOrder.getTotalAmount(),
+                        "ORDER_PLACED",
+                        String.valueOf(savedOrder.getId())
+                );
+            }
         }
 
         cartItemRepository.deleteByCustomerId(customerId);
@@ -201,6 +222,23 @@ public class OrderService {
         
         order.addHistory(history);
         orderRepository.save(order);
+        if (appMetricsService != null) {
+            appMetricsService.incrementOrderStatusChanges(OrderStatus.CANCELLED.name());
+        }
+
+        if (paymentService != null) {
+            paymentService.processRefund(order, request != null ? request.getReason() : "Customer cancelled");
+        }
+
+        if (notificationService != null) {
+            notificationService.createNotification(
+                    order.getFarmer(),
+                    "Order Cancelled",
+                    "Order #" + order.getId() + " was cancelled by the customer.",
+                    "ORDER_CANCELLED",
+                    String.valueOf(order.getId())
+            );
+        }
     }
 
     private OrderSummaryResponse mapToSummary(Order order) {
@@ -251,6 +289,9 @@ public class OrderService {
                 .status(order.getStatus())
                 .paymentMode(order.getPaymentMode())
                 .paymentStatus(order.getPaymentStatus())
+                .razorpayOrderId(order.getRazorpayOrderId())
+                .refundAmount(order.getRefundAmount())
+                .refundedAt(order.getRefundedAt())
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .shipName(order.getShipName())

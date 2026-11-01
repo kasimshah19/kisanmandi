@@ -1,14 +1,16 @@
 package com.kisanmandi.service;
 
-import com.kisanmandi.dto.AuthResponse;
-import com.kisanmandi.dto.LoginRequest;
-import com.kisanmandi.dto.RegisterRequest;
+import com.kisanmandi.dto.*;
+import com.kisanmandi.entity.PasswordResetToken;
 import com.kisanmandi.entity.Role;
 import com.kisanmandi.entity.User;
 import com.kisanmandi.entity.UserStatus;
 import com.kisanmandi.exception.DuplicateEmailException;
+import com.kisanmandi.repository.EmailVerificationTokenRepository;
+import com.kisanmandi.repository.PasswordResetTokenRepository;
 import com.kisanmandi.repository.UserRepository;
 import com.kisanmandi.security.JwtUtil;
+import com.kisanmandi.security.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,9 +21,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,6 +39,12 @@ class AuthServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Mock
+    private EmailVerificationTokenRepository emailVerificationTokenRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -43,11 +53,26 @@ class AuthServiceTest {
     @Mock
     private AuthenticationManager authenticationManager;
 
+    @Mock
+    private AppMetricsService appMetricsService;
+
+    @Mock
+    private EmailService emailService;
+
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, passwordEncoder, jwtUtil, authenticationManager);
+        authService = new AuthService(
+                userRepository,
+                passwordResetTokenRepository,
+                emailVerificationTokenRepository,
+                passwordEncoder,
+                jwtUtil,
+                authenticationManager,
+                appMetricsService,
+                emailService
+        );
     }
 
     @Test
@@ -56,6 +81,11 @@ class AuthServiceTest {
         RegisterRequest request = new RegisterRequest("  Ramesh Kumar  ", "  Ramesh@Test.com  ", "password123", "9876543210", Role.CUSTOMER);
         when(userRepository.existsByEmail("ramesh@test.com")).thenReturn(false);
         when(passwordEncoder.encode("password123")).thenReturn("hashed_password");
+        when(userRepository.save(any(User.class))).thenAnswer(i -> {
+            User u = i.getArgument(0);
+            u.setId(10L);
+            return u;
+        });
 
         String result = authService.register(request);
 
@@ -68,6 +98,8 @@ class AuthServiceTest {
         assertEquals("ramesh@test.com", savedUser.getEmail());
         assertEquals("hashed_password", savedUser.getPassword());
         assertEquals(Role.CUSTOMER, savedUser.getRole());
+        assertFalse(savedUser.isEmailVerified());
+        assertEquals(1, savedUser.getTokenVersion());
     }
 
     @Test
@@ -91,7 +123,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("Login: Valid credentials returns token and user info")
+    @DisplayName("Login: Valid credentials returns token and user info with tokenVersion")
     void login_success() {
         LoginRequest request = new LoginRequest("ramesh@test.com", "password123");
         User user = User.builder()
@@ -100,37 +132,134 @@ class AuthServiceTest {
                 .email("ramesh@test.com")
                 .role(Role.CUSTOMER)
                 .status(UserStatus.ACTIVE)
+                .tokenVersion(1)
+                .emailVerified(true)
                 .build();
 
         when(userRepository.findByEmail("ramesh@test.com")).thenReturn(Optional.of(user));
-        when(jwtUtil.generateToken("ramesh@test.com", "CUSTOMER")).thenReturn("valid.jwt.token");
+        when(jwtUtil.generateToken("ramesh@test.com", "CUSTOMER", 1)).thenReturn("valid.jwt.token");
 
         AuthResponse response = authService.login(request);
 
         assertNotNull(response);
         assertEquals("valid.jwt.token", response.getToken());
         assertEquals("Ramesh", response.getName());
+        assertTrue(response.isEmailVerified());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
     }
 
     @Test
-    @DisplayName("Login: Bad password throws BadCredentialsException")
-    void login_badPassword_throwsBadCredentialsException() {
+    @DisplayName("Login: Bad password increments failed attempts")
+    void login_badPassword_incrementsFailedAttempts() {
         LoginRequest request = new LoginRequest("ramesh@test.com", "wrongpassword");
+        User user = User.builder()
+                .id(1L)
+                .email("ramesh@test.com")
+                .failedLoginAttempts(2)
+                .build();
+
+        when(userRepository.findByEmail("ramesh@test.com")).thenReturn(Optional.of(user));
         doThrow(new BadCredentialsException("Bad credentials"))
                 .when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
 
         assertThrows(BadCredentialsException.class, () -> authService.login(request));
+        assertEquals(3, user.getFailedLoginAttempts());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("Login: 5 failed attempts locks user account")
+    void login_fiveFailedAttempts_locksAccount() {
+        LoginRequest request = new LoginRequest("ramesh@test.com", "wrongpassword");
+        User user = User.builder()
+                .id(1L)
+                .email("ramesh@test.com")
+                .failedLoginAttempts(4)
+                .build();
+
+        when(userRepository.findByEmail("ramesh@test.com")).thenReturn(Optional.of(user));
+        doThrow(new BadCredentialsException("Bad credentials"))
+                .when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+        assertThrows(BadCredentialsException.class, () -> authService.login(request));
+        assertEquals(5, user.getFailedLoginAttempts());
+        assertNotNull(user.getLockoutUntil());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("Login: Locked user throws LockedException before auth check")
+    void login_lockedUser_throwsLockedException() {
+        LoginRequest request = new LoginRequest("ramesh@test.com", "password123");
+        User user = User.builder()
+                .id(1L)
+                .email("ramesh@test.com")
+                .lockoutUntil(LocalDateTime.now().plusMinutes(10))
+                .build();
+
+        when(userRepository.findByEmail("ramesh@test.com")).thenReturn(Optional.of(user));
+
+        LockedException ex = assertThrows(LockedException.class, () -> authService.login(request));
+        assertTrue(ex.getMessage().contains("locked"));
+        verify(authenticationManager, never()).authenticate(any());
     }
 
     @Test
     @DisplayName("Login: Blocked user throws DisabledException")
     void login_blockedUser_throwsDisabledException() {
         LoginRequest request = new LoginRequest("blocked@test.com", "password123");
+        when(userRepository.findByEmail("blocked@test.com")).thenReturn(Optional.empty());
         doThrow(new DisabledException("Your account has been blocked"))
                 .when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
 
         DisabledException ex = assertThrows(DisabledException.class, () -> authService.login(request));
         assertTrue(ex.getMessage().contains("blocked"));
+    }
+
+    @Test
+    @DisplayName("ForgotPassword: Unknown email returns generic message without error")
+    void forgotPassword_unknownEmail_returnsGenericMessage() {
+        ForgotPasswordRequest request = new ForgotPasswordRequest("unknown@test.com");
+        when(userRepository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
+
+        String message = authService.forgotPassword(request);
+        assertEquals("If that email is registered, password reset instructions have been sent.", message);
+        verify(passwordResetTokenRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("ResetPassword: Valid token resets password and revokes previous tokens")
+    void resetPassword_validToken_resetsPassword() {
+        String rawToken = "my_reset_token_1234567890abcdef1234567890abcdef";
+        String tokenHash = TokenHashUtil.hashToken(rawToken);
+
+        User user = User.builder()
+                .id(1L)
+                .email("user@test.com")
+                .password("old_hash")
+                .tokenVersion(1)
+                .failedLoginAttempts(3)
+                .build();
+
+        PasswordResetToken token = PasswordResetToken.builder()
+                .id(5L)
+                .user(user)
+                .tokenHash(tokenHash)
+                .expiresAt(LocalDateTime.now().plusHours(1))
+                .used(false)
+                .build();
+
+        when(passwordResetTokenRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(token));
+        when(passwordEncoder.encode("newPassword123")).thenReturn("new_hash");
+
+        ResetPasswordRequest request = new ResetPasswordRequest(rawToken, "newPassword123");
+        String message = authService.resetPassword(request);
+
+        assertTrue(message.contains("reset successfully"));
+        assertEquals("new_hash", user.getPassword());
+        assertEquals(2, user.getTokenVersion());
+        assertEquals(0, user.getFailedLoginAttempts());
+        assertTrue(token.isUsed());
+        verify(userRepository).save(user);
     }
 }

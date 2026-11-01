@@ -274,6 +274,15 @@ export default function Login() {
                 </div>
               </FormField>
 
+              <div className="flex justify-end -mt-1">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs sm:text-sm font-semibold text-green-700 hover:text-green-800 hover:underline focus:outline-hidden focus:ring-2 focus:ring-green-600 rounded"
+                >
+                  {t('auth.forgot_password_link', 'Forgot password?')}
+                </Link>
+              </div>
+
               <div className="pt-2">
                 <Button
                   type="submit"

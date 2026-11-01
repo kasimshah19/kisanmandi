@@ -8,6 +8,7 @@ import { SkeletonCard } from '../../components/Skeleton';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import ChangePasswordCard from '../../components/ChangePasswordCard';
 import { farmerService } from '../../services/farmerService';
 import toast from 'react-hot-toast';
 import {
@@ -383,6 +384,10 @@ export default function FarmerProfile() {
             </div>
           </form>
         )}
+
+        <div className="mt-8">
+          <ChangePasswordCard />
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -23,6 +23,9 @@ class InternalCronIntegrationTest {
     @Autowired
     private InternalMandiSyncController syncController;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private com.kisanmandi.service.MandiApiClient mandiApiClient;
+
     @Test
     void cronSync_noTokenHeader_returns403() throws Exception {
         mockMvc.perform(post("/api/internal/mandi/sync"))

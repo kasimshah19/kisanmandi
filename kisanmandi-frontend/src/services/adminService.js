@@ -9,5 +9,6 @@ export const adminService = {
   getAllCategories: () => axiosInstance.get('/admin/categories'),
   createCategory: (data) => axiosInstance.post('/admin/categories', data),
   updateCategory: (id, data) => axiosInstance.put(`/admin/categories/${id}`, data),
-  setCategoryStatus: (id, active) => axiosInstance.patch(`/admin/categories/${id}/status`, { active })
+  setCategoryStatus: (id, active) => axiosInstance.patch(`/admin/categories/${id}/status`, { active }),
+  getSystemInfo: () => axiosInstance.get('/admin/system').then((r) => r.data)
 };

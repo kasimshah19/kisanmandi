@@ -35,6 +35,14 @@ class AdminServiceTest {
     private FarmerProfileRepository farmerProfileRepository;
     @Mock
     private ReviewService reviewService;
+    @Mock
+    private AppMetricsService appMetricsService;
+    @Mock
+    private com.kisanmandi.repository.MandiSyncLogRepository mandiSyncLogRepository;
+    @Mock
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    @Mock
+    private org.springframework.core.env.Environment environment;
 
     @InjectMocks
     private AdminService adminService;

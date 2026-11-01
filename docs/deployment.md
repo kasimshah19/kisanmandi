@@ -24,7 +24,7 @@ This guide details the step-by-step production deployment workflow for KisanMand
    ```text
    jdbc:mysql://<AIVEN_HOST>:<AIVEN_PORT>/defaultdb?ssl-mode=REQUIRED&serverTimezone=Asia/Kolkata
    ```
-   *Note: In `application-prod.properties`, HikariCP connection pool is already optimized (`maximum-pool-size=5`) to stay comfortably within Aiven free-tier connection limits.*
+   *Note: In `application-prod.properties`, HikariCP connection pool is optimized (`maximum-pool-size=5`) to stay comfortably within Aiven free-tier connection limits. Flyway automatically migrates the fresh database using `V1__baseline.sql` on the first application startup, while Hibernate operates in `validate` mode to strictly enforce schema contracts.*
 
 ---
 
@@ -68,6 +68,10 @@ This guide details the step-by-step production deployment workflow for KisanMand
    | `APP_CORS_ALLOWED_ORIGINS` | `https://<YOUR_VERCEL_FRONTEND>.vercel.app` | Vercel frontend URL |
    | `MANDI_CRON_TOKEN` | `<RANDOM_SECRET_TOKEN>` | Webhook token for GitHub Actions cron |
    | `SWAGGER_ENABLED` | `true` (or `false`) | Enables Swagger docs on prod |
+   | `RAZORPAY_ENABLED` | `false` (or `true`) | Optional: Enable Razorpay gateway |
+   | `RAZORPAY_KEY_ID` | `<RAZORPAY_KEY_ID>` | Optional: Razorpay Key ID |
+   | `RAZORPAY_KEY_SECRET` | `<RAZORPAY_KEY_SECRET>` | Optional: Razorpay Key Secret |
+   | `RAZORPAY_WEBHOOK_SECRET` | `<WEBHOOK_SECRET>` | Optional: Razorpay Webhook Secret |
 6. Click **Create Web Service**. Render will execute the multi-stage Docker build, start the container, and verify `/api/health`.
 7. Copy your assigned Render backend URL (e.g., `https://kisanmandi-api.onrender.com`).
 

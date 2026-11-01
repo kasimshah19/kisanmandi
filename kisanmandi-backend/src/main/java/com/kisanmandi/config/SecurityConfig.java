@@ -74,8 +74,8 @@ public class SecurityConfig {
         }
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Request-Id"));
+        config.setExposedHeaders(List.of("Authorization", "X-Request-Id"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -84,7 +84,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, com.kisanmandi.filter.RequestIdFilter requestIdFilter) throws Exception {
         http
             // Disable CSRF (we use JWT tokens, not cookies)
             .csrf(csrf -> csrf.disable())
@@ -103,11 +103,20 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Internal cron sync endpoint (protected only via X-Cron-Token header)
                 .requestMatchers(HttpMethod.POST, "/api/internal/mandi/sync").permitAll()
+                // Actuator public minimal endpoints
+                .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                // Actuator protected metrics & prometheus (ADMIN only)
+                .requestMatchers("/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus").hasRole("ADMIN")
                 // Public endpoints — no token needed
                 .requestMatchers(
                     "/api/auth/register",
                     "/api/auth/login",
+                    "/api/auth/forgot-password",
+                    "/api/auth/reset-password",
+                    "/api/auth/verify-email",
                     "/api/health",
+                    "/api/config/public",
+                    "/api/payment/webhook",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**"
@@ -125,6 +134,8 @@ public class SecurityConfig {
                 // Everything else requires an authenticated token
                 .anyRequest().authenticated()
             )
+            // RequestId filter executes first
+            .addFilterBefore(requestIdFilter, org.springframework.security.web.context.SecurityContextHolderFilter.class)
             // Rate limit filter executes before auth filter
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             // JWT verification filter before standard Spring auth filter

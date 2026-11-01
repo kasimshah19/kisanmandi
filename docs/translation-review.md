@@ -176,3 +176,41 @@ This document lists the 40+ most visible user-facing strings across **Navigation
 - **Real-Time Language Switcher**: Seamless language toggle component (`LanguageSwitcher.jsx`) accessible across desktop header, mobile navigation drawer, and login/register pages.
 - **Automated Key Validation**: CI script `npm run i18n:check` strictly enforces key equality between `en.json`, `hi.json`, and `mr.json`.
 
+---
+
+## Auth Hardening & Account Security (Sprint 1)
+
+| # | Translation Key | English (Source of Truth) | Hindi (हिन्दी) | Marathi (मराठी) | Context / Placement |
+|---|-----------------|---------------------------|---------------|-----------------|---------------------|
+| 1 | `auth.forgot_password_link` | Forgot password? | पासवर्ड भूल गए? | पासवर्ड विसरलात? | Login page under password field |
+| 2 | `auth.forgot_password_title` | Forgot password? | पासवर्ड भूल गए? | पासवर्ड विसरलात? | Forgot password page card header |
+| 3 | `auth.send_reset_link` | Send reset link | रीसेट लिंक भेजें | रीसेट लिंक पाठवा | Forgot password submit button |
+| 4 | `auth.check_inbox_title` | Check your inbox | अपना इनबॉक्स जांचें | तुमचा इनबॉक्स तपासा | Password reset requested confirmation |
+| 5 | `auth.set_new_password_title` | Set new password | नया पासवर्ड सेट करें | नवीन पासवर्ड सेट करा | Reset password page header |
+| 6 | `auth.update_password_btn` | Update Password | पासवर्ड अपडेट करें | पासवर्ड अपडेट करा | Reset password submit button |
+| 7 | `auth.password_updated_title` | Password updated! | पासवर्ड अपडेट हो गया! | पासवर्ड अपडेट झाला! | Password reset success confirmation |
+| 8 | `auth.email_verified_title` | Email verified! | ईमेल सत्यापित हो गया! | ईमेल सत्यापित झाला! | Email verification confirmation card |
+| 9 | `auth.resend_verification_btn` | Resend verification email | सत्यापन ईमेल पुनः भेजें | सत्यापन ईमेल पुन्हा पाठवा | Email verification action button |
+| 10 | `auth.unverified_banner_title` | Email unverified | ईमेल असत्यापित है | ईमेल असत्यापित आहे | Top persistent notification banner |
+| 11 | `auth.change_password_title` | Account Security | खाता सुरक्षा | खाते सुरक्षा | Profile change password card |
+| 12 | `auth.change_password_btn` | Change Password | पासवर्ड बदलें | पासवर्ड बदला | Profile change password button |
+
+---
+
+## Online Payments & In-App Notifications (Sprint 2)
+
+| # | Translation Key | English (Source of Truth) | Hindi (हिन्दी) | Marathi (मराठी) | Context / Placement |
+|---|-----------------|---------------------------|---------------|-----------------|---------------------|
+| 1 | `nav.notifications` | Notifications | सूचनाएं | सूचना | Navbar bell icon tooltip/aria |
+| 2 | `notifications.title` | Notifications | सूचनाएं | सूचना | Notifications dropdown title |
+| 3 | `notifications.empty` | No notifications yet | अभी कोई सूचना नहीं है | अद्याप कोणतीही सूचना नाही | Empty notifications dropdown state |
+| 4 | `notifications.markAllRead` | Mark all read | सभी पढ़ी हुई चिह्नित करें | सर्व वाचल्याचे चिन्हांकित करा | Notifications dropdown action |
+| 5 | `checkout.online_payment` | Online Payment (UPI, Cards, NetBanking) | ऑनलाइन भुगतान (UPI, कार्ड, नेटबैंकिंग) | ऑनलाइन पेमेंट (UPI, कार्ड, नेटबँकिंग) | Checkout payment selection card |
+| 6 | `checkout.online_explanation` | Pay securely via UPI, Debit/Credit Card, or NetBanking. | UPI, डेबिट/क्रेडिट कार्ड या नेटबैंकिंग द्वारा सुरक्षित भुगतान करें। | UPI, डेबिट/क्रेडिट कार्ड किंवा नेटबँकिंगद्वारे सुरक्षित पेमेंट करा. | Checkout payment description |
+| 7 | `checkout.pay_and_place` | Pay & Place Order | भुगतान करें और ऑर्डर दें | पेमेंट करा आणि ऑर्डर द्या | Checkout primary action button |
+| 8 | `checkout.payment_success` | Payment successful! | भुगतान सफल रहा! | पेमेंट यशस्वी झाले! | Payment verification success toast |
+| 9 | `orders.refunded` | Refunded | धनवापसी हुई | परतावा दिला | Order status badge & payment card |
+| 10 | `orders.paid` | Paid | भुगतान किया | पेमेंट केले | Online payment verified badge |
+| 11 | `orders.refund_processed` | Refund of {{amount}} processed to original payment method | {{amount}} की धनवापसी मूल भुगतान विधि में भेज दी गई है | {{amount}} चा परतावा मूळ पेमेंट खात्यात जमा करण्यात आला आहे | Order tracking refund summary |
+| 12 | `orders.paid_online_desc` | Paid securely via Razorpay | रेज़रपे द्वारा सुरक्षित भुगतान किया गया | रेझरपेद्वारे सुरक्षित पेमेंट केले | Order tracking payment note |
+

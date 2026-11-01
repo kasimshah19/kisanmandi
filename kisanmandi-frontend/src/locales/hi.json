@@ -48,7 +48,11 @@
     "language": "भाषा",
     "changeLanguage": "भाषा बदलें",
     "items": "वस्तुएं",
-    "done": "पूरा हुआ"
+    "done": "पूरा हुआ",
+    "server_error_with_ref": "कुछ गलत हो गया। यदि यह बार-बार हो रहा है, तो हमें यह संदर्भ कोड बताएं: {{id}}",
+    "reference": "संदर्भ",
+    "copied": "कॉपी हो गया!",
+    "copy_reference": "संदर्भ कोड कॉपी करें"
   },
   "nav": {
     "brand": "KisanMandi",
@@ -72,7 +76,8 @@
     "account": "खाता",
     "switch_language": "भाषा",
     "help": "मदद",
-    "about": "हमारे बारे में"
+    "about": "हमारे बारे में",
+    "notifications": "सूचनाएं"
   },
   "home": {
     "hero_badge": "खेत से सीधा रसोई तक",
@@ -224,7 +229,53 @@
     "buyer_benefit_1": "१००% खेत का ताज़ा अनाज, फल और सब्ज़ियां",
     "buyer_benefit_2": "मंडी भाव के अनुसार पारदर्शी और सही दाम",
     "buyer_benefit_3": "आस-पड़ोस की समीक्षाओं के साथ सत्यापित किसान",
-    "brand_tagline": "खेत से सीधा रसोई तक"
+    "brand_tagline": "खेत से सीधा रसोई तक",
+    "forgot_password_link": "पासवर्ड भूल गए?",
+    "forgot_password_title": "पासवर्ड भूल गए?",
+    "forgot_password_subtitle": "चिंता न करें, हम आपको रीसेट करने के निर्देश भेजेंगे। अपना पंजीकृत ईमेल दर्ज करें।",
+    "forgot_password_success_toast": "यदि ईमेल मौजूद है तो रीसेट निर्देश भेज दिए गए हैं",
+    "send_reset_link": "रीसेट लिंक भेजें",
+    "back_to_login": "लॉगिन पर वापस जाएं",
+    "check_inbox_title": "अपना इनबॉक्स जांचें",
+    "check_inbox_desc": "यदि इस ईमेल के लिए कोई खाता मौजूद है, तो हमने पासवर्ड रीसेट करने के निर्देश भेज दिए हैं। यह लिंक 1 घंटे में समाप्त हो जाएगा।",
+    "try_another_email": "दूसरा ईमेल आज़माएं",
+    "set_new_password_title": "नया पासवर्ड सेट करें",
+    "set_new_password_subtitle": "एक मजबूत पासवर्ड चुनें जो कम से कम 8 वर्णों का हो।",
+    "new_password_label": "नया पासवर्ड",
+    "confirm_new_password_label": "नए पासवर्ड की पुष्टि करें",
+    "update_password_btn": "पासवर्ड अपडेट करें",
+    "password_min_length": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए",
+    "passwords_do_not_match": "पासवर्ड मेल नहीं खाते",
+    "reset_password_success": "पासवर्ड सफलतापूर्वक रीसेट हो गया!",
+    "invalid_or_missing_token": "अमान्य या गायब रीसेट टोकन",
+    "invalid_link_title": "अमान्य या समाप्त लिंक",
+    "invalid_link_desc": "यह पासवर्ड रीसेट लिंक अमान्य है या पहले ही उपयोग किया जा चुका है। कृपया एक नया अनुरोध करें।",
+    "request_new_link": "नया रीसेट लिंक का अनुरोध करें",
+    "password_updated_title": "पासवर्ड अपडेट हो गया!",
+    "password_updated_desc": "आपका पासवर्ड सुरक्षित रूप से रीसेट कर दिया गया है और सभी पुराने सत्र समाप्त कर दिए गए हैं। अब आप लॉगिन कर सकते हैं।",
+    "proceed_to_login": "लॉगिन के लिए आगे बढ़ें",
+    "verifying_email_title": "आपका ईमेल सत्यापित किया जा रहा है...",
+    "verifying_email_desc": "कृपया प्रतीक्षा करें जब तक हम आपके ईमेल पते की पुष्टि करते हैं।",
+    "email_verified_title": "ईमेल सत्यापित हो गया!",
+    "email_verified_desc": "आपका ईमेल पता सफलतापूर्वक सत्यापित हो गया है। आपका खाता अब पूरी तरह सक्रिय है।",
+    "email_verified_success": "ईमेल सफलतापूर्वक सत्यापित हो गया!",
+    "verification_failed_title": "सत्यापन विफल रहा",
+    "verification_failed_desc": "सत्यापन लिंक अमान्य है या समाप्त हो चुका है।",
+    "resend_verification_success": "आपके ईमेल पर एक नया सत्यापन लिंक भेज दिया गया है।",
+    "resend_verification_btn": "सत्यापन ईमेल पुनः भेजें",
+    "verify_your_email_title": "अपना ईमेल सत्यापित करें",
+    "verify_your_email_desc": "पंजीकरण के समय हमने आपके ईमेल पर एक सत्यापन लिंक भेजा था। कृपया अपने खाते को सत्यापित करने के लिए उस लिंक पर क्लिक करें।",
+    "unverified_banner_title": "ईमेल असत्यापित है",
+    "unverified_banner_desc": "कृपया अपने खाते को सुरक्षित करने के लिए अपना ईमेल सत्यापित करें।",
+    "resend_email_btn": "लिंक पुनः भेजें",
+    "current_password_required": "वर्तमान पासवर्ड आवश्यक है",
+    "password_changed_success": "पासवर्ड सफलतापूर्वक अपडेट हो गया!",
+    "change_password_title": "खाता सुरक्षा",
+    "change_password_subtitle": "अपने खाते को सुरक्षित रखने के लिए अपना पासवर्ड अपडेट करें।",
+    "current_password_label": "वर्तमान पासवर्ड",
+    "change_password_btn": "पासवर्ड बदलें",
+    "show_pwd": "दिखाएं",
+    "hide_pwd": "छिपाएं"
   },
   "products": {
     "browse_title": "ताज़ा फसल व सब्ज़ियां खरीदें",
@@ -339,7 +390,16 @@
     "keep_shopping": "खरीदारी जारी रखें",
     "order_success_step1": "किसान आपकी फसल का ऑर्डर प्राप्त करके पुष्टि करते हैं",
     "order_success_step2": "आपकी उपज खेत में ताज़ी पैक की जाती है",
-    "order_success_step3": "आपके पते पर पहुंचाई जाती है — जाँचें और मिलने पर नकद भुगतान करें"
+    "order_success_step3": "आपके पते पर पहुंचाई जाती है — जाँचें और मिलने पर नकद भुगतान करें",
+    "online_payment": "ऑनलाइन भुगतान (UPI, कार्ड, नेटबैंकिंग)",
+    "online_explanation": "UPI, डेबिट/क्रेडिट कार्ड या नेटबैंकिंग द्वारा सुरक्षित भुगतान करें।",
+    "choose_payment_method": "अपना पसंदीदा भुगतान तरीका चुनें",
+    "pay_and_place": "भुगतान करें और ऑर्डर दें",
+    "payment_success": "भुगतान सफल रहा!",
+    "payment_verify_failed": "भुगतान सत्यापन विफल रहा",
+    "gateway_simulation": "रेज़रपे गेटवे (टेस्ट मोड)",
+    "gateway_order_id": "गेटवे ऑर्डर आईडी",
+    "simulate_success": "सफल अनुकरण करें"
   },
   "orders": {
     "my_orders_title": "मेरे ऑर्डर",
@@ -385,7 +445,13 @@
     "tab_delivered": "डिलीवर हुए",
     "tab_cancelled": "रद्द हुए",
     "call_farmer": "किसान को कॉल करें",
-    "what_happens_next": "आगे क्या होगा"
+    "what_happens_next": "आगे क्या होगा",
+    "refunded": "धनवापसी हुई",
+    "paid": "भुगतान किया",
+    "refund_processed": "{{amount}} की धनवापसी मूल भुगतान विधि में भेज दी गई है",
+    "paid_online_desc": "रेज़रपे द्वारा सुरक्षित भुगतान किया गया",
+    "payment_pending_desc": "भुगतान सत्यापन लंबित है",
+    "order_id": "ऑर्डर आईडी"
   },
   "customer": {
     "welcome_back": "वापसी पर स्वागत है, {{name}}!",
@@ -746,5 +812,11 @@
     "faq_mandi_a": "थोक मंडी भाव प्रतिदिन भारत सरकार के आधिकारिक Agmarknet (data.gov.in) पोर्टल से आते हैं। ये महाराष्ट्र की प्रमुख मंडियों के वास्तविक भाव हैं।",
     "faq_reg_q": "क्या किसानों के लिए यह मुफ़्त है?",
     "faq_reg_a": "हाँ, किसानमंडी किसानों के लिए 100% मुफ़्त है। कोई रजिस्ट्रेशन फीस, लिस्टिंग फीस या बिक्री पर कमीशन नहीं लिया जाता।"
+  },
+  "notifications": {
+    "title": "सूचनाएं",
+    "empty": "अभी कोई सूचना नहीं है",
+    "markAllRead": "सभी पढ़ी हुई चिह्नित करें",
+    "markAsRead": "पढ़ी हुई चिह्नित करें"
   }
 }

@@ -11,6 +11,7 @@ public class UserResponse {
     private String phone;
     private String role;
     private String status;
+    private boolean emailVerified;
 
     public boolean isActive() {
         return "ACTIVE".equalsIgnoreCase(status);

@@ -51,6 +51,34 @@ public class User {
     @Column(length = 300)
     private String blockedReason;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int tokenVersion = 1;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int failedLoginAttempts = 0;
+
+    private LocalDateTime lockoutUntil;
+
+    private LocalDateTime passwordChangedAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<PasswordResetToken> passwordResetTokens = new java.util.ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<EmailVerificationToken> emailVerificationTokens = new java.util.ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<Notification> notifications = new java.util.ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

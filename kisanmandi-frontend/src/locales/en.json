@@ -48,7 +48,11 @@
     "language": "Language",
     "changeLanguage": "Change language",
     "items": "items",
-    "done": "Done"
+    "done": "Done",
+    "server_error_with_ref": "Something went wrong. If it keeps happening, tell us this reference: {{id}}",
+    "reference": "Reference",
+    "copied": "Copied!",
+    "copy_reference": "Copy reference"
   },
   "nav": {
     "brand": "KisanMandi",
@@ -72,7 +76,8 @@
     "account": "Account",
     "switch_language": "Language",
     "help": "Help",
-    "about": "About"
+    "about": "About",
+    "notifications": "Notifications"
   },
   "home": {
     "hero_badge": "Direct Farm-to-Kitchen Marketplace",
@@ -224,7 +229,53 @@
     "buyer_benefit_1": "100% farm-fresh vegetables, fruits, and grains",
     "buyer_benefit_2": "Transparent market pricing matched with mandi rates",
     "buyer_benefit_3": "Verified local growers with ratings from your neighbors",
-    "brand_tagline": "Direct farm-to-kitchen marketplace"
+    "brand_tagline": "Direct farm-to-kitchen marketplace",
+    "forgot_password_link": "Forgot password?",
+    "forgot_password_title": "Forgot password?",
+    "forgot_password_subtitle": "No worries, we'll send you reset instructions. Enter your registered account email.",
+    "forgot_password_success_toast": "Reset instructions sent if email exists",
+    "send_reset_link": "Send reset link",
+    "back_to_login": "Back to login",
+    "check_inbox_title": "Check your inbox",
+    "check_inbox_desc": "If an account exists for this email, we have sent instructions to reset your password. The link will expire in 1 hour.",
+    "try_another_email": "Try another email",
+    "set_new_password_title": "Set new password",
+    "set_new_password_subtitle": "Choose a strong, memorable password that is at least 8 characters long.",
+    "new_password_label": "New Password",
+    "confirm_new_password_label": "Confirm New Password",
+    "update_password_btn": "Update Password",
+    "password_min_length": "Password must be at least 8 characters long",
+    "passwords_do_not_match": "Passwords do not match",
+    "reset_password_success": "Password reset successfully!",
+    "invalid_or_missing_token": "Invalid or missing reset token",
+    "invalid_link_title": "Invalid or expired link",
+    "invalid_link_desc": "This password reset link is invalid or has already been used. Please request a new one.",
+    "request_new_link": "Request a new reset link",
+    "password_updated_title": "Password updated!",
+    "password_updated_desc": "Your password has been securely reset and all existing sessions have been signed out. You can now log in.",
+    "proceed_to_login": "Proceed to login",
+    "verifying_email_title": "Verifying your email...",
+    "verifying_email_desc": "Please wait while we confirm your email address.",
+    "email_verified_title": "Email verified!",
+    "email_verified_desc": "Your email address has been successfully verified. Your account is now fully active.",
+    "email_verified_success": "Email verified successfully!",
+    "verification_failed_title": "Verification failed",
+    "verification_failed_desc": "The verification link is invalid or has expired.",
+    "resend_verification_success": "A new verification link has been sent to your email.",
+    "resend_verification_btn": "Resend verification email",
+    "verify_your_email_title": "Verify your email",
+    "verify_your_email_desc": "We sent a verification link to your email address when you registered. Please click that link to verify your account.",
+    "unverified_banner_title": "Email unverified",
+    "unverified_banner_desc": "Please verify your email address to secure your account.",
+    "resend_email_btn": "Resend Link",
+    "current_password_required": "Current password is required",
+    "password_changed_success": "Password updated successfully!",
+    "change_password_title": "Account Security",
+    "change_password_subtitle": "Update your password to keep your account safe.",
+    "current_password_label": "Current Password",
+    "change_password_btn": "Change Password",
+    "show_pwd": "Show",
+    "hide_pwd": "Hide"
   },
   "products": {
     "browse_title": "Browse Fresh Produce",
@@ -339,7 +390,16 @@
     "keep_shopping": "Keep shopping",
     "order_success_step1": "Farmer receives and confirms your harvest order",
     "order_success_step2": "Your produce is packed fresh at the farm",
-    "order_success_step3": "Delivered to your doorstep — inspect and pay cash on delivery"
+    "order_success_step3": "Delivered to your doorstep — inspect and pay cash on delivery",
+    "online_payment": "Online Payment (UPI, Cards, NetBanking)",
+    "online_explanation": "Pay securely via UPI, Debit/Credit Card, or NetBanking.",
+    "choose_payment_method": "Choose your preferred payment method",
+    "pay_and_place": "Pay & Place Order",
+    "payment_success": "Payment successful!",
+    "payment_verify_failed": "Payment verification failed",
+    "gateway_simulation": "Razorpay Gateway (Test Mode)",
+    "gateway_order_id": "Gateway Order ID",
+    "simulate_success": "Simulate Success"
   },
   "orders": {
     "my_orders_title": "My Orders",
@@ -385,7 +445,13 @@
     "tab_delivered": "Delivered",
     "tab_cancelled": "Cancelled",
     "call_farmer": "Call farmer",
-    "what_happens_next": "What happens next"
+    "what_happens_next": "What happens next",
+    "refunded": "Refunded",
+    "paid": "Paid",
+    "refund_processed": "Refund of {{amount}} processed to original payment method",
+    "paid_online_desc": "Paid securely via Razorpay",
+    "payment_pending_desc": "Payment pending verification",
+    "order_id": "Order ID"
   },
   "customer": {
     "welcome_back": "Welcome back, {{name}}!",
@@ -746,5 +812,11 @@
     "faq_mandi_a": "Wholesale mandi rates are synced daily from the official Government Agmarknet portal via data.gov.in (Open Government Data). They reflect real wholesale market rates across Maharashtra mandis.",
     "faq_reg_q": "Is registration free for farmers?",
     "faq_reg_a": "Yes, KisanMandi is 100% free for farmers. There are no registration fees, listing fees, or commission deductions on your sales."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all read",
+    "markAsRead": "Mark read"
   }
 }

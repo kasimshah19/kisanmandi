@@ -27,6 +27,10 @@ public class AdminService {
     private final ReviewRepository reviewRepository;
     private final FarmerProfileRepository farmerProfileRepository;
     private final ReviewService reviewService;
+    private final AppMetricsService appMetricsService;
+    private final MandiSyncLogRepository mandiSyncLogRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final org.springframework.core.env.Environment environment;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -402,6 +406,7 @@ public class AdminService {
         
         order.addHistory(history);
         orderRepository.save(order);
+        appMetricsService.incrementOrderStatusChanges(OrderStatus.CANCELLED.name());
     }
 
     @Transactional
@@ -426,5 +431,60 @@ public class AdminService {
         if (review.getFarmer() != null) {
             reviewService.recalculateFarmerRating(review.getFarmer().getId());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public SystemInfoResponse getSystemInfo() {
+        long uptimeMs = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime();
+        long seconds = uptimeMs / 1000;
+        long days = seconds / (24 * 3600);
+        long hours = (seconds % (24 * 3600)) / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
+        String formattedUptime = String.format("%dd %dh %dm %ds", days, hours, minutes, secs);
+
+        Runtime rt = Runtime.getRuntime();
+        long totalMemory = rt.totalMemory();
+        long freeMemory = rt.freeMemory();
+        long maxMemory = rt.maxMemory();
+        long usedMemory = totalMemory - freeMemory;
+
+        Map<String, Object> memoryMap = new LinkedHashMap<>();
+        memoryMap.put("usedMb", usedMemory / (1024 * 1024));
+        memoryMap.put("totalMb", totalMemory / (1024 * 1024));
+        memoryMap.put("maxMb", maxMemory / (1024 * 1024));
+        memoryMap.put("freeMb", freeMemory / (1024 * 1024));
+
+        String dbStatus = "CONNECTED";
+        try {
+            jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+        } catch (Exception e) {
+            dbStatus = "DOWN";
+        }
+
+        String[] profiles = environment.getActiveProfiles();
+        String activeProfile = profiles.length > 0 ? profiles[0] : "local";
+
+        Map<String, Object> mandiSyncMap = new LinkedHashMap<>();
+        mandiSyncLogRepository.findFirstByOrderByStartedAtDesc().ifPresentOrElse(log -> {
+            mandiSyncMap.put("status", log.getStatus() != null ? log.getStatus().name() : "UNKNOWN");
+            mandiSyncMap.put("startedAt", log.getStartedAt() != null ? log.getStartedAt().toString() : null);
+            mandiSyncMap.put("durationMs", log.getDurationMs());
+            mandiSyncMap.put("recordsFetched", log.getRecordsFetched());
+            mandiSyncMap.put("recordsInserted", log.getRecordsInserted());
+            mandiSyncMap.put("recordsUpdated", log.getRecordsUpdated());
+        }, () -> {
+            mandiSyncMap.put("status", "NO_SYNC_YET");
+        });
+
+        return SystemInfoResponse.builder()
+                .uptimeMs(uptimeMs)
+                .uptimeFormatted(formattedUptime)
+                .appVersion("1.0.0")
+                .activeProfile(activeProfile)
+                .databaseStatus(dbStatus)
+                .jvmMemory(memoryMap)
+                .lastMandiSync(mandiSyncMap)
+                .build();
     }
 }

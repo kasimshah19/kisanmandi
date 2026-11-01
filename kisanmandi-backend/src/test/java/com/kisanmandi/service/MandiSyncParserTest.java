@@ -16,7 +16,7 @@ class MandiSyncParserTest {
 
     @BeforeEach
     void setUp() {
-        syncService = new MandiSyncService(null, null, null, null);
+        syncService = new MandiSyncService(null, null, null, null, null);
     }
 
     @Test

@@ -67,7 +67,7 @@ public class DemoAccountsSeeder implements CommandLineRunner {
     private void seedCustomer() {
         String email = customerEmail.toLowerCase().trim();
         if (userRepository.existsByEmail(email)) {
-            log.info("Demo customer already exists ({}). Skipping.", email);
+            log.info("Demo customer already exists. Skipping.");
             return;
         }
 
@@ -78,16 +78,19 @@ public class DemoAccountsSeeder implements CommandLineRunner {
                 .phone("9876543210")
                 .role(Role.CUSTOMER)
                 .status(com.kisanmandi.entity.UserStatus.ACTIVE)
+                .emailVerified(true)
+                .tokenVersion(1)
+                .failedLoginAttempts(0)
                 .build();
 
         userRepository.save(customer);
-        log.info("Demo customer created: {}", email);
+        log.info("Demo customer created successfully.");
     }
 
     private void seedFarmer() {
         String email = farmerEmail.toLowerCase().trim();
         if (userRepository.existsByEmail(email)) {
-            log.info("Demo farmer already exists ({}). Skipping.", email);
+            log.info("Demo farmer already exists. Skipping.");
             return;
         }
 
@@ -98,6 +101,9 @@ public class DemoAccountsSeeder implements CommandLineRunner {
                 .phone("9876543211")
                 .role(Role.FARMER)
                 .status(com.kisanmandi.entity.UserStatus.ACTIVE)
+                .emailVerified(true)
+                .tokenVersion(1)
+                .failedLoginAttempts(0)
                 .build();
 
         User savedFarmer = userRepository.save(farmer);
@@ -118,6 +124,6 @@ public class DemoAccountsSeeder implements CommandLineRunner {
                 .build();
 
         farmerProfileRepository.save(profile);
-        log.info("Demo farmer created and approved: {}", email);
+        log.info("Demo farmer created and approved successfully.");
     }
 }

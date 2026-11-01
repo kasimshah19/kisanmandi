@@ -17,6 +17,9 @@ public class OrderResponse {
     private OrderStatus status;
     private PaymentMode paymentMode;
     private PaymentStatus paymentStatus;
+    private String razorpayOrderId;
+    private BigDecimal refundAmount;
+    private LocalDateTime refundedAt;
     private BigDecimal totalAmount;
     private LocalDateTime createdAt;
     

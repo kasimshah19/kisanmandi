@@ -33,15 +33,21 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Create a JWT token with the user's email and role
-    public String generateToken(String email, String role) {
+    // Create a JWT token with the user's email, role, and tokenVersion
+    public String generateToken(String email, String role, int tokenVersion) {
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
+                .claim("tokenVersion", tokenVersion)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key)
                 .compact();
+    }
+
+    // Overload for backward compatibility
+    public String generateToken(String email, String role) {
+        return generateToken(email, role, 1);
     }
 
     // Extract the email (subject) from a JWT token
@@ -52,6 +58,24 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    // Extract the tokenVersion claim from a JWT token
+    public Integer extractTokenVersion(String token) {
+        try {
+            Object tv = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("tokenVersion");
+            if (tv instanceof Number num) {
+                return num.intValue();
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // Check if a token is valid (not expired, not tampered)

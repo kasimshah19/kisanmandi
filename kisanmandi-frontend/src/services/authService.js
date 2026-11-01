@@ -17,3 +17,42 @@ export const getMe = async () => {
   const response = await axiosInstance.get('/auth/me');
   return response.data;
 };
+
+// Request a password reset link
+export const forgotPassword = async (email) => {
+  const response = await axiosInstance.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+// Reset password with token
+export const resetPassword = async (token, newPassword) => {
+  const response = await axiosInstance.post('/auth/reset-password', { token, newPassword });
+  return response.data;
+};
+
+// Change password for logged-in user
+export const changePassword = async (currentPassword, newPassword) => {
+  const response = await axiosInstance.post('/auth/change-password', { currentPassword, newPassword });
+  return response.data;
+};
+
+// Verify email with token
+export const verifyEmail = async (token) => {
+  const response = await axiosInstance.post('/auth/verify-email', { token });
+  return response.data;
+};
+
+// Resend email verification link
+export const resendVerification = async () => {
+  const response = await axiosInstance.post('/auth/resend-verification');
+  return response.data;
+};
+
+// Logout from server
+export const logout = async () => {
+  try {
+    await axiosInstance.post('/auth/logout');
+  } catch {
+    // Ignore error if server unreachable or already expired
+  }
+};

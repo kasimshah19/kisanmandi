@@ -28,6 +28,8 @@ class OrderStatusTransitionsTest {
     private OrderRepository orderRepository;
     @Mock
     private ProductRepository productRepository;
+    @Mock
+    private AppMetricsService appMetricsService;
 
     @InjectMocks
     private FarmerOrderService farmerOrderService;

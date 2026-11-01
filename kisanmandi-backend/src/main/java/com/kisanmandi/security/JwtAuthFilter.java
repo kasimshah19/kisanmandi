@@ -47,15 +47,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7); // Remove "Bearer " prefix
 
-        // Validate the token
+        // Validate the token signature and expiration
         if (jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
+            Integer tokenVersion = jwtUtil.extractTokenVersion(token);
 
-            // Load user details from DB (also checks if account is active)
+            // Load user details from DB (checks active status and account lockout)
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            // Only set authentication if user account is enabled (not blocked)
-            if (userDetails.isEnabled()) {
+            // Only set authentication if account is enabled and not locked
+            if (userDetails.isEnabled() && userDetails.isAccountNonLocked()) {
+                if (userDetails instanceof CustomUserDetails customUser) {
+                    // If token contains a tokenVersion, ensure it matches current DB tokenVersion
+                    if (tokenVersion != null && tokenVersion != customUser.getTokenVersion()) {
+                        // Token was revoked (user logged out or changed password)
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+                    org.slf4j.MDC.put("userId", String.valueOf(customUser.getId()));
+                }
+
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails, null, userDetails.getAuthorities()

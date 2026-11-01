@@ -29,6 +29,8 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", 401);
         body.put("message", "Please login to continue");
+        String reqId = org.slf4j.MDC.get("requestId");
+        body.put("requestId", reqId != null && !reqId.isBlank() ? reqId : "unknown");
 
         new ObjectMapper().writeValue(response.getOutputStream(), body);
     }

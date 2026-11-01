@@ -7,6 +7,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // Loads user details from the database for Spring Security authentication
@@ -25,17 +26,23 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        // If user is blocked, Spring Security will throw DisabledException/LockedException
+        // If user is blocked, Spring Security will consider account disabled
         boolean isActive = user.getStatus() == UserStatus.ACTIVE;
 
+        // Account is locked if lockoutUntil exists and is in the future
+        boolean isNotLocked = isActive && (user.getLockoutUntil() == null || !user.getLockoutUntil().isAfter(LocalDateTime.now()));
+
         // Authority must be prefixed with "ROLE_" for hasRole() checks to work
-        return new org.springframework.security.core.userdetails.User(
+        return new CustomUserDetails(
+                user.getId(),
                 user.getEmail(),
                 user.getPassword(),
-                isActive,   // enabled
-                true,       // accountNonExpired
-                true,       // credentialsNonExpired
-                isActive,   // accountNonLocked
+                isActive,      // enabled
+                true,          // accountNonExpired
+                true,          // credentialsNonExpired
+                isNotLocked,   // accountNonLocked
+                user.getTokenVersion(),
+                user.isEmailVerified(),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
     }

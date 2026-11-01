@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   XCircle,
   Truck,
-  AlertTriangle
+  AlertTriangle,
+  CreditCard
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
 import OrderTimeline from '../../components/OrderTimeline';
@@ -241,18 +242,46 @@ export default function OrderTracking() {
 
           {/* Right Column: Address, Farmer, and Items */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Payment Summary Card ("Pay cash when you receive. Rs X") */}
-            <div className="bg-green-50/80 rounded-3xl border border-green-200/90 p-5 sm:p-6 shadow-xs flex items-center justify-between gap-4">
+            {/* Payment Summary Card */}
+            <div className={`rounded-3xl border p-5 sm:p-6 shadow-xs flex items-center justify-between gap-4 ${
+              order.paymentStatus === 'REFUNDED'
+                ? 'bg-amber-50/80 border-amber-200/90'
+                : 'bg-green-50/80 border-green-200/90'
+            }`}>
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-green-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Banknote size={24} />
+                <div className={`w-12 h-12 rounded-2xl text-white flex items-center justify-center shrink-0 shadow-xs ${
+                  order.paymentStatus === 'REFUNDED' ? 'bg-amber-600' : 'bg-green-700'
+                }`}>
+                  {order.paymentMode === 'ONLINE' ? <CreditCard size={24} /> : <Banknote size={24} />}
                 </div>
                 <div>
-                  <h4 className="font-black text-neutral-900 text-base">
-                    {t('checkout.cash_on_delivery')}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-green-900 mt-0.5">
-                    Pay in cash when you receive and inspect your harvest.
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-black text-neutral-900 text-base">
+                      {order.paymentMode === 'ONLINE'
+                        ? t('checkout.online_payment', 'Online Payment')
+                        : t('checkout.cash_on_delivery')}
+                    </h4>
+                    {order.paymentStatus === 'REFUNDED' && (
+                      <span className="bg-amber-200 text-amber-900 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                        {t('orders.refunded', 'Refunded')}
+                      </span>
+                    )}
+                    {order.paymentStatus === 'PAID' && order.paymentMode === 'ONLINE' && (
+                      <span className="bg-green-200 text-green-900 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                        {t('orders.paid', 'Paid')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm text-neutral-700 mt-0.5">
+                    {order.paymentStatus === 'REFUNDED'
+                      ? t('orders.refund_processed', 'Refund of {{amount}} processed to original payment method', {
+                          amount: formatINR(order.refundAmount || order.totalAmount)
+                        })
+                      : order.paymentMode === 'ONLINE'
+                      ? order.paymentStatus === 'PAID'
+                        ? t('orders.paid_online_desc', 'Paid securely via Razorpay')
+                        : t('orders.payment_pending_desc', 'Payment pending verification')
+                      : t('checkout.cod_explanation')}
                   </p>
                 </div>
               </div>
@@ -260,7 +289,7 @@ export default function OrderTracking() {
                 <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
                   {t('common.total')}
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-green-900 tabular-nums">
+                <span className="text-xl sm:text-2xl font-black text-neutral-900 tabular-nums">
                   {formatINR(order.totalAmount)}
                 </span>
               </div>

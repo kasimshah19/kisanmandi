@@ -36,6 +36,12 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getStats());
     }
 
+    @Operation(summary = "Get system status, runtime memory, uptime, and database connectivity")
+    @GetMapping("/system")
+    public ResponseEntity<com.kisanmandi.dto.SystemInfoResponse> getSystemInfo() {
+        return ResponseEntity.ok(adminService.getSystemInfo());
+    }
+
     @Operation(summary = "Get paginated users for admin management")
     @GetMapping("/users")
     public ResponseEntity<PageResponse<UserResponse>> getUsers(
