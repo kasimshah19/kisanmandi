@@ -8,20 +8,22 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.*;
 
 class RateLimitFilterTest {
 
     private RateLimitFilter rateLimitFilter;
+    private AtomicInteger chainCalls;
     private FilterChain filterChain;
 
     @BeforeEach
     void setUp() {
         rateLimitFilter = new RateLimitFilter();
-        filterChain = mock(FilterChain.class);
+        chainCalls = new AtomicInteger(0);
+        filterChain = (req, res) -> chainCalls.incrementAndGet();
     }
 
     @Test
@@ -38,7 +40,7 @@ class RateLimitFilterTest {
             assertEquals(200, response.getStatus());
         }
 
-        verify(filterChain, times(10)).doFilter(any(), any());
+        assertEquals(10, chainCalls.get());
 
         // 11th request must be blocked with HTTP 429
         MockHttpServletRequest request11 = new MockHttpServletRequest("POST", "/api/auth/login");
@@ -50,7 +52,7 @@ class RateLimitFilterTest {
         assertEquals(429, response11.getStatus());
         assertNotNull(response11.getHeader("Retry-After"));
         // FilterChain should NOT have been invoked on 11th request
-        verify(filterChain, times(10)).doFilter(any(), any());
+        assertEquals(10, chainCalls.get());
     }
 
     @Test
@@ -66,7 +68,7 @@ class RateLimitFilterTest {
             assertEquals(200, response.getStatus());
         }
 
-        verify(filterChain, times(5)).doFilter(any(), any());
+        assertEquals(5, chainCalls.get());
 
         // 6th request must be blocked
         MockHttpServletRequest request6 = new MockHttpServletRequest("POST", "/api/auth/register");
@@ -77,7 +79,7 @@ class RateLimitFilterTest {
 
         assertEquals(429, response6.getStatus());
         assertNotNull(response6.getHeader("Retry-After"));
-        verify(filterChain, times(5)).doFilter(any(), any());
+        assertEquals(5, chainCalls.get());
     }
 
     @Test
@@ -93,7 +95,7 @@ class RateLimitFilterTest {
             assertEquals(200, response.getStatus());
         }
 
-        verify(filterChain, times(20)).doFilter(any(), any());
+        assertEquals(20, chainCalls.get());
     }
 
     @Test
