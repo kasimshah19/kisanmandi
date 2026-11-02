@@ -152,8 +152,8 @@ public class AuthService {
 
                 if (attempts >= MAX_FAILED_ATTEMPTS) {
                     user.setLockoutUntil(LocalDateTime.now().plusMinutes(LOCKOUT_MINUTES));
-                    log.warn("User account {} locked for {} minutes after {} failed attempts",
-                            email, LOCKOUT_MINUTES, attempts);
+                    log.warn("User account ID {} locked for {} minutes after {} failed attempts",
+                            user.getId(), LOCKOUT_MINUTES, attempts);
                 }
                 userRepository.save(user);
             }
@@ -214,7 +214,7 @@ public class AuthService {
                 String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
                 emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
             } catch (Exception e) {
-                log.error("Error creating password reset token for {}: {}", email, e.getMessage());
+                log.error("Error creating password reset token for user ID {}: {}", user.getId(), e.getMessage());
             }
         }
 

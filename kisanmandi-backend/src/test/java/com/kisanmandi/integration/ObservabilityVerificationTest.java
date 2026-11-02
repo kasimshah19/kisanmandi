@@ -114,7 +114,7 @@ class ObservabilityVerificationTest {
         assertThat(replacedId).isNotNull().isNotEqualTo("bad!id").matches("^[a-f0-9]{16}$");
     }
 
-    @org.springframework.boot.test.mock.mockito.MockBean
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
     private com.kisanmandi.service.CategoryService categoryService;
 
     @Test
