@@ -1,6 +1,7 @@
 package com.kisanmandi.dto;
 
 import com.kisanmandi.entity.Role;
+import com.kisanmandi.security.StrongPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -8,6 +9,7 @@ import lombok.*;
 // DTO for user registration — validates input before processing
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 @Schema(description = "User registration payload")
+@StrongPassword
 public class RegisterRequest {
 
     @Schema(description = "Full name of the user", example = "Ramesh Kumar")
@@ -21,9 +23,8 @@ public class RegisterRequest {
     @Size(max = 100, message = "Email cannot exceed 100 characters")
     private String email;
 
-    @Schema(description = "Password (minimum 6 characters)", example = "securePassword123")
+    @Schema(description = "Password (minimum 8 characters, letter and digit)", example = "securePassword123")
     @NotBlank(message = "Password is required")
-    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
     private String password;
 
     @Schema(description = "10-digit mobile number", example = "9876543210")

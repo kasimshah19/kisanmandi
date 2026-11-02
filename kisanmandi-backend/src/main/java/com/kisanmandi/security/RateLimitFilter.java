@@ -6,8 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -25,11 +25,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final int LOGIN_LIMIT = 10;       // max 10 requests per minute
     private static final int REGISTER_LIMIT = 5;      // max 5 requests per minute
-    private static final long WINDOW_MS = 60_000L;    // 1 minute window
+    private static final int REFRESH_LIMIT = 30;     // max 30 requests per minute
+    private static final int PASSWORD_LIMIT = 10;    // max 10 requests per minute
+    private static final long WINDOW_MS = 60_000L;   // 1 minute window
 
     // Key: "ip:endpoint", Value: deque of request timestamps (epoch ms)
     private final ConcurrentHashMap<String, Deque<Long>> requestCounts = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ClientIpResolver clientIpResolver;
+
+    public RateLimitFilter(ClientIpResolver clientIpResolver) {
+        this.clientIpResolver = clientIpResolver;
+    }
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -48,6 +55,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 if (isRateLimited(request, "register", REGISTER_LIMIT, response)) {
                     return;
                 }
+            } else if ("/api/auth/refresh".equals(path)) {
+                if (isRateLimited(request, "refresh", REFRESH_LIMIT, response)) {
+                    return;
+                }
+            } else if ("/api/auth/change-password".equals(path)) {
+                if (isRateLimited(request, "password", PASSWORD_LIMIT, response)) {
+                    return;
+                }
+            }
+        } else if ("PUT".equalsIgnoreCase(method)) {
+            if ("/api/auth/password".equals(path)) {
+                if (isRateLimited(request, "password", PASSWORD_LIMIT, response)) {
+                    return;
+                }
             }
         }
 
@@ -55,7 +76,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private boolean isRateLimited(HttpServletRequest request, String endpointKey, int maxRequests, HttpServletResponse response) throws IOException {
-        String clientIp = extractClientIp(request);
+        String clientIp = clientIpResolver.resolveClientIp(request);
         String key = clientIp + ":" + endpointKey;
         long now = System.currentTimeMillis();
 
@@ -89,6 +110,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             body.put("status", 429);
             body.put("error", "Too Many Requests");
             body.put("message", "Too many requests. Please try again later.");
+            body.put("retryAfterSeconds", retryAfterSeconds);
             String reqId = org.slf4j.MDC.get("requestId");
             body.put("requestId", reqId != null && !reqId.isBlank() ? reqId : "unknown");
 
@@ -97,14 +119,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         return false;
-    }
-
-    private String extractClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
     }
 
     // Periodic cleanup every 60 seconds to prevent memory leaks from stale IPs

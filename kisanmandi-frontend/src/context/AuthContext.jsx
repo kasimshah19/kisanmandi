@@ -1,10 +1,20 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { login as loginApi, register as registerApi, getMe, logout as logoutApi } from '../services/authService';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import {
+  login as loginApi,
+  register as registerApi,
+  getMe,
+  logout as logoutApi,
+  logoutAll as logoutAllApi,
+  changePassword as changePasswordApi,
+} from '../services/authService';
+import { executeTokenRefresh } from '../services/axiosInstance';
+import { setToken, clearToken, getToken, isTokenExpiringSoon } from '../utils/tokenStore';
+import { broadcastAuthEvent, subscribeAuthEvents } from '../utils/authBroadcast';
 
-const TOKEN_KEY = 'kisanmandi_token';
 const USER_KEY = 'kisanmandi_user';
+const LEGACY_TOKEN_KEY = 'kisanmandi_token';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 // Helper: returns the correct dashboard path based on user role
 export function getDashboardPath(role) {
@@ -17,48 +27,133 @@ export function getDashboardPath(role) {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Purge legacy token on startup
+  try {
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    // Storage access unavailable
+  }
 
-  // On app start, restore user & token from localStorage
-  useEffect(() => {
-    const savedToken = localStorage.getItem(TOKEN_KEY);
-    const savedUser  = localStorage.getItem(USER_KEY);
-
-    if (savedToken && savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        if (parsed && typeof parsed === 'object') {
-          setToken(savedToken);
-          setUser(parsed);
-        } else {
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem(USER_KEY);
-        }
-      } catch (e) {
-        console.warn('Corrupted session data in localStorage, clearing auth state.', e);
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-      }
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem(USER_KEY);
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
     }
-    setLoading(false);
+  });
+
+  const [token, setTokenState] = useState(() => getToken());
+  const [loading, setLoading] = useState(true);
+  const proactiveTimerRef = useRef(null);
+
+  // Restore session via httpOnly cookie on startup
+  const restoreSession = useCallback(async () => {
+    try {
+      const refreshResult = await executeTokenRefresh();
+      if (refreshResult?.token) {
+        setToken(refreshResult.token, refreshResult.expiresIn || 900);
+        setTokenState(refreshResult.token);
+        if (refreshResult.name) {
+          setUser(refreshResult);
+          localStorage.setItem(USER_KEY, JSON.stringify(refreshResult));
+        } else {
+          try {
+            const me = await getMe();
+            setUser(me);
+            localStorage.setItem(USER_KEY, JSON.stringify(me));
+          } catch {
+            // Keep existing non-sensitive display user if getMe fails
+          }
+        }
+      }
+    } catch {
+      clearToken();
+      setTokenState(null);
+      setUser(null);
+      localStorage.removeItem(USER_KEY);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Login: call API, store token + user, return user info
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  // Multi-tab synchronization
+  useEffect(() => {
+    const unsubscribe = subscribeAuthEvents((event) => {
+      if (event.type === 'logout') {
+        clearToken();
+        setTokenState(null);
+        setUser(null);
+        localStorage.removeItem(USER_KEY);
+      } else if (event.type === 'login' || event.type === 'password_changed') {
+        restoreSession();
+      }
+    });
+    return unsubscribe;
+  }, [restoreSession]);
+
+  // Proactive token refresh check (~60s before expiry and on tab focus)
+  const checkAndRefreshToken = useCallback(async () => {
+    if (document.visibilityState === 'visible' && getToken() && isTokenExpiringSoon(60)) {
+      try {
+        const refreshResult = await executeTokenRefresh();
+        if (refreshResult?.token) {
+          setTokenState(refreshResult.token);
+        }
+      } catch {
+        // Silent failure: will retry or let request interceptor handle
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    proactiveTimerRef.current = setInterval(checkAndRefreshToken, 20000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndRefreshToken();
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      if (proactiveTimerRef.current) clearInterval(proactiveTimerRef.current);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [checkAndRefreshToken]);
+
+  // Login: authenticate, receive token and expiresIn, store in memory
   const login = async (credentials) => {
     const data = await loginApi(credentials);
-    localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(data));
-    setToken(data.token);
+    setToken(data.token, data.expiresIn || 900);
+    setTokenState(data.token);
     setUser(data);
+    localStorage.setItem(USER_KEY, JSON.stringify(data));
+    broadcastAuthEvent('login', { userId: data.id });
     return data;
   };
 
-  // Register: just calls API (user must then log in separately)
+  // Register: calls API
   const register = async (data) => {
-    const result = await registerApi(data);
-    return result;
+    return await registerApi(data);
+  };
+
+  // Change Password
+  const changePassword = async (currentPassword, newPassword) => {
+    const data = await changePasswordApi(currentPassword, newPassword);
+    if (data?.token) {
+      setToken(data.token, data.expiresIn || 900);
+      setTokenState(data.token);
+      setUser((prev) => ({ ...prev, ...data }));
+      localStorage.setItem(USER_KEY, JSON.stringify({ ...user, ...data }));
+    }
+    broadcastAuthEvent('password_changed');
+    return data;
   };
 
   // Update user state partially
@@ -71,19 +166,53 @@ export function AuthProvider({ children }) {
     });
   };
 
-  // Logout: notify server & clear everything locally
-  const logout = () => {
-    logoutApi();
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    setToken(null);
+  // Logout current session (revokes refresh token family and clears cookie)
+  const logout = async () => {
+    try {
+      await logoutApi();
+    } catch {
+      // Ignore network errors
+    }
+    clearToken();
+    setTokenState(null);
     setUser(null);
+    localStorage.removeItem(USER_KEY);
+    broadcastAuthEvent('logout');
+  };
+
+  // Logout from all devices
+  const logoutAll = async () => {
+    try {
+      await logoutAllApi();
+    } catch {
+      // Ignore network errors
+    }
+    clearToken();
+    setTokenState(null);
+    setUser(null);
+    localStorage.removeItem(USER_KEY);
+    broadcastAuthEvent('logout');
   };
 
   const isAuthenticated = !!token && !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser, isAuthenticated, getDashboardPath }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        logoutAll,
+        changePassword,
+        updateUser,
+        isAuthenticated,
+        getDashboardPath,
+        restoreSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -97,5 +226,3 @@ export function useAuth() {
   }
   return context;
 }
-
-export { AuthContext };

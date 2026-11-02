@@ -10,6 +10,7 @@ import { FormField, Input } from '../../components/ui/FormField';
 import Button from '../../components/ui/Button';
 import BigChoice from '../../components/ui/BigChoice';
 import HeroFarmScene from '../../components/illustrations/HeroFarmScene';
+import PasswordPolicyChecklist, { checkPasswordRules } from '../../components/PasswordPolicyChecklist';
 
 export default function Register() {
   const { t } = useTranslation();
@@ -76,6 +77,23 @@ export default function Register() {
     if (errors.role) setErrors({ ...errors, role: '' });
   };
 
+  const mapPasswordErrorCode = (code) => {
+    switch (code) {
+      case 'PASSWORD_TOO_SHORT':
+        return t('auth.policy_length', 'Password must be 8 to 72 characters long');
+      case 'PASSWORD_NEEDS_LETTER':
+        return t('auth.policy_letter', 'Password needs at least one letter');
+      case 'PASSWORD_NEEDS_DIGIT':
+        return t('auth.policy_digit', 'Password needs at least one digit');
+      case 'PASSWORD_TOO_COMMON':
+        return t('auth.policy_not_common', 'Password is too common and easily guessable');
+      case 'PASSWORD_CONTAINS_EMAIL':
+        return t('auth.policy_not_email', 'Password cannot contain your email username');
+      default:
+        return code;
+    }
+  };
+
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = t('errors.field_required', 'Full name is required');
@@ -83,8 +101,14 @@ export default function Register() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('auth.email_invalid', 'Enter a valid email address');
     if (!form.phone.trim()) e.phone = t('errors.field_required', 'Mobile number is required');
     else if (!/^[0-9]{10}$/.test(form.phone)) e.phone = t('auth.phone_invalid', 'Enter a valid 10-digit mobile number');
-    if (!form.password) e.password = t('errors.field_required', 'Password is required');
-    else if (form.password.length < 6) e.password = 'Password must be at least 6 characters';
+    if (!form.password) {
+      e.password = t('errors.field_required', 'Password is required');
+    } else {
+      const rules = checkPasswordRules(form.password, form.email);
+      if (!rules.allPassed) {
+        e.password = t('auth.password_requirements_failed', 'Please fulfill all password requirements');
+      }
+    }
     if (form.password !== form.confirmPassword) e.confirmPassword = t('auth.password_mismatch', 'Passwords do not match');
     if (!form.role) e.role = t('errors.field_required', 'Please choose your role');
     return e;
@@ -111,7 +135,12 @@ export default function Register() {
       navigate('/login');
     } catch (error) {
       if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
+        const rawErrors = error.response.data.errors;
+        const mappedErrors = { ...rawErrors };
+        if (mappedErrors.password) {
+          mappedErrors.password = mapPasswordErrorCode(mappedErrors.password);
+        }
+        setErrors(mappedErrors);
       }
       const msg =
         error.friendlyMessage ||
@@ -368,6 +397,7 @@ export default function Register() {
                         {strength.label}
                       </p>
                     )}
+                    <PasswordPolicyChecklist password={form.password} email={form.email} />
                   </div>
                 )}
               </FormField>

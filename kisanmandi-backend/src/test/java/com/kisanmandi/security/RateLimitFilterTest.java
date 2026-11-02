@@ -21,7 +21,7 @@ class RateLimitFilterTest {
 
     @BeforeEach
     void setUp() {
-        rateLimitFilter = new RateLimitFilter();
+        rateLimitFilter = new RateLimitFilter(new ClientIpResolver());
         chainCalls = new AtomicInteger(0);
         filterChain = (req, res) -> chainCalls.incrementAndGet();
     }
@@ -51,7 +51,6 @@ class RateLimitFilterTest {
 
         assertEquals(429, response11.getStatus());
         assertNotNull(response11.getHeader("Retry-After"));
-        // FilterChain should NOT have been invoked on 11th request
         assertEquals(10, chainCalls.get());
     }
 
@@ -80,6 +79,58 @@ class RateLimitFilterTest {
         assertEquals(429, response6.getStatus());
         assertNotNull(response6.getHeader("Retry-After"));
         assertEquals(5, chainCalls.get());
+    }
+
+    @Test
+    void refreshEndpoint_allows30Requests_blocks31stWith429() throws ServletException, IOException {
+        String clientIp = "192.168.1.25";
+
+        for (int i = 1; i <= 30; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/refresh");
+            request.setRemoteAddr(clientIp);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            rateLimitFilter.doFilterInternal(request, response, filterChain);
+            assertEquals(200, response.getStatus());
+        }
+
+        assertEquals(30, chainCalls.get());
+
+        MockHttpServletRequest req31 = new MockHttpServletRequest("POST", "/api/auth/refresh");
+        req31.setRemoteAddr(clientIp);
+        MockHttpServletResponse res31 = new MockHttpServletResponse();
+
+        rateLimitFilter.doFilterInternal(req31, res31, filterChain);
+
+        assertEquals(429, res31.getStatus());
+        assertNotNull(res31.getHeader("Retry-After"));
+        assertEquals(30, chainCalls.get());
+    }
+
+    @Test
+    void passwordEndpoint_allows10Requests_blocks11thWith429() throws ServletException, IOException {
+        String clientIp = "192.168.1.35";
+
+        for (int i = 1; i <= 10; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("PUT", "/api/auth/password");
+            request.setRemoteAddr(clientIp);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            rateLimitFilter.doFilterInternal(request, response, filterChain);
+            assertEquals(200, response.getStatus());
+        }
+
+        assertEquals(10, chainCalls.get());
+
+        MockHttpServletRequest req11 = new MockHttpServletRequest("PUT", "/api/auth/password");
+        req11.setRemoteAddr(clientIp);
+        MockHttpServletResponse res11 = new MockHttpServletResponse();
+
+        rateLimitFilter.doFilterInternal(req11, res11, filterChain);
+
+        assertEquals(429, res11.getStatus());
+        assertNotNull(res11.getHeader("Retry-After"));
+        assertEquals(10, chainCalls.get());
     }
 
     @Test

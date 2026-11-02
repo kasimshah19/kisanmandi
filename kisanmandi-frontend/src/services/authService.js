@@ -6,9 +6,15 @@ export const register = async (data) => {
   return response.data;
 };
 
-// Login and get JWT token + user info
+// Login and get JWT token + user info (sets httpOnly refresh cookie)
 export const login = async (data) => {
   const response = await axiosInstance.post('/auth/login', data);
+  return response.data;
+};
+
+// Refresh access token via httpOnly cookie
+export const refresh = async () => {
+  const response = await axiosInstance.post('/auth/refresh');
   return response.data;
 };
 
@@ -30,9 +36,9 @@ export const resetPassword = async (token, newPassword) => {
   return response.data;
 };
 
-// Change password for logged-in user
+// Change password for logged-in user (PUT /auth/password)
 export const changePassword = async (currentPassword, newPassword) => {
-  const response = await axiosInstance.post('/auth/change-password', { currentPassword, newPassword });
+  const response = await axiosInstance.put('/auth/password', { currentPassword, newPassword });
   return response.data;
 };
 
@@ -48,11 +54,17 @@ export const resendVerification = async () => {
   return response.data;
 };
 
-// Logout from server
+// Logout current session (revokes refresh token family and clears cookie)
 export const logout = async () => {
   try {
     await axiosInstance.post('/auth/logout');
   } catch {
     // Ignore error if server unreachable or already expired
   }
+};
+
+// Logout from all devices (increments tokenVersion and revokes all refresh tokens)
+export const logoutAll = async () => {
+  const response = await axiosInstance.post('/auth/logout-all');
+  return response.data;
 };

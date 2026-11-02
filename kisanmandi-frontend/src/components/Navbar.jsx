@@ -18,6 +18,7 @@ import {
   Info,
   Home as HomeIcon,
   ShoppingBag,
+  Shield,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth, getDashboardPath } from '../context/AuthContext';
@@ -350,6 +351,16 @@ export default function Navbar() {
                   )}
 
                   <Link
+                    to="/account/security"
+                    role="menuitem"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-gray-700 hover:text-green-800 hover:bg-green-50 transition-colors font-medium min-h-[40px]"
+                  >
+                    <Shield size={16} className="text-gray-500" />
+                    <span>{t('nav.security', 'Security')}</span>
+                  </Link>
+
+                  <Link
                     to="/about"
                     role="menuitem"
                     onClick={() => setUserDropdownOpen(false)}
@@ -471,14 +482,24 @@ export default function Navbar() {
               </NavLink>
 
               {isAuthenticated && (
-                <NavLink
-                  to={getDashboardPath(user?.role)}
-                  onClick={() => setMenuOpen(false)}
-                  className={mobileNavLinkClass}
-                >
-                  <LayoutDashboard size={18} className="text-green-700" />
-                  <span>{t('nav.dashboard', 'Dashboard')}</span>
-                </NavLink>
+                <>
+                  <NavLink
+                    to={getDashboardPath(user?.role)}
+                    onClick={() => setMenuOpen(false)}
+                    className={mobileNavLinkClass}
+                  >
+                    <LayoutDashboard size={18} className="text-green-700" />
+                    <span>{t('nav.dashboard', 'Dashboard')}</span>
+                  </NavLink>
+                  <NavLink
+                    to="/account/security"
+                    onClick={() => setMenuOpen(false)}
+                    className={mobileNavLinkClass}
+                  >
+                    <Shield size={18} className="text-gray-600" />
+                    <span>{t('nav.security', 'Security')}</span>
+                  </NavLink>
+                </>
               )}
 
               {isAuthenticated && isCustomer && (

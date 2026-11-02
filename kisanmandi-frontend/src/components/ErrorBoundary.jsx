@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw, Home, Copy, Check } from 'lucide-react';
 import i18n from '../i18n';
 import Button from './ui/Button';
 import { captureException } from '../utils/sentry';
+import { getToken } from '../utils/tokenStore';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -60,7 +61,7 @@ export default class ErrorBoundary extends Component {
     if (this.state.hasError) {
       let hasToken = false;
       try {
-        hasToken = Boolean(localStorage.getItem('kisanmandi_token'));
+        hasToken = Boolean(getToken() || localStorage.getItem('kisanmandi_user'));
       } catch {
         hasToken = false;
       }

@@ -84,6 +84,7 @@ export default function DashboardLayout({ children, role }) {
     { name: t('nav.reviews'), path: '/farmer/reviews', icon: Star },
     { name: t('nav.mandi_rates'), path: '/farmer/mandi', icon: Tractor },
     { name: t('farmer.my_profile'), path: '/farmer/profile', icon: UserCircle },
+    { name: t('nav.security', 'Security'), path: '/account/security', icon: Shield },
   ];
 
   const adminLinks = [
@@ -96,6 +97,7 @@ export default function DashboardLayout({ children, role }) {
     { name: 'Categories', path: '/admin/categories', icon: Tags },
     { name: 'Mandi Sync Logs', path: '/admin/mandi-sync', icon: Database },
     { name: 'System', path: '/admin/system', icon: Cpu },
+    { name: t('nav.security', 'Security'), path: '/account/security', icon: Shield },
   ];
 
   const links = role === 'ADMIN' ? adminLinks : farmerLinks;

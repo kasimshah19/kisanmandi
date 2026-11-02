@@ -77,7 +77,8 @@
     "switch_language": "भाषा",
     "help": "मदत",
     "about": "आमच्याबद्दल",
-    "notifications": "सूचना"
+    "notifications": "सूचना",
+    "security": "सुरक्षा"
   },
   "home": {
     "hero_badge": "थेट शेतातून स्वयंपाकघरापर्यंत",
@@ -275,7 +276,36 @@
     "current_password_label": "सध्याचा पासवर्ड",
     "change_password_btn": "पासवर्ड बदला",
     "show_pwd": "दाखवा",
-    "hide_pwd": "लपवा"
+    "hide_pwd": "लपवा",
+    "strength": "सामर्थ्य",
+    "policy_length": "8 ते 72 अक्षरे लांब",
+    "policy_letter": "किमान एक अक्षर (a-z, A-Z)",
+    "policy_digit": "किमान एक अंक (0-9)",
+    "policy_not_common": "सहज अंदाज लावता येणारा पासवर्ड नाही",
+    "policy_not_email": "तुमच्या ईमेलचे नाव असू नये",
+    "password_requirements": "पासवर्ड आवश्यकता",
+    "password_requirements_failed": "कृपया सर्व पासवर्ड आवश्यकता पूर्ण करा",
+    "password_same_as_current": "नवीन पासवर्ड तुमच्या सध्याच्या पासवर्डसारखा असू शकत नाही",
+    "lockout_title": "सुरक्षा लॉकआउट सक्रिय",
+    "lockout_message": "खूप चुकीचे प्रयत्न. कृपया {{minutes}} मिनिटांनंतर पुन्हा प्रयत्न करा.",
+    "logout_all_success": "सर्व उपकरणांमधून लॉग आउट केले."
+  },
+  "account": {
+    "security_title": "खाते सुरक्षा",
+    "security_desc": "तुमचे लॉगिन क्रेडेंशियल, सक्रिय सत्रे आणि खाते संरक्षण व्यवस्थापित करा.",
+    "change_password": "पासवर्ड बदला",
+    "change_password_subtitle": "तुमचे खाते सुरक्षित ठेवण्यासाठी एक मजबूत पासवर्ड निवडा.",
+    "current_password": "सध्याचा पासवर्ड",
+    "new_password": "नवीन पासवर्ड",
+    "confirm_new_password": "नवीन पासवर्डची पुष्टी करा",
+    "update_password": "पासवर्ड अपडेट करा",
+    "session_management": "सक्रिय सत्रे",
+    "session_management_desc": "इतर सर्व ब्राउझर, मोबाइल आणि संगणकावरून प्रवेश रद्द करा.",
+    "logout_all_warning": "तुम्हाला अनधिकृत प्रवेशाचा संशय असल्यास, तुम्ही त्वरित सर्व सक्रिय सत्रे समाप्त करू शकता.",
+    "logout_all_devices": "सर्व उपकरणांमधून लॉग आउट करा",
+    "logout_all_confirm_title": "तुम्ही सर्व उपकरणांमधून लॉग आउट करू इच्छिता?",
+    "logout_all_confirm_msg": "हे सर्व उपकरणांवरील सर्व सत्रे समाप्त करेल. तुम्हाला पुन्हा लॉगिन करावे लागेल.",
+    "logout_all_btn": "सर्व ठिकाणांवरून लॉग आउट करा"
   },
   "products": {
     "browse_title": "ताजा शेतमाल व भाजीपाला शोधा",

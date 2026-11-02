@@ -58,6 +58,24 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleAuthError = (error) => {
+    if (error.response?.status === 429) {
+      const retryAfter = error.response?.data?.retryAfterSeconds || 900;
+      const minutes = Math.max(1, Math.ceil(retryAfter / 60));
+      toast.error(
+        t('auth.lockout_message', 'Too many wrong tries. Please try again after {{minutes}} minutes.', {
+          minutes,
+        })
+      );
+      return;
+    }
+    const msg =
+      error.friendlyMessage ||
+      error.response?.data?.message ||
+      t('errors.server_timeout', 'Failed to connect. Please try again.');
+    toast.error(msg);
+  };
+
   const handleDemoLogin = async (email, password) => {
     setForm({ email, password });
     setIsLoading(true);
@@ -66,11 +84,7 @@ export default function Login() {
       toast.success(`${t('common.continue', 'Welcome back')}, ${data.name}!`);
       navigate(resolveTarget(data.role), { replace: true });
     } catch (error) {
-      const msg =
-        error.friendlyMessage ||
-        error.response?.data?.message ||
-        t('errors.server_timeout', 'Failed to connect. Please try again.');
-      toast.error(msg);
+      handleAuthError(error);
     } finally {
       setIsLoading(false);
     }
@@ -89,11 +103,7 @@ export default function Login() {
       toast.success(`${t('common.continue', 'Welcome back')}, ${data.name}!`);
       navigate(resolveTarget(data.role), { replace: true });
     } catch (error) {
-      const msg =
-        error.friendlyMessage ||
-        error.response?.data?.message ||
-        t('errors.server_timeout', 'Failed to connect. Please try again.');
-      toast.error(msg);
+      handleAuthError(error);
     } finally {
       setIsLoading(false);
     }

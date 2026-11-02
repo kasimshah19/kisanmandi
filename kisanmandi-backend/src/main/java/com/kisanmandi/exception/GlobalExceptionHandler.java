@@ -61,7 +61,22 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, "Your account is blocked");
     }
 
-    // ─── Account locked (brute-force lockout) → 423 ───
+    // ─── Account lockout (brute-force rate limiting) → 429 ───
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccountLocked(AccountLockedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", 429);
+        body.put("error", "Too Many Requests");
+        body.put("message", ex.getMessage());
+        body.put("retryAfterSeconds", ex.getRetryAfterSeconds());
+        body.put("requestId", resolveRequestId());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(body);
+    }
+
+    // ─── Account locked (legacy spring locked) → 423 ───
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<Map<String, Object>> handleLocked(LockedException ex) {
         String message = (ex.getMessage() != null && !ex.getMessage().isBlank())

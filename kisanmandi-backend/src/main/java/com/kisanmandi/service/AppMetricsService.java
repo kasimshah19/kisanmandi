@@ -48,6 +48,21 @@ public class AppMetricsService {
                 .increment();
     }
 
+    public void incrementAuthRefresh(String result) {
+        Counter.builder("auth_refresh_total")
+                .description("Total token refresh requests")
+                .tag("result", result != null ? result : "UNKNOWN")
+                .register(meterRegistry)
+                .increment();
+    }
+
+    public void incrementAuthRefreshReuse() {
+        Counter.builder("auth_refresh_reuse_total")
+                .description("Total detected refresh token reuses")
+                .register(meterRegistry)
+                .increment();
+    }
+
     public void recordMandiSync(long durationMs, String status) {
         Timer.builder("mandi_sync_duration")
                 .description("Duration of mandi prices synchronization")

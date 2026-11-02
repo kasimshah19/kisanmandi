@@ -77,7 +77,8 @@
     "switch_language": "Language",
     "help": "Help",
     "about": "About",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "security": "Security"
   },
   "home": {
     "hero_badge": "Direct Farm-to-Kitchen Marketplace",
@@ -275,7 +276,36 @@
     "current_password_label": "Current Password",
     "change_password_btn": "Change Password",
     "show_pwd": "Show",
-    "hide_pwd": "Hide"
+    "hide_pwd": "Hide",
+    "strength": "Strength",
+    "policy_length": "8 to 72 characters long",
+    "policy_letter": "At least one letter (a-z, A-Z)",
+    "policy_digit": "At least one digit (0-9)",
+    "policy_not_common": "Not an easily guessable password",
+    "policy_not_email": "Does not contain your email name",
+    "password_requirements": "Password Requirements",
+    "password_requirements_failed": "Please fulfill all password requirements",
+    "password_same_as_current": "New password cannot be the same as your current password",
+    "lockout_title": "Security Lockout Active",
+    "lockout_message": "Too many wrong tries. Please try again after {{minutes}} minutes.",
+    "logout_all_success": "Logged out from all devices."
+  },
+  "account": {
+    "security_title": "Account Security",
+    "security_desc": "Manage your login credentials, active sessions, and account protection.",
+    "change_password": "Change Password",
+    "change_password_subtitle": "Choose a strong password to safeguard your account.",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_new_password": "Confirm New Password",
+    "update_password": "Update Password",
+    "session_management": "Active Sessions",
+    "session_management_desc": "Revoke access across all other browsers, mobile devices, and computers.",
+    "logout_all_warning": "If you suspect unauthorized access or lost a device, you can instantly terminate all active sessions. You will be signed out everywhere and will need to log in again.",
+    "logout_all_devices": "Log out from all devices",
+    "logout_all_confirm_title": "Log out from all devices?",
+    "logout_all_confirm_msg": "This will revoke all active refresh tokens and sessions on all devices. You will be redirected to the login page.",
+    "logout_all_btn": "Log out everywhere"
   },
   "products": {
     "browse_title": "Browse Fresh Produce",

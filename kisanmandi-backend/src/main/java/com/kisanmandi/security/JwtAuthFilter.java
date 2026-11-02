@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,9 +27,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request,
-                                    @org.springframework.lang.NonNull HttpServletResponse response,
-                                    @org.springframework.lang.NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         // Get the Authorization header
         String authHeader = request.getHeader("Authorization");
@@ -58,9 +59,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // Only set authentication if account is enabled and not locked
             if (userDetails.isEnabled() && userDetails.isAccountNonLocked()) {
                 if (userDetails instanceof CustomUserDetails customUser) {
-                    // If token contains a tokenVersion, ensure it matches current DB tokenVersion
-                    if (tokenVersion != null && tokenVersion != customUser.getTokenVersion()) {
-                        // Token was revoked (user logged out or changed password)
+                    // Reject when token's tv differs from user's current tokenVersion
+                    if (tokenVersion == null || tokenVersion != customUser.getTokenVersion()) {
+                        // Token was revoked (user logged out, changed password, or bumped tokenVersion)
                         filterChain.doFilter(request, response);
                         return;
                     }

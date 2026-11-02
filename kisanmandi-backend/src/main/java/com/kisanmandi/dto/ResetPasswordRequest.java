@@ -1,8 +1,8 @@
 package com.kisanmandi.dto;
 
+import com.kisanmandi.security.StrongPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,8 +19,8 @@ public class ResetPasswordRequest {
     @NotBlank(message = "Token is required")
     private String token;
 
-    @Schema(description = "New password (min 8 chars)", example = "NewPass@123")
+    @Schema(description = "New password (min 8 chars, letter and digit)", example = "NewPass@123")
     @NotBlank(message = "New password is required")
-    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+    @StrongPassword
     private String newPassword;
 }

@@ -1,16 +1,22 @@
 package com.kisanmandi.service;
 
 import com.kisanmandi.dto.*;
+import com.kisanmandi.entity.LoginAttempt;
 import com.kisanmandi.entity.PasswordResetToken;
 import com.kisanmandi.entity.Role;
 import com.kisanmandi.entity.User;
 import com.kisanmandi.entity.UserStatus;
+import com.kisanmandi.exception.AccountLockedException;
 import com.kisanmandi.exception.DuplicateEmailException;
 import com.kisanmandi.repository.EmailVerificationTokenRepository;
+import com.kisanmandi.repository.LoginAttemptRepository;
 import com.kisanmandi.repository.PasswordResetTokenRepository;
+import com.kisanmandi.repository.RefreshTokenRepository;
 import com.kisanmandi.repository.UserRepository;
+import com.kisanmandi.security.ClientIpResolver;
 import com.kisanmandi.security.JwtUtil;
 import com.kisanmandi.security.TokenHashUtil;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,6 +65,18 @@ class AuthServiceTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private LoginAttemptRepository loginAttemptRepository;
+
+    @Mock
+    private ClientIpResolver clientIpResolver;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private AuthService authService;
 
     @BeforeEach
@@ -67,11 +85,15 @@ class AuthServiceTest {
                 userRepository,
                 passwordResetTokenRepository,
                 emailVerificationTokenRepository,
+                refreshTokenRepository,
+                loginAttemptRepository,
                 passwordEncoder,
                 jwtUtil,
                 authenticationManager,
                 appMetricsService,
-                emailService
+                emailService,
+                clientIpResolver,
+                eventPublisher
         );
     }
 
@@ -152,55 +174,53 @@ class AuthServiceTest {
     @DisplayName("Login: Bad password increments failed attempts")
     void login_badPassword_incrementsFailedAttempts() {
         LoginRequest request = new LoginRequest("ramesh@test.com", "wrongpassword");
-        User user = User.builder()
-                .id(1L)
-                .email("ramesh@test.com")
-                .failedLoginAttempts(2)
+        LoginAttempt existingAttempt = LoginAttempt.builder()
+                .emailKey("ramesh@test.com")
+                .failedCount(2)
                 .build();
 
-        when(userRepository.findByEmail("ramesh@test.com")).thenReturn(Optional.of(user));
+        when(loginAttemptRepository.findById("ramesh@test.com")).thenReturn(Optional.of(existingAttempt));
         doThrow(new BadCredentialsException("Bad credentials"))
                 .when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
 
         assertThrows(BadCredentialsException.class, () -> authService.login(request));
-        assertEquals(3, user.getFailedLoginAttempts());
-        verify(userRepository).save(user);
+        assertEquals(3, existingAttempt.getFailedCount());
+        verify(loginAttemptRepository).save(existingAttempt);
     }
 
     @Test
-    @DisplayName("Login: 5 failed attempts locks user account")
+    @DisplayName("Login: 5 failed attempts locks user account and throws AccountLockedException")
     void login_fiveFailedAttempts_locksAccount() {
         LoginRequest request = new LoginRequest("ramesh@test.com", "wrongpassword");
-        User user = User.builder()
-                .id(1L)
-                .email("ramesh@test.com")
-                .failedLoginAttempts(4)
+        LoginAttempt existingAttempt = LoginAttempt.builder()
+                .emailKey("ramesh@test.com")
+                .failedCount(4)
                 .build();
 
-        when(userRepository.findByEmail("ramesh@test.com")).thenReturn(Optional.of(user));
+        when(loginAttemptRepository.findById("ramesh@test.com")).thenReturn(Optional.of(existingAttempt));
         doThrow(new BadCredentialsException("Bad credentials"))
                 .when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
 
-        assertThrows(BadCredentialsException.class, () -> authService.login(request));
-        assertEquals(5, user.getFailedLoginAttempts());
-        assertNotNull(user.getLockoutUntil());
-        verify(userRepository).save(user);
+        AccountLockedException ex = assertThrows(AccountLockedException.class, () -> authService.login(request));
+        assertEquals(5, existingAttempt.getFailedCount());
+        assertNotNull(existingAttempt.getLockedUntil());
+        verify(loginAttemptRepository).save(existingAttempt);
     }
 
     @Test
-    @DisplayName("Login: Locked user throws LockedException before auth check")
+    @DisplayName("Login: Locked user throws AccountLockedException before auth check")
     void login_lockedUser_throwsLockedException() {
         LoginRequest request = new LoginRequest("ramesh@test.com", "password123");
-        User user = User.builder()
-                .id(1L)
-                .email("ramesh@test.com")
-                .lockoutUntil(LocalDateTime.now().plusMinutes(10))
+        LoginAttempt lockedAttempt = LoginAttempt.builder()
+                .emailKey("ramesh@test.com")
+                .failedCount(5)
+                .lockedUntil(LocalDateTime.now().plusMinutes(10))
                 .build();
 
-        when(userRepository.findByEmail("ramesh@test.com")).thenReturn(Optional.of(user));
+        when(loginAttemptRepository.findById("ramesh@test.com")).thenReturn(Optional.of(lockedAttempt));
 
-        LockedException ex = assertThrows(LockedException.class, () -> authService.login(request));
-        assertTrue(ex.getMessage().contains("locked"));
+        AccountLockedException ex = assertThrows(AccountLockedException.class, () -> authService.login(request));
+        assertTrue(ex.getMessage().contains("Too many failed attempts"));
         verify(authenticationManager, never()).authenticate(any());
     }
 
@@ -208,7 +228,6 @@ class AuthServiceTest {
     @DisplayName("Login: Blocked user throws DisabledException")
     void login_blockedUser_throwsDisabledException() {
         LoginRequest request = new LoginRequest("blocked@test.com", "password123");
-        when(userRepository.findByEmail("blocked@test.com")).thenReturn(Optional.empty());
         doThrow(new DisabledException("Your account has been blocked"))
                 .when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
 

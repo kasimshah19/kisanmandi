@@ -81,7 +81,7 @@ This guide details the step-by-step production deployment workflow for KisanMand
 
 ---
 
-## 4. Frontend Deployment: Vercel (Static SPA)
+## 4. Frontend Deployment: Vercel (Static SPA with Same-Origin API Proxy)
 
 1. Sign up / Log in to [Vercel](https://vercel.com/).
 2. Click **Add New...** $\rightarrow$ **Project** $\rightarrow$ Import your Git repository.
@@ -90,10 +90,36 @@ This guide details the step-by-step production deployment workflow for KisanMand
    - **Root Directory**: `kisanmandi-frontend`
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-4. Add Environment Variable:
-   - `VITE_API_BASE_URL` = `https://<YOUR_RENDER_BACKEND>.onrender.com/api`
-5. Click **Deploy**. Vercel will install dependencies, build the production bundle, and deploy the SPA.
-6. SPA routing is automatically handled by the included `kisanmandi-frontend/vercel.json` rewrites.
+4. Configure Environment Variables:
+   - `VITE_API_BASE_URL` = `/api` *(Relative base URL)*
+5. **Same-Origin First-Party Cookie Architecture (`vercel.json`)**:
+   KisanMandi configures an external rewrite in `kisanmandi-frontend/vercel.json`:
+   ```json
+   {
+     "rewrites": [
+       {
+         "source": "/api/(.*)",
+         "destination": "https://<YOUR_RENDER_BACKEND>.onrender.com/api/$1"
+       },
+       {
+         "source": "/(.*)",
+         "destination": "/index.html"
+       }
+     ]
+   }
+   ```
+   **Why this matters:**
+   - **First-Party Cookies**: The browser perceives all API communication as happening with the same origin (the Vercel app domain). The rotating refresh token cookie `km_refresh` is treated as a **first-party cookie**, completely avoiding third-party cookie restrictions enforced by Apple Safari (ITP), iOS WebViews, and Google Chrome Privacy Sandbox.
+   - **No CORS Preflight Overhead**: Standard API requests avoid extra `OPTIONS` preflight round-trips.
+   - **Automatic Header Forwarding**: In `application-prod.properties`, Spring Boot is configured with `server.forward-headers-strategy=native`. Tomcat's native `RemoteIpValve` resolves the authentic client IP from trusted reverse proxy headers (`X-Forwarded-For`).
+6. Click **Deploy**. Vercel will install dependencies, build the production bundle, and deploy the SPA.
+
+> [!NOTE]
+> **Render Free-Tier Cold Sleep Handling:**
+> Render free-tier web services spin down after 15 minutes of inactivity, requiring 30–60 seconds to resume. KisanMandi's frontend includes:
+> 1. An early health ping (`/api/health`) on application mount.
+> 2. Single-flight 401 token refresh queue (`src/services/axiosInstance.js`) that prevents concurrent requests from hammering a waking server or triggering race conditions.
+> 3. Visual server wake banner so users understand cold-start latency.
 
 ---
 

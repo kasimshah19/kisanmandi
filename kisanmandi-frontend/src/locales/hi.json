@@ -77,7 +77,8 @@
     "switch_language": "भाषा",
     "help": "मदद",
     "about": "हमारे बारे में",
-    "notifications": "सूचनाएं"
+    "notifications": "सूचनाएं",
+    "security": "सुरक्षा"
   },
   "home": {
     "hero_badge": "खेत से सीधा रसोई तक",
@@ -275,7 +276,36 @@
     "current_password_label": "वर्तमान पासवर्ड",
     "change_password_btn": "पासवर्ड बदलें",
     "show_pwd": "दिखाएं",
-    "hide_pwd": "छिपाएं"
+    "hide_pwd": "छिपाएं",
+    "strength": "मजबूती",
+    "policy_length": "8 से 72 अक्षर लंबा",
+    "policy_letter": "कम से कम एक अक्षर (a-z, A-Z)",
+    "policy_digit": "कम से कम एक अंक (0-9)",
+    "policy_not_common": "आसानी से अनुमान लगाने योग्य पासवर्ड नहीं",
+    "policy_not_email": "आपके ईमेल का नाम शामिल नहीं होना चाहिए",
+    "password_requirements": "पासवर्ड आवश्यकताएं",
+    "password_requirements_failed": "कृपया पासवर्ड की सभी आवश्यकताएं पूरी करें",
+    "password_same_as_current": "नया पासवर्ड आपके वर्तमान पासवर्ड के समान नहीं हो सकता",
+    "lockout_title": "सुरक्षा लॉकआउट सक्रिय",
+    "lockout_message": "बहुत सारे गलत प्रयास। कृपया {{minutes}} मिनट बाद पुन: प्रयास करें।",
+    "logout_all_success": "सभी डिवाइस से लॉग आउट हो गए।"
+  },
+  "account": {
+    "security_title": "खाता सुरक्षा",
+    "security_desc": "अपने लॉगिन क्रेडेंशियल, सक्रिय सत्र और खाता सुरक्षा प्रबंधित करें।",
+    "change_password": "पासवर्ड बदलें",
+    "change_password_subtitle": "अपने खाते को सुरक्षित रखने के लिए एक मजबूत पासवर्ड चुनें।",
+    "current_password": "वर्तमान पासवर्ड",
+    "new_password": "नया पासवर्ड",
+    "confirm_new_password": "नए पासवर्ड की पुष्टि करें",
+    "update_password": "पासवर्ड अपडेट करें",
+    "session_management": "सक्रिय सत्र",
+    "session_management_desc": "अन्य सभी ब्राउज़र, मोबाइल और कंप्यूटर से पहुंच रद्द करें।",
+    "logout_all_warning": "यदि आपको अनधिकृत पहुंच का संदेह है, तो आप तुरंत सभी सक्रिय सत्र समाप्त कर सकते हैं।",
+    "logout_all_devices": "सभी डिवाइस से लॉग आउट करें",
+    "logout_all_confirm_title": "क्या आप सभी डिवाइस से लॉग आउट करना चाहते हैं?",
+    "logout_all_confirm_msg": "यह सभी डिवाइस पर सभी सत्र समाप्त कर देगा। आपको फिर से लॉगिन करना होगा।",
+    "logout_all_btn": "हर जगह से लॉग आउट करें"
   },
   "products": {
     "browse_title": "ताज़ा फसल व सब्ज़ियां खरीदें",

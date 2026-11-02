@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 // Utility class for creating and validating JWT tokens
 @Component
@@ -17,7 +18,7 @@ public class JwtUtil {
     @Value("${app.jwt.secret}")
     private String secret;
 
-    @Value("${app.jwt.expiration-ms}")
+    @Value("${app.jwt.expiration-ms:900000}")
     private long expirationMs;
 
     private SecretKey key;
@@ -33,12 +34,19 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Create a JWT token with the user's email, role, and tokenVersion
+    public long getExpirationMs() {
+        return expirationMs;
+    }
+
+    // Create a JWT token with the user's email, role, token_version (tv), and jti
     public String generateToken(String email, String role, int tokenVersion) {
+        String jti = UUID.randomUUID().toString();
         return Jwts.builder()
                 .subject(email)
+                .id(jti)
                 .claim("role", role)
-                .claim("tokenVersion", tokenVersion)
+                .claim("tv", tokenVersion)
+                .claim("tokenVersion", tokenVersion) // keep for backwards compatibility
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key)
@@ -60,15 +68,18 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    // Extract the tokenVersion claim from a JWT token
+    // Extract the token_version claim (tv or tokenVersion) from a JWT token
     public Integer extractTokenVersion(String token) {
         try {
-            Object tv = Jwts.parser()
+            Claims claims = Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token)
-                    .getPayload()
-                    .get("tokenVersion");
+                    .getPayload();
+            Object tv = claims.get("tv");
+            if (tv == null) {
+                tv = claims.get("tokenVersion");
+            }
             if (tv instanceof Number num) {
                 return num.intValue();
             }

@@ -8,6 +8,7 @@ PORT=8080
 
 # ─── JWT (MUST be at least 32 characters long) ─────────
 JWT_SECRET=your_random_jwt_secret_at_least_32_characters_long
+# APP_AUTH_COOKIE_SECURE=false
 
 # ─── Admin Seeder (this admin is auto-created on startup) ──
 APP_ADMIN_EMAIL=admin@kisanmandi.com

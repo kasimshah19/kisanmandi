@@ -8,6 +8,7 @@ import LanguageWelcomeModal from './components/LanguageWelcomeModal';
 import PageLoader from './components/PageLoader';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './routes/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 import { checkHealth } from './services/healthService';
 
 // Public routes kept in main bundle for instantaneous first paint
@@ -58,9 +59,11 @@ const ManageProducts = lazy(() => import('./pages/admin/ManageProducts'));
 const AllOrders = lazy(() => import('./pages/admin/AllOrders'));
 const ManageReviews = lazy(() => import('./pages/admin/ManageReviews'));
 const AdminSystem = lazy(() => import('./pages/admin/AdminSystem'));
+const Security = lazy(() => import('./pages/account/Security'));
 
 function App() {
   const location = useLocation();
+  const { user } = useAuth();
 
   // Dashboard routes have their own dedicated sidebar, topbar, and workspace layout
   const isDashboardRoute =
@@ -71,7 +74,8 @@ function App() {
     location.pathname.startsWith('/farmer/products') ||
     location.pathname.startsWith('/farmer/orders') ||
     location.pathname === '/farmer/earnings' ||
-    location.pathname === '/farmer/reviews';
+    location.pathname === '/farmer/reviews' ||
+    (location.pathname === '/account/security' && (user?.role === 'FARMER' || user?.role === 'ADMIN'));
 
   const isFullBleed =
     isDashboardRoute ||
@@ -114,6 +118,16 @@ function App() {
             <Route path="/farmers/:id" element={<FarmerPublicProfile />} />
             <Route path="/farmer/:id" element={<FarmerPublicProfile />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* Shared Authenticated Account Security Route */}
+            <Route
+              path="/account/security"
+              element={
+                <ProtectedRoute allowedRoles={['CUSTOMER', 'FARMER', 'ADMIN']}>
+                  <Security />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Farmer Routes */}
             <Route

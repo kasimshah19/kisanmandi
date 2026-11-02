@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Check, Globe } from 'lucide-react';
+import { getToken } from '../utils/tokenStore';
 
 const WELCOMED_STORAGE_KEY = 'kisanmandi_welcome_seen';
 const LEGACY_STORAGE_KEY = 'kisanmandi_welcomed';
@@ -25,10 +26,10 @@ export default function LanguageWelcomeModal({ force = false }) {
     try {
       const alreadyWelcomed = localStorage.getItem(WELCOMED_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       const savedLang = localStorage.getItem('kisanmandi_lang');
-      const token = localStorage.getItem('kisanmandi_token');
+      const hasSession = Boolean(getToken() || localStorage.getItem('kisanmandi_user'));
 
       // Never show to logged in users or users who have already selected language/welcomed
-      if (!alreadyWelcomed && !savedLang && !token) {
+      if (!alreadyWelcomed && !savedLang && !hasSession) {
         setIsOpen(true);
       }
     } catch {

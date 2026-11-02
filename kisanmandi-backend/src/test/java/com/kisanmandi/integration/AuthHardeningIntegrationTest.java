@@ -8,6 +8,7 @@ import com.kisanmandi.entity.UserStatus;
 import com.kisanmandi.repository.PasswordResetTokenRepository;
 import com.kisanmandi.repository.UserRepository;
 import com.kisanmandi.security.JwtUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -53,10 +55,22 @@ class AuthHardeningIntegrationTest {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private com.kisanmandi.security.RateLimitFilter rateLimitFilter;
+
+    @Autowired
+    private com.kisanmandi.repository.RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private com.kisanmandi.repository.LoginAttemptRepository loginAttemptRepository;
+
     private User testUser;
 
     @BeforeEach
     void setup() {
+        rateLimitFilter.reset();
+        refreshTokenRepository.deleteAll();
+        loginAttemptRepository.deleteAll();
         emailVerificationTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();
         userRepository.deleteAll();
@@ -73,6 +87,16 @@ class AuthHardeningIntegrationTest {
                 .failedLoginAttempts(0)
                 .build();
         testUser = userRepository.save(testUser);
+    }
+
+    @AfterEach
+    void tearDown() {
+        rateLimitFilter.reset();
+        refreshTokenRepository.deleteAll();
+        loginAttemptRepository.deleteAll();
+        emailVerificationTokenRepository.deleteAll();
+        passwordResetTokenRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -117,7 +141,7 @@ class AuthHardeningIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Password changed successfully. Please log in again."));
+                .andExpect(jsonPath("$.token").isNotEmpty());
 
         User updated = userRepository.findById(testUser.getId()).orElseThrow();
         assertTrue(passwordEncoder.matches("NewPassword@1234", updated.getPassword()));
@@ -140,7 +164,7 @@ class AuthHardeningIntegrationTest {
     }
 
     @Test
-    @DisplayName("Logout: increments tokenVersion and revokes old JWT")
+    @DisplayName("Logout-all: increments tokenVersion and revokes old JWT")
     void logout_revokesOldJwt() throws Exception {
         String oldToken = jwtUtil.generateToken(testUser.getEmail(), testUser.getRole().name(), testUser.getTokenVersion());
 
@@ -149,11 +173,10 @@ class AuthHardeningIntegrationTest {
                         .header("Authorization", "Bearer " + oldToken))
                 .andExpect(status().isOk());
 
-        // Perform logout
-        mockMvc.perform(post("/api/auth/logout")
+        // Perform logout-all
+        mockMvc.perform(post("/api/auth/logout-all")
                         .header("Authorization", "Bearer " + oldToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Logged out successfully."));
+                .andExpect(status().isNoContent());
 
         // Verify old token is now rejected (tokenVersion mismatch)
         mockMvc.perform(get("/api/auth/me")
@@ -162,27 +185,29 @@ class AuthHardeningIntegrationTest {
     }
 
     @Test
-    @DisplayName("Brute force protection: 5 bad attempts locks account and returns 423")
+    @DisplayName("Brute force protection: 5 bad attempts locks account and returns 429")
     void bruteForce_fiveAttempts_locksAccount() throws Exception {
         LoginRequest badRequest = new LoginRequest("hardened@example.com", "WrongPassword");
 
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 1; i <= 4; i++) {
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(badRequest)))
                     .andExpect(status().isUnauthorized());
         }
 
-        User lockedUser = userRepository.findById(testUser.getId()).orElseThrow();
-        assertEquals(5, lockedUser.getFailedLoginAttempts());
-        assertNotNull(lockedUser.getLockoutUntil());
-        assertTrue(lockedUser.getLockoutUntil().isAfter(LocalDateTime.now()));
+        // 5th attempt triggers lockout and returns 429
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(badRequest)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"));
 
-        // 6th attempt returns 423 Locked
+        // 6th attempt returns 429
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginRequest("hardened@example.com", "Password@123"))))
-                .andExpect(status().is(423))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Account is temporarily locked")));
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Too many failed attempts")));
     }
 }

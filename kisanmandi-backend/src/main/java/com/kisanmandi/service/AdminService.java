@@ -29,6 +29,7 @@ public class AdminService {
     private final ReviewService reviewService;
     private final AppMetricsService appMetricsService;
     private final MandiSyncLogRepository mandiSyncLogRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final org.springframework.core.env.Environment environment;
 
@@ -336,7 +337,9 @@ public class AdminService {
         }
         user.setStatus(UserStatus.BLOCKED);
         user.setBlockedReason(request != null ? request.getReason() : null);
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
+        refreshTokenRepository.revokeAllByUser(user.getId(), java.time.LocalDateTime.now());
     }
 
     @Transactional
