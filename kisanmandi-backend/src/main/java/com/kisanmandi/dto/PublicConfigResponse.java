@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PublicConfigResponse {
+    private boolean emailEnabled;
+    private boolean requireVerifiedEmail;
     private boolean paymentEnabled;
     private String razorpayKeyId;
 }

@@ -54,6 +54,12 @@ export const resendVerification = async () => {
   return response.data;
 };
 
+// Update preferred language for logged-in user
+export const updateLanguage = async (language) => {
+  const response = await axiosInstance.put('/auth/me/language', { language });
+  return response.data;
+};
+
 // Logout current session (revokes refresh token family and clears cookie)
 export const logout = async () => {
   try {

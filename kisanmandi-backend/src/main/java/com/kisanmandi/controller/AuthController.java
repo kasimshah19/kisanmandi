@@ -113,12 +113,12 @@ public class AuthController {
 
     @Operation(summary = "Request password reset email")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Reset link processed (no user enumeration)")
+            @ApiResponse(responseCode = "202", description = "Reset link processed (no user enumeration)")
     })
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String message = authService.forgotPassword(request);
-        return ResponseEntity.ok(Map.of("message", message));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of("message", message));
     }
 
     @Operation(summary = "Reset password using token")
@@ -164,5 +164,22 @@ public class AuthController {
     public ResponseEntity<UserResponse> me() {
         UserResponse response = authService.getCurrentUser();
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Update preferred language for authenticated user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Language updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid language"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PutMapping("/me/language")
+    public ResponseEntity<Map<String, String>> updateLanguage(@Valid @RequestBody UpdateLanguageRequest request) {
+        org.springframework.security.core.userdetails.UserDetails userDetails =
+                (org.springframework.security.core.userdetails.UserDetails) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long userId = (userDetails instanceof com.kisanmandi.security.CustomUserDetails cud)
+                ? cud.getId()
+                : authService.getCurrentUser().getId();
+        authService.updateLanguage(userId, request.getLanguage());
+        return ResponseEntity.ok(Map.of("message", "Language preference updated successfully"));
     }
 }

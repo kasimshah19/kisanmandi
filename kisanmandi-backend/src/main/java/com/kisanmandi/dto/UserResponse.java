@@ -12,6 +12,7 @@ public class UserResponse {
     private String role;
     private String status;
     private boolean emailVerified;
+    private String preferredLanguage;
 
     public boolean isActive() {
         return "ACTIVE".equalsIgnoreCase(status);

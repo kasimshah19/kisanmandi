@@ -100,20 +100,20 @@ class AuthHardeningIntegrationTest {
     }
 
     @Test
-    @DisplayName("Forgot password does not enumerate users (returns 200 for both known and unknown emails)")
+    @DisplayName("Forgot password does not enumerate users (returns 202 Accepted for both known and unknown emails)")
     void forgotPassword_noEnumeration() throws Exception {
         // Unknown email
         mockMvc.perform(post("/api/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ForgotPasswordRequest("nonexistent@example.com"))))
-                .andExpect(status().isOk())
+                .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.message").value("If that email is registered, password reset instructions have been sent."));
 
         // Known email
         mockMvc.perform(post("/api/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ForgotPasswordRequest("hardened@example.com"))))
-                .andExpect(status().isOk())
+                .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.message").value("If that email is registered, password reset instructions have been sent."));
     }
 

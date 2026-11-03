@@ -41,8 +41,18 @@ public class OrderService {
     private final NotificationService notificationService;
     private final PaymentService paymentService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.auth.require-verified-email:false}")
+    private boolean requireVerifiedEmail;
+
     @Transactional
     public List<OrderSummaryResponse> checkout(Long customerId, CheckoutRequest request) {
+        User customer = userRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        if (requireVerifiedEmail && !customer.isEmailVerified()) {
+            throw new com.kisanmandi.exception.EmailNotVerifiedException("Please verify your email address to checkout.");
+        }
+
         List<CartItem> cartItems = cartItemRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
         if (cartItems.isEmpty()) {
             appMetricsService.incrementCheckoutFailures("cart_empty");
@@ -54,9 +64,6 @@ public class OrderService {
         if (!address.getUser().getId().equals(customerId)) {
             throw new ResourceNotFoundException("Address not found");
         }
-
-        User customer = userRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         // Group items by farmer
         Map<Long, List<CartItem>> itemsByFarmer = cartItems.stream()

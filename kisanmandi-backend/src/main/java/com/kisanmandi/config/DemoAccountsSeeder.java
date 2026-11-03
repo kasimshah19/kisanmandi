@@ -79,6 +79,8 @@ public class DemoAccountsSeeder implements CommandLineRunner {
                 .role(Role.CUSTOMER)
                 .status(com.kisanmandi.entity.UserStatus.ACTIVE)
                 .emailVerified(true)
+                .emailVerifiedAt(LocalDateTime.now())
+                .preferredLanguage("en")
                 .tokenVersion(1)
                 .failedLoginAttempts(0)
                 .build();
@@ -102,6 +104,8 @@ public class DemoAccountsSeeder implements CommandLineRunner {
                 .role(Role.FARMER)
                 .status(com.kisanmandi.entity.UserStatus.ACTIVE)
                 .emailVerified(true)
+                .emailVerifiedAt(LocalDateTime.now())
+                .preferredLanguage("en")
                 .tokenVersion(1)
                 .failedLoginAttempts(0)
                 .build();

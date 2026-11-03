@@ -27,6 +27,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int REGISTER_LIMIT = 5;      // max 5 requests per minute
     private static final int REFRESH_LIMIT = 30;     // max 30 requests per minute
     private static final int PASSWORD_LIMIT = 10;    // max 10 requests per minute
+    private static final int FORGOT_PASSWORD_LIMIT = 10; // max 10 requests per minute per IP
     private static final long WINDOW_MS = 60_000L;   // 1 minute window
 
     // Key: "ip:endpoint", Value: deque of request timestamps (epoch ms)
@@ -61,6 +62,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 }
             } else if ("/api/auth/change-password".equals(path)) {
                 if (isRateLimited(request, "password", PASSWORD_LIMIT, response)) {
+                    return;
+                }
+            } else if ("/api/auth/forgot-password".equals(path)) {
+                if (isRateLimited(request, "forgot-password", FORGOT_PASSWORD_LIMIT, response)) {
                     return;
                 }
             }

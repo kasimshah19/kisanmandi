@@ -13,7 +13,7 @@ import HeroFarmScene from '../../components/illustrations/HeroFarmScene';
 import PasswordPolicyChecklist, { checkPasswordRules } from '../../components/PasswordPolicyChecklist';
 
 export default function Register() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   useDocumentTitle('Register | KisanMandi');
 
   const { register } = useAuth();
@@ -124,12 +124,16 @@ export default function Register() {
 
     setIsLoading(true);
     try {
+      const currentLang = (i18n?.resolvedLanguage || i18n?.language || 'en').split('-')[0];
+      const lang = ['en', 'hi', 'mr'].includes(currentLang) ? currentLang : 'en';
+
       await register({
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone,
         password: form.password,
         role: form.role,
+        language: lang,
       });
       toast.success(t('auth.register_success', 'Account created! Please sign in.'));
       navigate('/login');

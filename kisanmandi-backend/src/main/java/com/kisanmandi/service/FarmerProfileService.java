@@ -24,6 +24,9 @@ public class FarmerProfileService {
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.auth.require-verified-email:false}")
+    private boolean requireVerifiedEmail;
+
     @Transactional(readOnly = true)
     public FarmerProfileResponse getMyProfile(Long userId) {
         Optional<FarmerProfile> profileOpt = farmerProfileRepository.findByUserId(userId);
@@ -39,6 +42,10 @@ public class FarmerProfileService {
     public FarmerProfileResponse saveProfile(Long userId, FarmerProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (requireVerifiedEmail && !user.isEmailVerified()) {
+            throw new com.kisanmandi.exception.EmailNotVerifiedException("Please verify your email address to submit farmer profile.");
+        }
 
         FarmerProfile profile = farmerProfileRepository.findByUserId(userId)
                 .orElse(FarmerProfile.builder()

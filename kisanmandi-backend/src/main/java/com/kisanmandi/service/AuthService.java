@@ -45,6 +45,8 @@ public class AuthService {
     public static final String REFRESH_COOKIE_NAME = "km_refresh";
 
     private final UserRepository userRepository;
+    private final UserTokenRepository userTokenRepository;
+    private final UserTokenService userTokenService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -58,6 +60,7 @@ public class AuthService {
     private final ApplicationEventPublisher eventPublisher;
 
     private final SecureRandom secureRandom = new SecureRandom();
+    private final java.util.concurrent.ConcurrentHashMap<String, java.util.Deque<Long>> forgotPasswordEmailAttempts = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -70,6 +73,35 @@ public class AuthService {
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthService(UserRepository userRepository,
+                       UserTokenRepository userTokenRepository,
+                       UserTokenService userTokenService,
+                       RefreshTokenRepository refreshTokenRepository,
+                       LoginAttemptRepository loginAttemptRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil,
+                       AuthenticationManager authenticationManager,
+                       AppMetricsService appMetricsService,
+                       EmailService emailService,
+                       ClientIpResolver clientIpResolver,
+                       ApplicationEventPublisher eventPublisher) {
+        this.userRepository = userRepository;
+        this.userTokenRepository = userTokenRepository;
+        this.userTokenService = userTokenService;
+        this.passwordResetTokenRepository = null;
+        this.emailVerificationTokenRepository = null;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.loginAttemptRepository = loginAttemptRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.authenticationManager = authenticationManager;
+        this.appMetricsService = appMetricsService;
+        this.emailService = emailService;
+        this.clientIpResolver = clientIpResolver;
+        this.eventPublisher = eventPublisher;
+    }
 
     public AuthService(UserRepository userRepository,
                        PasswordResetTokenRepository passwordResetTokenRepository,
@@ -84,6 +116,8 @@ public class AuthService {
                        ClientIpResolver clientIpResolver,
                        ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
+        this.userTokenRepository = null;
+        this.userTokenService = null;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -109,6 +143,13 @@ public class AuthService {
             throw new DuplicateEmailException("Email is already registered");
         }
 
+        String lang = (request.getLanguage() != null && !request.getLanguage().isBlank())
+                ? request.getLanguage().toLowerCase(Locale.ROOT).trim()
+                : "en";
+        if (!List.of("en", "hi", "mr").contains(lang)) {
+            lang = "en";
+        }
+
         User user = User.builder()
                 .name(request.getName().trim())
                 .email(email)
@@ -116,6 +157,7 @@ public class AuthService {
                 .phone(request.getPhone())
                 .role(request.getRole())
                 .emailVerified(false)
+                .preferredLanguage(lang)
                 .tokenVersion(1)
                 .failedLoginAttempts(0)
                 .build();
@@ -123,19 +165,31 @@ public class AuthService {
         user = userRepository.save(user);
 
         try {
-            String rawToken = TokenHashUtil.generateRandomToken();
-            String tokenHash = TokenHashUtil.hashToken(rawToken);
+            if (userTokenService != null) {
+                String rawToken = userTokenService.createToken(user, UserTokenType.VERIFY_EMAIL);
+                String verifyLink = frontendUrl + "/verify-email#token=" + rawToken;
+                eventPublisher.publishEvent(new com.kisanmandi.event.SendEmailEvent(
+                        com.kisanmandi.event.EmailType.VERIFY_EMAIL,
+                        user.getEmail(),
+                        user.getName(),
+                        verifyLink,
+                        user.getPreferredLanguage()
+                ));
+            } else if (emailVerificationTokenRepository != null) {
+                String rawToken = TokenHashUtil.generateRandomToken();
+                String tokenHash = TokenHashUtil.hashToken(rawToken);
 
-            EmailVerificationToken token = EmailVerificationToken.builder()
-                    .user(user)
-                    .tokenHash(tokenHash)
-                    .expiresAt(LocalDateTime.now().plusHours(24))
-                    .used(false)
-                    .build();
-            emailVerificationTokenRepository.save(token);
+                EmailVerificationToken token = EmailVerificationToken.builder()
+                        .user(user)
+                        .tokenHash(tokenHash)
+                        .expiresAt(LocalDateTime.now().plusHours(24))
+                        .used(false)
+                        .build();
+                emailVerificationTokenRepository.save(token);
 
-            String verifyLink = frontendUrl + "/verify-email?token=" + rawToken;
-            emailService.sendEmailVerificationEmail(user.getEmail(), verifyLink);
+                String verifyLink = frontendUrl + "/verify-email#token=" + rawToken;
+                emailService.sendEmailVerificationEmail(user.getEmail(), verifyLink);
+            }
         } catch (Exception ex) {
             log.warn("Failed to generate or send verification email on register: {}", ex.getMessage());
         }
@@ -258,6 +312,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .emailVerified(user.isEmailVerified())
+                .preferredLanguage(user.getPreferredLanguage())
                 .build();
     }
 
@@ -369,6 +424,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .emailVerified(user.isEmailVerified())
+                .preferredLanguage(user.getPreferredLanguage())
                 .build();
     }
 
@@ -506,37 +562,79 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .emailVerified(user.isEmailVerified())
+                .preferredLanguage(user.getPreferredLanguage())
                 .build();
     }
 
-    // ─── Forgot Password (No user enumeration) ───
+    // ─── Forgot Password (No user enumeration + Rate Limited) ───
     @Transactional
     public String forgotPassword(ForgotPasswordRequest request) {
         String email = request.getEmail().toLowerCase(Locale.ROOT).trim();
-        Optional<User> userOpt = userRepository.findByEmail(email);
 
+        // 1. Sliding window rate limit per email (3 requests per hour)
+        long now = System.currentTimeMillis();
+        long window = 3600_000L;
+        java.util.Deque<Long> timestamps = forgotPasswordEmailAttempts.computeIfAbsent(email, k -> new java.util.ArrayDeque<>());
+        long retryAfter = 3600;
+        boolean rateLimited = false;
+
+        synchronized (timestamps) {
+            while (!timestamps.isEmpty() && now - timestamps.peekFirst() > window) {
+                timestamps.pollFirst();
+            }
+            if (timestamps.size() >= 3) {
+                rateLimited = true;
+                long oldest = timestamps.peekFirst() != null ? timestamps.peekFirst() : now;
+                retryAfter = Math.max(1, (oldest + window - now) / 1000);
+            } else {
+                timestamps.addLast(now);
+            }
+        }
+
+        if (rateLimited) {
+            log.warn("Password reset rate limited for email. requestId={}", MDC.get("requestId"));
+            throw new com.kisanmandi.exception.RateLimitExceededException(
+                    "Too many password reset requests. Please try again after " + Math.max(1, (retryAfter + 59) / 60) + " minutes.",
+                    retryAfter
+            );
+        }
+
+        // 2. Prevent user enumeration: identical body and timing whether user exists or not
+        Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             try {
-                passwordResetTokenRepository.deleteByUser(user);
-
-                String rawToken = TokenHashUtil.generateRandomToken();
-                String tokenHash = TokenHashUtil.hashToken(rawToken);
-
-                PasswordResetToken resetToken = PasswordResetToken.builder()
-                        .user(user)
-                        .tokenHash(tokenHash)
-                        .expiresAt(LocalDateTime.now().plusHours(1))
-                        .used(false)
-                        .build();
-
-                passwordResetTokenRepository.save(resetToken);
-
-                String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
-                emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+                if (userTokenService != null) {
+                    String rawToken = userTokenService.createToken(user, UserTokenType.RESET_PASSWORD);
+                    String resetLink = frontendUrl + "/reset-password#token=" + rawToken;
+                    eventPublisher.publishEvent(new com.kisanmandi.event.SendEmailEvent(
+                            com.kisanmandi.event.EmailType.RESET_PASSWORD,
+                            user.getEmail(),
+                            user.getName(),
+                            resetLink,
+                            user.getPreferredLanguage()
+                    ));
+                    log.info("Password reset token generated and email dispatched for user id {}", user.getId());
+                } else if (passwordResetTokenRepository != null) {
+                    passwordResetTokenRepository.deleteByUser(user);
+                    String rawToken = TokenHashUtil.generateRandomToken();
+                    String tokenHash = TokenHashUtil.hashToken(rawToken);
+                    PasswordResetToken resetToken = PasswordResetToken.builder()
+                            .user(user)
+                            .tokenHash(tokenHash)
+                            .expiresAt(LocalDateTime.now().plusHours(1))
+                            .used(false)
+                            .build();
+                    passwordResetTokenRepository.save(resetToken);
+                    String resetLink = frontendUrl + "/reset-password#token=" + rawToken;
+                    emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+                }
             } catch (Exception e) {
                 log.error("Error creating password reset token for user ID {}: {}", user.getId(), e.getMessage());
             }
+        } else {
+            // Constant-time dummy work to prevent timing side-channel
+            passwordEncoder.matches("dummyPassword", "$2a$10$wK1.V6dY6Hh1m.K/Wv1.YeP.q.12345678901234567890123");
         }
 
         return "If that email is registered, password reset instructions have been sent.";
@@ -545,15 +643,27 @@ public class AuthService {
     // ─── Reset Password using Token ───
     @Transactional
     public String resetPassword(ResetPasswordRequest request) {
-        String tokenHash = TokenHashUtil.hashToken(request.getToken().trim());
-        PasswordResetToken token = passwordResetTokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset link"));
-
-        if (token.isUsed() || token.isExpired()) {
-            throw new IllegalArgumentException("Invalid or expired password reset link");
+        if (request.getToken() == null || request.getToken().isBlank()) {
+            throw new IllegalArgumentException("Token is required");
         }
 
-        User user = token.getUser();
+        User user;
+        if (userTokenService != null) {
+            user = userTokenService.consumeToken(request.getToken(), UserTokenType.RESET_PASSWORD);
+        } else if (passwordResetTokenRepository != null) {
+            String tokenHash = TokenHashUtil.hashToken(request.getToken().trim());
+            PasswordResetToken token = passwordResetTokenRepository.findByTokenHash(tokenHash)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset link"));
+            if (token.isUsed() || token.isExpired()) {
+                throw new IllegalArgumentException("Invalid or expired password reset link");
+            }
+            token.setUsed(true);
+            passwordResetTokenRepository.save(token);
+            user = token.getUser();
+        } else {
+            throw new IllegalStateException("Token service unavailable");
+        }
+
         List<String> policyErrors = PasswordPolicy.validate(request.getNewPassword(), user.getEmail());
         if (!policyErrors.isEmpty()) {
             throw new IllegalArgumentException(policyErrors.get(0));
@@ -569,10 +679,20 @@ public class AuthService {
         // Revoke all refresh tokens
         refreshTokenRepository.revokeAllByUser(user.getId(), LocalDateTime.now());
 
-        token.setUsed(true);
-        passwordResetTokenRepository.save(token);
+        // Clear email lockout if any
+        loginAttemptRepository.findById(user.getEmail()).ifPresent(attempt -> {
+            attempt.setFailedCount(0);
+            attempt.setLockedUntil(null);
+            loginAttemptRepository.save(attempt);
+        });
 
-        eventPublisher.publishEvent(new PasswordChangedEvent(user.getId(), user.getEmail(), MDC.get("requestId")));
+        eventPublisher.publishEvent(new PasswordChangedEvent(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                user.getPreferredLanguage(),
+                MDC.get("requestId")
+        ));
         log.info("Auth event: password_reset. userId={}, requestId={}", user.getId(), MDC.get("requestId"));
 
         return "Password reset successfully. Please log in with your new password.";
@@ -581,20 +701,32 @@ public class AuthService {
     // ─── Verify Email using Token ───
     @Transactional
     public String verifyEmail(VerifyEmailRequest request) {
-        String tokenHash = TokenHashUtil.hashToken(request.getToken().trim());
-        EmailVerificationToken token = emailVerificationTokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired email verification link"));
-
-        if (token.isUsed() || token.isExpired()) {
-            throw new IllegalArgumentException("Invalid or expired email verification link");
+        if (request.getToken() == null || request.getToken().isBlank()) {
+            throw new IllegalArgumentException("Token is required");
         }
 
-        User user = token.getUser();
-        user.setEmailVerified(true);
-        userRepository.save(user);
+        User user;
+        if (userTokenService != null) {
+            user = userTokenService.consumeToken(request.getToken(), UserTokenType.VERIFY_EMAIL);
+        } else if (emailVerificationTokenRepository != null) {
+            String tokenHash = TokenHashUtil.hashToken(request.getToken().trim());
+            EmailVerificationToken token = emailVerificationTokenRepository.findByTokenHash(tokenHash)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid or expired email verification link"));
+            if (token.isUsed() || token.isExpired()) {
+                throw new IllegalArgumentException("Invalid or expired email verification link");
+            }
+            token.setUsed(true);
+            emailVerificationTokenRepository.save(token);
+            user = token.getUser();
+        } else {
+            throw new IllegalStateException("Token service unavailable");
+        }
 
-        token.setUsed(true);
-        emailVerificationTokenRepository.save(token);
+        if (!user.isEmailVerified()) {
+            user.setEmailVerified(true);
+            user.setEmailVerifiedAt(LocalDateTime.now());
+            userRepository.save(user);
+        }
 
         log.info("Auth event: email_verified. userId={}, requestId={}", user.getId(), MDC.get("requestId"));
         return "Email verified successfully!";
@@ -602,32 +734,86 @@ public class AuthService {
 
     // ─── Resend Verification Email for Logged-In User ───
     @Transactional
-    public String resendVerification() {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User user = userRepository.findByEmail(userDetails.getUsername())
+    public String resendVerification(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (user.isEmailVerified()) {
             throw new IllegalStateException("Your email is already verified");
         }
 
-        emailVerificationTokenRepository.deleteByUser(user);
+        // 1. Cooldown check (60 seconds)
+        if (userTokenRepository != null) {
+            Optional<UserToken> latestOpt = userTokenRepository.findTopByUserIdAndTypeOrderByCreatedAtDesc(user.getId(), UserTokenType.VERIFY_EMAIL);
+            if (latestOpt.isPresent()) {
+                long secondsSince = Duration.between(latestOpt.get().getCreatedAt(), LocalDateTime.now()).getSeconds();
+                if (secondsSince >= 0 && secondsSince < 60) {
+                    long retryAfter = 60 - secondsSince;
+                    throw new com.kisanmandi.exception.RateLimitExceededException(
+                            "Please wait " + retryAfter + " seconds before requesting another verification email.",
+                            retryAfter
+                    );
+                }
+            }
 
-        String rawToken = TokenHashUtil.generateRandomToken();
-        String tokenHash = TokenHashUtil.hashToken(rawToken);
+            // 2. Daily limit check (max 5 per day)
+            LocalDateTime oneDayAgo = LocalDateTime.now().minusHours(24);
+            int count = userTokenRepository.countByUserIdAndTypeAndCreatedAtAfter(user.getId(), UserTokenType.VERIFY_EMAIL, oneDayAgo);
+            if (count >= 5) {
+                throw new com.kisanmandi.exception.RateLimitExceededException(
+                        "Maximum verification emails reached for today. Please try again tomorrow.",
+                        3600
+                );
+            }
+        }
 
-        EmailVerificationToken token = EmailVerificationToken.builder()
-                .user(user)
-                .tokenHash(tokenHash)
-                .expiresAt(LocalDateTime.now().plusHours(24))
-                .used(false)
-                .build();
-        emailVerificationTokenRepository.save(token);
-
-        String verifyLink = frontendUrl + "/verify-email?token=" + rawToken;
-        emailService.sendEmailVerificationEmail(user.getEmail(), verifyLink);
+        if (userTokenService != null) {
+            String rawToken = userTokenService.createToken(user, UserTokenType.VERIFY_EMAIL);
+            String verifyLink = frontendUrl + "/verify-email#token=" + rawToken;
+            eventPublisher.publishEvent(new com.kisanmandi.event.SendEmailEvent(
+                    com.kisanmandi.event.EmailType.VERIFY_EMAIL,
+                    user.getEmail(),
+                    user.getName(),
+                    verifyLink,
+                    user.getPreferredLanguage()
+            ));
+        } else if (emailVerificationTokenRepository != null) {
+            emailVerificationTokenRepository.deleteByUser(user);
+            String rawToken = TokenHashUtil.generateRandomToken();
+            String tokenHash = TokenHashUtil.hashToken(rawToken);
+            EmailVerificationToken token = EmailVerificationToken.builder()
+                    .user(user)
+                    .tokenHash(tokenHash)
+                    .expiresAt(LocalDateTime.now().plusHours(24))
+                    .used(false)
+                    .build();
+            emailVerificationTokenRepository.save(token);
+            String verifyLink = frontendUrl + "/verify-email#token=" + rawToken;
+            emailService.sendEmailVerificationEmail(user.getEmail(), verifyLink);
+        }
 
         return "Verification email sent. Please check your inbox.";
+    }
+
+    @Transactional
+    public String resendVerification() {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return resendVerification(user.getId());
+    }
+
+    // ─── Update User Preferred Language ───
+    @Transactional
+    public void updateLanguage(Long userId, String language) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        String lang = language != null ? language.toLowerCase(Locale.ROOT).trim() : "en";
+        if (List.of("en", "hi", "mr").contains(lang)) {
+            user.setPreferredLanguage(lang);
+            userRepository.save(user);
+            log.info("Updated language preference for userId={} to {}", userId, lang);
+        }
     }
 
     // ─── Get the currently logged-in user's profile ───
@@ -643,6 +829,7 @@ public class AuthService {
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
                 .emailVerified(user.isEmailVerified())
+                .preferredLanguage(user.getPreferredLanguage())
                 .build();
     }
 

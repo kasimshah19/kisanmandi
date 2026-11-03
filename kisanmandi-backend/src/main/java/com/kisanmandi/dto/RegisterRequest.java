@@ -35,4 +35,11 @@ public class RegisterRequest {
     @Schema(description = "User role (FARMER or CUSTOMER)", example = "FARMER")
     @NotNull(message = "Role is required (FARMER or CUSTOMER)")
     private Role role;
+
+    @Schema(description = "Preferred language (en, hi, mr)", example = "en")
+    private String language;
+
+    public RegisterRequest(String name, String email, String password, String phone, Role role) {
+        this(name, email, password, phone, role, "en");
+    }
 }

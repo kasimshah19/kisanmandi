@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, AlertTriangle, ArrowRight, Loader2, Mail } from 'lucide-react';
@@ -16,14 +16,51 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, updateUser, isAuthenticated } = useAuth();
-  const token = searchParams.get('token') || '';
 
-  const [status, setStatus] = useState(token ? 'verifying' : 'no_token'); // 'verifying' | 'success' | 'error' | 'no_token'
+  const [token, setToken] = useState('');
+  const [status, setStatus] = useState('verifying'); // 'verifying' | 'success' | 'error' | 'no_token'
   const [errorMessage, setErrorMessage] = useState('');
   const [isResending, setIsResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
+  // StrictMode single-call guard to prevent double verification
+  const executedRef = useRef(false);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      setCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
+
+  // Read token from location.hash (#token=...) or query param and strip from URL
+  useEffect(() => {
+    let extractedToken = '';
+    const hash = window.location.hash || '';
+    const match = hash.match(/token=([^&]+)/);
+    if (match) {
+      extractedToken = decodeURIComponent(match[1]);
+    } else {
+      extractedToken = searchParams.get('token') || '';
+    }
+
+    if (extractedToken) {
+      setToken(extractedToken);
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } else {
+      setStatus('no_token');
+    }
+  }, []);
+
+  // Execute verification once token is resolved
   useEffect(() => {
     if (!token) return;
+    if (executedRef.current) return;
+    executedRef.current = true;
 
     let isMounted = true;
     const verify = async () => {
@@ -55,16 +92,25 @@ export default function VerifyEmail() {
   }, [token]);
 
   const handleResend = async () => {
+    if (cooldown > 0) return;
     setIsResending(true);
     try {
       await resendVerification();
+      setCooldown(60);
       toast.success(t('auth.resend_verification_success', 'A new verification link has been sent to your email.'));
     } catch (error) {
-      const msg =
-        error.friendlyMessage ||
-        error.response?.data?.message ||
-        t('errors.server_timeout', 'Failed to connect. Please try again.');
-      toast.error(msg);
+      if (error.response?.status === 429) {
+        const retryAfter = error.response.data?.retryAfterSeconds || 60;
+        setCooldown(retryAfter);
+        const msg = error.response.data?.message || t('errors.rate_limit', 'Too many requests. Please wait.');
+        toast.error(msg);
+      } else {
+        const msg =
+          error.friendlyMessage ||
+          error.response?.data?.message ||
+          t('errors.server_timeout', 'Failed to connect. Please try again.');
+        toast.error(msg);
+      }
     } finally {
       setIsResending(false);
     }
@@ -147,16 +193,18 @@ export default function VerifyEmail() {
                   variant="primary"
                   fullWidth
                   loading={isResending}
-                  disabled={isResending}
+                  disabled={isResending || cooldown > 0}
                   onClick={handleResend}
                   className="min-h-[50px] font-bold"
                 >
-                  {t('auth.resend_verification_btn', 'Resend verification email')}
+                  {cooldown > 0
+                    ? `${t('auth.resend_email_btn', 'Resend Link')} (${cooldown}s)`
+                    : t('auth.resend_email_btn', 'Resend Link')}
                 </Button>
               ) : (
                 <Link to="/login">
                   <Button variant="primary" fullWidth className="min-h-[50px] font-bold">
-                    {t('auth.proceed_to_login', 'Proceed to login')}
+                    {t('auth.back_to_login', 'Back to login')}
                   </Button>
                 </Link>
               )}
@@ -166,32 +214,25 @@ export default function VerifyEmail() {
 
         {status === 'no_token' && (
           <div className="text-center py-6 space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-stone-100 text-stone-700 flex items-center justify-center mx-auto">
               <Mail size={32} />
             </div>
             <h1 className="text-2xl font-extrabold text-stone-900 tracking-tight">
-              {t('auth.verify_your_email_title', 'Verify your email')}
+              {t('auth.no_token_title', 'Check your email')}
             </h1>
             <p className="text-sm text-stone-600 leading-relaxed">
               {t(
-                'auth.verify_your_email_desc',
-                'We sent a verification link to your email address when you registered. Please click that link to verify your account.'
+                'auth.no_token_desc',
+                'Please click the verification link sent to your registered email address to verify your account.'
               )}
             </p>
-            {isAuthenticated && (
-              <div className="pt-4">
-                <Button
-                  variant="primary"
-                  fullWidth
-                  loading={isResending}
-                  disabled={isResending}
-                  onClick={handleResend}
-                  className="min-h-[50px] font-bold"
-                >
-                  {t('auth.resend_verification_btn', 'Resend verification email')}
+            <div className="pt-4">
+              <Link to="/">
+                <Button variant="outline" fullWidth className="min-h-[50px]">
+                  {t('nav.home', 'Back to Home')}
                 </Button>
-              </div>
-            )}
+              </Link>
+            </div>
           </div>
         )}
       </div>

@@ -118,6 +118,7 @@ public class SecurityConfig {
                     "/api/auth/verify-email",
                     "/api/health",
                     "/api/config/public",
+                    "/api/public/config",
                     "/api/payment/webhook",
                     "/swagger-ui/**",
                     "/swagger-ui.html",

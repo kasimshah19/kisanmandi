@@ -10,6 +10,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 // Runs at startup — creates a default admin user if one doesn't exist yet
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -47,6 +49,8 @@ public class DataSeeder implements CommandLineRunner {
                     .password(passwordEncoder.encode(adminPassword))
                     .role(Role.ADMIN)
                     .emailVerified(true)
+                    .emailVerifiedAt(LocalDateTime.now())
+                    .preferredLanguage("en")
                     .tokenVersion(1)
                     .failedLoginAttempts(0)
                     .build();

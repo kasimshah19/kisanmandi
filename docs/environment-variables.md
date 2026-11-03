@@ -24,13 +24,13 @@
 | `APP_DEMO_FARMER_EMAIL` | No | `farmer@demo.com` | Demo farmer email | Render/local |
 | `APP_DEMO_FARMER_PASSWORD` | No | `DemoFarmer@123` | Demo farmer password | Render/local |
 | `SENTRY_DSN` | No (empty = disabled) | `https://abc@o123.ingest.sentry.io/456` | Backend Sentry error reporting DSN | Render/local |
-| `APP_MAIL_ENABLED` | No (default `false`) | `false` | Enable/disable actual SMTP dispatch (gracefully logs links if false) | Render/local |
-| `APP_MAIL_FROM` | No (default `no-reply@kisanmandi.com`) | `support@kisanmandi.com` | Outgoing email sender address | Render/local |
+| `BREVO_API_KEY` | Yes (prod if brevo used) | `xkeysib-1234567890abcdef...` | Brevo REST API key for HTTPS email delivery (Render blocks SMTP) | Render/local |
+| `APP_MAIL_PROVIDER` | No (default `log`) | `brevo` | Outgoing email provider (`brevo` or `log`) | Render/local |
+| `MAIL_FROM_EMAIL` | No (default `support@kisanmandi.com`) | `notifications@kisanmandi.com` | Outgoing email sender address | Render/local |
+| `MAIL_FROM_NAME` | No (default `KisanMandi`) | `KisanMandi` | Outgoing email sender display name | Render/local |
 | `APP_FRONTEND_URL` | No (default `http://localhost:5173`) | `https://kisanmandi.vercel.app` | Base frontend URL for reset & verification action links | Render/local |
-| `SPRING_MAIL_HOST` | No (default `smtp.gmail.com`) | `smtp.resend.com` | SMTP host for email delivery | Render/local |
-| `SPRING_MAIL_PORT` | No (default `587`) | `587` | SMTP port | Render/local |
-| `SPRING_MAIL_USERNAME` | No (prod if mail enabled) | `resend_or_gmail_user` | SMTP username | Render/local |
-| `SPRING_MAIL_PASSWORD` | No (prod if mail enabled) | `resend_or_app_password` | SMTP password / API token | Render/local |
+| `APP_MAIL_LOG_LINKS` | No (default `true` local, `false` prod) | `true` | Log action links in console for local testing | Local |
+| `REQUIRE_VERIFIED_EMAIL` | No (default `false`) | `false` | Gate checkout, product creation, and profile submission behind email verification | Render/local |
 | `APP_PAYMENT_ENABLED` | No (default `false`) | `true` | Enable/disable online payments (falls back to COD if false) | Render/local |
 | `RAZORPAY_KEY_ID` | No (prod if payment enabled) | `rzp_live_abcdef123456` | Razorpay public Key ID | Render/local |
 | `RAZORPAY_KEY_SECRET` | No (prod if payment enabled) | `your_razorpay_secret_key` | Razorpay secret key (HMAC-SHA256 signature verification) | Render/local |

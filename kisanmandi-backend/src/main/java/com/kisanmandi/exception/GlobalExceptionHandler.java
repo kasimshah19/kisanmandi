@@ -61,6 +61,34 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, "Your account is blocked");
     }
 
+    // ─── Rate Limit Exceeded → 429 ───
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimitExceeded(RateLimitExceededException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", 429);
+        body.put("error", "Too Many Requests");
+        body.put("message", ex.getMessage());
+        body.put("retryAfterSeconds", ex.getRetryAfterSeconds());
+        body.put("requestId", resolveRequestId());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(body);
+    }
+
+    // ─── Email Not Verified Gate → 403 with code EMAIL_NOT_VERIFIED ───
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailNotVerified(EmailNotVerifiedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", 403);
+        body.put("error", "Forbidden");
+        body.put("code", "EMAIL_NOT_VERIFIED");
+        body.put("message", ex.getMessage());
+        body.put("requestId", resolveRequestId());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
     // ─── Account lockout (brute-force rate limiting) → 429 ───
     @ExceptionHandler(AccountLockedException.class)
     public ResponseEntity<Map<String, Object>> handleAccountLocked(AccountLockedException ex) {

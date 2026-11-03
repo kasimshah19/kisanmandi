@@ -3,11 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { Globe, ChevronDown, Check } from 'lucide-react';
 import { LANGUAGES } from '../utils/languages';
+import { useAuth } from '../context/AuthContext';
+import { updateLanguage } from '../services/authService';
 
 export default function LanguageSwitcher({ variant = 'dropdown', className = '' }) {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const menuId = useId();
+
+  let isAuthenticated = false;
+  try {
+    const auth = useAuth();
+    isAuthenticated = Boolean(auth?.isAuthenticated);
+  } catch {
+    // Safe fallback when component is mounted outside AuthProvider (e.g. isolated tests)
+  }
   const triggerId = useId();
 
   // Resolved current language code ('en', 'hi', or 'mr')
@@ -30,6 +40,9 @@ export default function LanguageSwitcher({ variant = 'dropdown', className = '' 
     }
     if (typeof document !== 'undefined') {
       document.documentElement.lang = code;
+    }
+    if (isAuthenticated) {
+      updateLanguage(code).catch(() => {});
     }
     setIsOpen(false);
     triggerRef.current?.focus();

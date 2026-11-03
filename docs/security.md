@@ -148,3 +148,33 @@ Sliding window in-memory rate limiting protects sensitive authentication routes:
 - Stale, revoked, or expired refresh tokens older than 30 days are purged nightly via `@Scheduled(cron = "0 0 3 * * *")` and on application startup.
 - Expired login attempts older than 1 day are cleaned up automatically to maintain optimal table performance.
 
+---
+
+## 7. Email Verification & Account Recovery Security
+
+### Cryptographic Opaque Tokens
+- **Entropy**: 32 cryptographically secure random bytes generated with `java.security.SecureRandom`, encoded as Base64URL.
+- **Hash-at-Rest**: Raw tokens are never stored in the database. Only SHA-256 hashes (`CHAR(64)` in `user_tokens`) are persisted.
+- **Single Active Token**: Generating a new verification or reset token automatically invalidates any existing unused tokens of the same type for that user.
+- **Atomic Single-Use Update**:
+  Token consumption executes an atomic database update (`UPDATE user_tokens SET used_at = :now WHERE token_hash = :hash AND type = :type AND used_at IS NULL AND expires_at > :now`), preventing race conditions and token replay attacks.
+- **Token Expiry**:
+  - Email Verification tokens expire in **24 hours**.
+  - Password Reset tokens expire in **30 minutes**.
+
+### URL Fragment Security (`#token=...`)
+- Emailed links format tokens as URL hash fragments (`/reset-password#token=...` and `/verify-email#token=...`).
+- Hash fragments are client-side only and are **never transmitted across the network** in HTTP request lines, reverse proxy logs, server access logs, or `Referer` headers.
+- The frontend extracts the token synchronously, cleanses the browser address bar immediately via `history.replaceState()`, and injects `<meta name="referrer" content="no-referrer">`.
+
+### Anti-Enumeration & Side-Channel Mitigation
+- `POST /api/auth/forgot-password` unconditionally returns `HTTP 202 Accepted` with an identical message for both existing and non-existing email addresses.
+- To prevent timing side-channel attacks, non-existent accounts trigger a constant-time dummy BCrypt check (`passwordEncoder.matches("dummyPassword", "$2a$10$...")`).
+- The endpoint is protected by dual-tier rate limiting: 3 attempts per hour per email, and 10 attempts per minute per IP address.
+
+### Post-Reset Session Invalidation
+- Resetting a password immediately increments `token_version` on the user record, revoking all existing access tokens.
+- All active refresh tokens in `refresh_tokens` are revoked (`revoked_at = NOW()`), logging the user out across all devices.
+- An asynchronous security notification email (`PasswordChangedEvent`) is dispatched immediately to alert the account owner.
+
+

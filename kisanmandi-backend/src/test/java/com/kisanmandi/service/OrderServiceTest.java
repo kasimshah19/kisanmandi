@@ -91,6 +91,7 @@ class OrderServiceTest {
 
     @Test
     void checkout_emptyCart_throwsException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(cartItemRepository.findByCustomerIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
 
         CheckoutRequest request = new CheckoutRequest();
@@ -109,6 +110,7 @@ class OrderServiceTest {
         Product product = createProduct(50L, "Tomato", farmer1, new BigDecimal("50.00"));
         CartItem item = CartItem.builder().id(1L).customer(customer).product(product).quantity(new BigDecimal("2.00")).build();
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
         when(cartItemRepository.findByCustomerIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(item));
         when(addressRepository.findById(100L)).thenReturn(Optional.of(otherAddress));
 

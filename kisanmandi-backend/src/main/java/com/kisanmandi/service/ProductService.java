@@ -41,6 +41,9 @@ public class ProductService {
     private final CloudinaryService cloudinaryService;
     private final NearbyService nearbyService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.auth.require-verified-email:false}")
+    private boolean requireVerifiedEmail;
+
     @Transactional(readOnly = true)
     public ProductResponse getMyProduct(Long farmerId, Long productId) {
         Product product = getFarmerProduct(farmerId, productId);
@@ -53,6 +56,10 @@ public class ProductService {
 
         User farmer = userRepository.findById(farmerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Farmer not found"));
+
+        if (requireVerifiedEmail && !farmer.isEmailVerified()) {
+            throw new com.kisanmandi.exception.EmailNotVerifiedException("Please verify your email address to add products.");
+        }
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));

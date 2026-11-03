@@ -55,6 +55,12 @@ public class User {
     @Builder.Default
     private boolean emailVerified = false;
 
+    private LocalDateTime emailVerifiedAt;
+
+    @Column(nullable = false, length = 5)
+    @Builder.Default
+    private String preferredLanguage = "en";
+
     @Column(nullable = false)
     @Builder.Default
     private int tokenVersion = 1;
@@ -82,6 +88,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private java.util.List<RefreshToken> refreshTokens = new java.util.ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<UserToken> userTokens = new java.util.ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

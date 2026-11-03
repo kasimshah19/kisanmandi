@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Lock, Eye, EyeOff, CheckCircle2, ArrowRight, AlertTriangle } from 'lucide-react';
@@ -7,6 +7,7 @@ import useDocumentTitle from '../../hooks/useDocumentTitle';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { FormField, Input } from '../../components/ui/FormField';
 import Button from '../../components/ui/Button';
+import PasswordPolicyChecklist, { checkPasswordRules } from '../../components/PasswordPolicyChecklist';
 import { resetPassword } from '../../services/authService';
 
 export default function ResetPassword() {
@@ -15,13 +16,49 @@ export default function ResetPassword() {
 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token') || '';
 
+  const getInitialToken = () => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const match = hash.match(/token=([^&]+)/);
+      if (match) return decodeURIComponent(match[1]);
+    }
+    return searchParams.get('token') || '';
+  };
+
+  const [token, setToken] = useState(getInitialToken);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
+
+  // Read token from location.hash (#token=...) or query param, strip from URL, set referrer meta
+  useEffect(() => {
+    // 1. Set <meta name="referrer" content="no-referrer"> to protect token
+    let meta = document.querySelector('meta[name="referrer"]');
+    const prevReferrer = meta ? meta.getAttribute('content') : null;
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'referrer';
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', 'no-referrer');
+
+    // 2. Immediately strip token from URL so it does not leak into browser history or logs
+    if (token && window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+
+    return () => {
+      if (prevReferrer) {
+        meta.setAttribute('content', prevReferrer);
+      } else if (meta && meta.parentNode) {
+        meta.parentNode.removeChild(meta);
+      }
+    };
+  }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,10 +66,23 @@ export default function ResetPassword() {
       toast.error(t('auth.invalid_or_missing_token', 'Invalid or missing reset token'));
       return;
     }
-    if (password.length < 8) {
-      toast.error(t('auth.password_min_length', 'Password must be at least 8 characters long'));
+
+    const rules = checkPasswordRules(password, '');
+    if (!rules.allPassed) {
+      if (!rules.minLength) {
+        toast.error(t('auth.policy_length', '8 to 72 characters long'));
+      } else if (!rules.hasLetter) {
+        toast.error(t('auth.policy_letter', 'At least one letter (a-z, A-Z)'));
+      } else if (!rules.hasDigit) {
+        toast.error(t('auth.policy_digit', 'At least one digit (0-9)'));
+      } else if (!rules.notCommon) {
+        toast.error(t('auth.policy_not_common', 'Not an easily guessable password'));
+      } else {
+        toast.error(t('auth.password_policy_fail', 'Password does not meet requirements'));
+      }
       return;
     }
+
     if (password !== confirmPassword) {
       toast.error(t('auth.passwords_do_not_match', 'Passwords do not match'));
       return;
@@ -49,6 +99,9 @@ export default function ResetPassword() {
         error.response?.data?.message ||
         t('errors.server_timeout', 'Failed to connect. Please try again.');
       toast.error(msg);
+      if (error.response?.status === 400 && msg.toLowerCase().includes('expired')) {
+        setTokenError(true);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +121,7 @@ export default function ResetPassword() {
           <LanguageSwitcher variant="segmented" />
         </div>
 
-        {!token ? (
+        {!token || tokenError ? (
           <div className="text-center py-6 space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
               <AlertTriangle size={32} />
@@ -101,18 +154,18 @@ export default function ResetPassword() {
             <p className="text-sm text-stone-600 leading-relaxed">
               {t(
                 'auth.password_updated_desc',
-                'Your password has been securely reset and all existing sessions have been signed out. You can now log in.'
+                'Your password has been changed successfully. You can now log in with your new credentials.'
               )}
             </p>
-            <div className="pt-4">
+            <div className="pt-2">
               <Button
                 variant="primary"
                 fullWidth
-                onClick={() => navigate('/login', { replace: true })}
+                onClick={() => navigate('/login')}
                 rightIcon={<ArrowRight size={18} />}
-                className="min-h-[50px] font-bold"
+                className="min-h-[48px]"
               >
-                {t('auth.proceed_to_login', 'Proceed to login')}
+                {t('auth.proceed_to_login', 'Proceed to Login')}
               </Button>
             </div>
           </div>
@@ -161,6 +214,13 @@ export default function ResetPassword() {
                   </button>
                 </div>
               </FormField>
+
+              {/* Password Policy Checklist */}
+              {password && (
+                <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200">
+                  <PasswordPolicyChecklist password={password} email="" />
+                </div>
+              )}
 
               <FormField
                 id="reset-confirm-password"
