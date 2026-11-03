@@ -106,3 +106,4 @@
 - **Operational**:
   - Brevo API key must be provisioned in production environments.
   - In local development, action links are easily retrieved from application logs when `app.mail.log-links=true`.
+
