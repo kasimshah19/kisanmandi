@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import BottomSheet from './ui/BottomSheet';
 
 export default function NotificationBell({ variant = 'desktop' }) {
   const { t, i18n } = useTranslation();
@@ -176,15 +177,72 @@ export default function NotificationBell({ variant = 'desktop' }) {
 
   const displayBadgeCount = unreadCount > 9 ? '9+' : unreadCount;
 
-  return (
-    <div className="relative inline-block" ref={dropdownRef}>
-      {variant === 'mobile' ? (
+  const renderNotificationList = () => {
+    if (loading) {
+      return (
+        <div className="p-8 text-center text-sm text-neutral-500">
+          {t('common.loading', 'Loading...')}
+        </div>
+      );
+    }
+    if (recentNotifications.length === 0) {
+      return (
+        <div className="p-8 text-center text-neutral-500 flex flex-col items-center gap-2">
+          <Inbox className="w-8 h-8 text-neutral-300" />
+          <p className="text-sm font-medium">{t('notifications.empty', 'No notifications yet')}</p>
+        </div>
+      );
+    }
+    return recentNotifications.slice(0, 8).map((n) => {
+      const { title, body } = getNotificationText(n);
+      return (
+        <div
+          key={n.id}
+          onClick={() => handleNotificationClick(n)}
+          className={`p-3.5 flex items-start gap-3 cursor-pointer hover:bg-neutral-50 transition-colors ${
+            !n.read ? 'bg-emerald-50/40' : ''
+          }`}
+        >
+          <div className="mt-0.5">{getTypeIcon(n.type)}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-1 mb-0.5">
+              <p
+                className={`text-xs font-bold truncate ${
+                  !n.read ? 'text-emerald-950 font-semibold' : 'text-neutral-800'
+                }`}
+              >
+                {title}
+              </p>
+              <span className="text-[10px] text-neutral-400 whitespace-nowrap">
+                {formatRelativeTime(n.createdAt)}
+              </span>
+            </div>
+            <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">{body}</p>
+          </div>
+          {!n.read && (
+            <button
+              type="button"
+              title={t('notifications.markAsRead', 'Mark read')}
+              onClick={(e) => handleMarkOne(e, n)}
+              className="p-1 text-neutral-400 hover:text-emerald-600 rounded shrink-0"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 block"></span>
+            </button>
+          )}
+        </div>
+      );
+    });
+  };
+
+  if (variant === 'mobile') {
+    return (
+      <div className="w-full">
         <button
           type="button"
           onClick={handleToggle}
           aria-label={t('nav.notifications', 'Notifications')}
           aria-expanded={isOpen}
-          aria-haspopup="true"
+          aria-haspopup="dialog"
           className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-neutral-700 hover:bg-neutral-100 font-medium text-sm transition"
         >
           <span className="flex items-center gap-3">
@@ -200,27 +258,70 @@ export default function NotificationBell({ variant = 'desktop' }) {
             </span>
           )}
         </button>
-      ) : (
-        <button
-          type="button"
-          id="navbar-notifications-btn"
-          aria-label={t('nav.notifications', 'Notifications')}
-          aria-expanded={isOpen}
-          aria-haspopup="true"
-          onClick={handleToggle}
-          className="relative p-2 text-neutral-600 hover:text-emerald-700 rounded-full hover:bg-emerald-50 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[40px] min-w-[40px] flex items-center justify-center"
+
+        <BottomSheet
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          title={t('notifications.title', 'Notifications')}
         >
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <span
-              data-testid="notification-badge"
-              className="absolute top-1 right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold leading-none text-white bg-red-600 rounded-full shadow-xs"
-            >
-              {displayBadgeCount}
-            </span>
-          )}
-        </button>
-      )}
+          <div className="space-y-3 pb-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-semibold text-neutral-500">
+                {unreadCount > 0 ? `${unreadCount} ${t('notifications.unreadOnly', 'Unread')}` : ''}
+              </span>
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAll}
+                  className="text-xs text-brand-700 hover:text-brand-800 font-bold flex items-center gap-1"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  {t('notifications.markAllRead', 'Mark all read')}
+                </button>
+              )}
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto divide-y divide-neutral-100 -mx-4 sm:-mx-6 px-4 sm:px-6">
+              {renderNotificationList()}
+            </div>
+
+            <div className="pt-2 border-t border-neutral-100 flex items-center justify-center">
+              <Link
+                to="/notifications"
+                onClick={() => setIsOpen(false)}
+                className="text-sm text-brand-700 font-bold flex items-center gap-1.5 hover:underline py-2"
+              >
+                <span>{t('notifications.seeAll', 'See all notifications')}</span>
+                <ExternalLink size={14} />
+              </Link>
+            </div>
+          </div>
+        </BottomSheet>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative inline-block" ref={dropdownRef}>
+      <button
+        type="button"
+        id="navbar-notifications-btn"
+        aria-label={t('nav.notifications', 'Notifications')}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+        onClick={handleToggle}
+        className="relative p-2 text-neutral-600 hover:text-emerald-700 rounded-full hover:bg-emerald-50 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[40px] min-w-[40px] flex items-center justify-center"
+      >
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span
+            data-testid="notification-badge"
+            className="absolute top-1 right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold leading-none text-white bg-red-600 rounded-full shadow-xs"
+          >
+            {displayBadgeCount}
+          </span>
+        )}
+      </button>
 
       {isOpen && (
         <div
@@ -251,54 +352,7 @@ export default function NotificationBell({ variant = 'desktop' }) {
           </div>
 
           <div className="max-h-84 overflow-y-auto divide-y divide-neutral-100">
-            {loading ? (
-              <div className="p-8 text-center text-sm text-neutral-500">
-                {t('common.loading', 'Loading...')}
-              </div>
-            ) : recentNotifications.length === 0 ? (
-              <div className="p-8 text-center text-neutral-500 flex flex-col items-center gap-2">
-                <Inbox className="w-8 h-8 text-neutral-300" />
-                <p className="text-sm font-medium">{t('notifications.empty', 'No notifications yet')}</p>
-              </div>
-            ) : (
-              recentNotifications.slice(0, 8).map((n) => {
-                const { title, body } = getNotificationText(n);
-                return (
-                  <div
-                    key={n.id}
-                    onClick={() => handleNotificationClick(n)}
-                    className={`p-3.5 flex items-start gap-3 cursor-pointer hover:bg-neutral-50 transition-colors ${
-                      !n.read ? 'bg-emerald-50/40' : ''
-                    }`}
-                  >
-                    <div className="mt-0.5">{getTypeIcon(n.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <p className={`text-xs font-bold truncate ${!n.read ? 'text-emerald-950 font-semibold' : 'text-neutral-800'}`}>
-                          {title}
-                        </p>
-                        <span className="text-[10px] text-neutral-400 whitespace-nowrap">
-                          {formatRelativeTime(n.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
-                        {body}
-                      </p>
-                    </div>
-                    {!n.read && (
-                      <button
-                        type="button"
-                        title={t('notifications.markAsRead', 'Mark read')}
-                        onClick={(e) => handleMarkOne(e, n)}
-                        className="p-1 text-neutral-400 hover:text-emerald-600 rounded shrink-0"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 block"></span>
-                      </button>
-                    )}
-                  </div>
-                );
-              })
-            )}
+            {renderNotificationList()}
           </div>
 
           <div className="px-4 py-2 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-between text-xs">
