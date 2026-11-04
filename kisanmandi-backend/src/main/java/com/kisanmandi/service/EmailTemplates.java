@@ -188,6 +188,200 @@ public class EmailTemplates {
         return new EmailContent(subject, textContent, htmlContent);
     }
 
+    public static EmailContent buildOrderPlacedCustomerEmail(String recipientName, Long orderId, java.math.BigDecimal amount, String link, String lang) {
+        String safeName = (recipientName != null && !recipientName.isBlank()) ? HtmlUtils.htmlEscape(recipientName) : "Friend";
+        String normalizedLang = normalizeLang(lang);
+        String formattedOrder = "KM-" + String.format("%05d", orderId);
+        String amountStr = amount != null ? amount.toString() : "0";
+
+        String subject;
+        String greeting;
+        String intro;
+        String buttonText;
+        String fallbackText;
+        String footer;
+
+        switch (normalizedLang) {
+            case "hi" -> {
+                subject = "ऑर्डर पुष्टि: " + formattedOrder + " - KisanMandi";
+                greeting = "नमस्ते " + safeName + ",";
+                intro = "आपके ऑर्डर के लिए धन्यवाद! आपका ऑर्डर ₹" + amountStr + " के लिए सफलतापूर्वक दर्ज कर लिया गया है। किसान जल्द ही इसे स्वीकार करेंगे।";
+                buttonText = "ऑर्डर ट्रैक करें";
+                fallbackText = "ऑर्डर विवरण देखने के लिए नीचे दिए गए लिंक पर जाएं:";
+                footer = "किसान और खरीदार को सीधे जोड़ने वाला आपका विश्वसनीय मंच।";
+            }
+            case "mr" -> {
+                subject = "ऑर्डर पुष्टीकरण: " + formattedOrder + " - KisanMandi";
+                greeting = "नमस्ते " + safeName + ",";
+                intro = "आपल्या ऑर्डरबद्दल धन्यवाद! आपली ऑर्डर ₹" + amountStr + " साठी यशस्वीरित्या नोंदवली गेली आहे. शेतकरी लवकरच ती स्वीकारतील.";
+                buttonText = "ऑर्डर ट्रॅक करा";
+                fallbackText = "ऑर्डर तपशील पाहण्यासाठी खालील लिंकवर जा:";
+                footer = "शेतकरी आणि ग्राहक यांना थेट जोडणारे आपले विश्वासू व्यासपीठ.";
+            }
+            default -> {
+                subject = "Order Confirmation: " + formattedOrder + " - KisanMandi";
+                greeting = "Hello " + safeName + ",";
+                intro = "Thank you for your order! Your order has been placed successfully for ₹" + amountStr + ". The farmer will review and accept it shortly.";
+                buttonText = "Track Your Order";
+                fallbackText = "To view your order details, copy and paste this link:";
+                footer = "Direct from local farms to your home.";
+            }
+        }
+
+        String textContent = greeting + "\n\n" + intro + "\n\n" + buttonText + ": " + link + "\n\n" + footer;
+        String htmlContent = buildHtmlLayout(greeting, intro, link, buttonText, fallbackText, "Order #" + orderId + " • ₹" + amountStr, footer);
+        return new EmailContent(subject, textContent, htmlContent);
+    }
+
+    public static EmailContent buildNewOrderFarmerEmail(String farmerName, Long orderId, String customerName, java.math.BigDecimal amount, String link, String lang) {
+        String safeFarmer = (farmerName != null && !farmerName.isBlank()) ? HtmlUtils.htmlEscape(farmerName) : "Farmer";
+        String safeCustomer = (customerName != null && !customerName.isBlank()) ? HtmlUtils.htmlEscape(customerName) : "Customer";
+        String normalizedLang = normalizeLang(lang);
+        String formattedOrder = "KM-" + String.format("%05d", orderId);
+        String amountStr = amount != null ? amount.toString() : "0";
+
+        String subject;
+        String greeting;
+        String intro;
+        String buttonText;
+        String fallbackText;
+        String footer;
+
+        switch (normalizedLang) {
+            case "hi" -> {
+                subject = "नया ऑर्डर प्राप्त हुआ: " + formattedOrder + " - KisanMandi";
+                greeting = "नमस्ते " + safeFarmer + ",";
+                intro = "बधाई हो! आपको " + safeCustomer + " से ₹" + amountStr + " का नया ऑर्डर प्राप्त हुआ है। कृपया अपने डैशबोर्ड में जाकर ऑर्डर स्वीकार करें।";
+                buttonText = "ऑर्डर देखें";
+                fallbackText = "ऑर्डर देखने के लिए नीचे दिए गए लिंक पर जाएं:";
+                footer = "KisanMandi - आपकी उपज, आपकी कीमत।";
+            }
+            case "mr" -> {
+                subject = "नवीन ऑर्डर प्राप्त झाली: " + formattedOrder + " - KisanMandi";
+                greeting = "नमस्ते " + safeFarmer + ",";
+                intro = "अभिनंदन! आपल्याला " + safeCustomer + " कडून ₹" + amountStr + " ची नवीन ऑर्डर प्राप्त झाली आहे. कृपया आपल्या डॅशबोर्डवर जाऊन ऑर्डर स्वीकारा.";
+                buttonText = "ऑर्डर पहा";
+                fallbackText = "ऑर्डर पाहण्यासाठी खालील लिंकवर जा:";
+                footer = "KisanMandi - आपला शेतमाल, आपला भाव.";
+            }
+            default -> {
+                subject = "New Order Received: " + formattedOrder + " - KisanMandi";
+                greeting = "Hello " + safeFarmer + ",";
+                intro = "Congratulations! You received a new order from " + safeCustomer + " for ₹" + amountStr + ". Please log in to accept and pack this order.";
+                buttonText = "View Incoming Orders";
+                fallbackText = "To view your orders, copy and paste this link:";
+                footer = "Empowering farmers with fair prices.";
+            }
+        }
+
+        String textContent = greeting + "\n\n" + intro + "\n\n" + buttonText + ": " + link + "\n\n" + footer;
+        String htmlContent = buildHtmlLayout(greeting, intro, link, buttonText, fallbackText, "Order #" + orderId + " • ₹" + amountStr, footer);
+        return new EmailContent(subject, textContent, htmlContent);
+    }
+
+    public static EmailContent buildOrderStatusCustomerEmail(String customerName, Long orderId, com.kisanmandi.entity.OrderStatus status, String note, String link, String lang) {
+        String safeName = (customerName != null && !customerName.isBlank()) ? HtmlUtils.htmlEscape(customerName) : "Friend";
+        String normalizedLang = normalizeLang(lang);
+        String formattedOrder = "KM-" + String.format("%05d", orderId);
+        String safeNote = (note != null && !note.isBlank()) ? HtmlUtils.htmlEscape(note) : null;
+
+        String statusLabelEn = status.name();
+        String subject;
+        String greeting = "Hello " + safeName + ",";
+        String intro;
+        String buttonText = "Track Order";
+        String fallbackText = "View your order status here:";
+        String footer = "Direct from local farms to your home.";
+
+        switch (status) {
+            case ACCEPTED -> {
+                if ("hi".equals(normalizedLang)) {
+                    subject = "ऑर्डर स्वीकार किया गया: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "किसान ने आपका ऑर्डर स्वीकार कर लिया है और जल्द ही इसे पैक करना शुरू करेंगे।";
+                    buttonText = "ऑर्डर देखें";
+                } else if ("mr".equals(normalizedLang)) {
+                    subject = "ऑर्डर स्वीकारली: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "शेतकऱ्याने आपली ऑर्डर स्वीकारली आहे आणि लवकरच पॅकिंग सुरू करतील.";
+                    buttonText = "ऑर्डर पहा";
+                } else {
+                    subject = "Order Accepted: " + formattedOrder;
+                    intro = "Great news! The farmer has accepted your order and will begin packing it shortly.";
+                }
+            }
+            case OUT_FOR_DELIVERY -> {
+                if ("hi".equals(normalizedLang)) {
+                    subject = "ऑर्डर डिलीवरी के लिए निकल चुका है: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "आपका ऑर्डर डिलीवरी के लिए निकल चुका है और जल्द ही आपके पास पहुँचेगा।";
+                    buttonText = "ऑर्डर ट्रैक करें";
+                } else if ("mr".equals(normalizedLang)) {
+                    subject = "ऑर्डर वितरणासाठी निघाली आहे: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "आपली ऑर्डर वितरणासाठी निघाली आहे आणि लवकरच आपल्या पत्त्यावर पोहोचेल.";
+                    buttonText = "ऑर्डर ट्रॅक करा";
+                } else {
+                    subject = "Out for Delivery: " + formattedOrder;
+                    intro = "Your order is out for delivery and will arrive at your address soon.";
+                }
+            }
+            case DELIVERED -> {
+                if ("hi".equals(normalizedLang)) {
+                    subject = "ऑर्डर डिलीवर हो गया: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "आपका ऑर्डर सफलतापूर्वक डिलीवर हो गया है! कृपया अपने अनुभव का रिव्यू दें।";
+                    buttonText = "रिव्यू दें";
+                } else if ("mr".equals(normalizedLang)) {
+                    subject = "ऑर्डर वितरित झाली: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "आपली ऑर्डर यशस्वीरित्या वितरित झाली आहे! कृपया शेतकऱ्याला रेटिंग आणि रिव्ह्यू द्या.";
+                    buttonText = "रिव्ह्यू द्या";
+                } else {
+                    subject = "Order Delivered: " + formattedOrder;
+                    intro = "Your order has been delivered! Please take a moment to rate and review the farmer.";
+                }
+            }
+            case REJECTED -> {
+                if ("hi".equals(normalizedLang)) {
+                    subject = "ऑर्डर स्वीकार नहीं हो सका: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "किसान द्वारा आपका ऑर्डर स्वीकार नहीं किया जा सका।" + (safeNote != null ? " कारण: " + safeNote : "");
+                    buttonText = "ऑर्डर विवरण";
+                } else if ("mr".equals(normalizedLang)) {
+                    subject = "ऑर्डर स्वीकारली जाऊ शकली नाही: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "शेतकऱ्याकडून आपली ऑर्डर स्वीकारली जाऊ शकली नाही." + (safeNote != null ? " कारण: " + safeNote : "");
+                    buttonText = "ऑर्डर तपशील";
+                } else {
+                    subject = "Order Could Not Be Accepted: " + formattedOrder;
+                    intro = "Unfortunately, the farmer was unable to accept your order." + (safeNote != null ? " Reason: " + safeNote : "");
+                }
+            }
+            default -> {
+                // CANCELLED or other
+                if ("hi".equals(normalizedLang)) {
+                    subject = "ऑर्डर रद्द किया गया: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "आपका ऑर्डर रद्द कर दिया गया है।" + (safeNote != null ? " कारण: " + safeNote : "");
+                    buttonText = "विवरण देखें";
+                } else if ("mr".equals(normalizedLang)) {
+                    subject = "ऑर्डर रद्द झाली: " + formattedOrder;
+                    greeting = "नमस्ते " + safeName + ",";
+                    intro = "आपली ऑर्डर रद्द करण्यात आली आहे." + (safeNote != null ? " कारण: " + safeNote : "");
+                    buttonText = "तपशील पहा";
+                } else {
+                    subject = "Order Cancelled: " + formattedOrder;
+                    intro = "Your order has been cancelled." + (safeNote != null ? " Reason: " + safeNote : "");
+                }
+            }
+        }
+
+        String textContent = greeting + "\n\n" + intro + "\n\n" + buttonText + ": " + link + "\n\n" + footer;
+        String htmlContent = buildHtmlLayout(greeting, intro, link, buttonText, fallbackText, "Status: " + statusLabelEn, footer);
+        return new EmailContent(subject, textContent, htmlContent);
+    }
+
     private static String buildHtmlLayout(String greeting, String intro, String link, String buttonText,
                                           String fallbackText, String expiryNote, String footer) {
         return """

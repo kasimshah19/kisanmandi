@@ -488,7 +488,8 @@
     "refund_processed": "Refund of {{amount}} processed to original payment method",
     "paid_online_desc": "Paid securely via Razorpay",
     "payment_pending_desc": "Payment pending verification",
-    "order_id": "Order ID"
+    "order_id": "Order ID",
+    "new_orders_arrived": "New orders received!"
   },
   "customer": {
     "welcome_back": "Welcome back, {{name}}!",
@@ -853,7 +854,74 @@
   "notifications": {
     "title": "Notifications",
     "empty": "No notifications yet",
+    "empty_desc": "We'll notify you when your orders, produce status, or account activities update.",
+    "empty_unread": "No unread notifications",
     "markAllRead": "Mark all read",
-    "markAsRead": "Mark read"
+    "markAsRead": "Mark read",
+    "allMarkedRead": "All marked as read",
+    "viewDetails": "View details",
+    "delete": "Delete",
+    "delete_confirm_title": "Delete notification?",
+    "delete_confirm_desc": "Are you sure you want to delete this notification? This action cannot be undone.",
+    "unreadOnly": "Unread only",
+    "showAll": "Show all",
+    "seeAll": "See all notifications",
+    "newNotificationToast": "New notification received",
+    "order_placed": {
+      "title": "New Order Placed",
+      "body": "New Order #{{orderId}} received from {{customerName}} for ₹{{amount}}."
+    },
+    "order_cancelled_customer": {
+      "title": "Order Cancelled by Customer",
+      "body": "Order #{{orderId}} was cancelled by the customer. {{reason}}"
+    },
+    "order_accepted": {
+      "title": "Order Accepted",
+      "body": "Your Order #{{orderId}} has been accepted by {{farmerName}}."
+    },
+    "order_packed": {
+      "title": "Order Packed",
+      "body": "Your Order #{{orderId}} is packed and ready for dispatch."
+    },
+    "order_out_for_delivery": {
+      "title": "Out for Delivery",
+      "body": "Your Order #{{orderId}} is out for delivery."
+    },
+    "order_delivered": {
+      "title": "Order Delivered",
+      "body": "Your Order #{{orderId}} has been delivered! Please review your items."
+    },
+    "order_rejected": {
+      "title": "Order Rejected",
+      "body": "Your Order #{{orderId}} was rejected. {{reason}}"
+    },
+    "order_cancelled_admin": {
+      "title": "Order Cancelled by Admin",
+      "body": "Your Order #{{orderId}} was cancelled by admin. {{reason}}"
+    },
+    "review_created": {
+      "title": "New Customer Review",
+      "body": "Received a {{rating}}-star review from {{reviewerName}}."
+    },
+    "farmer_approved": {
+      "title": "Farmer Account Approved",
+      "body": "Congratulations! Your farmer account has been approved. You can now sell products."
+    },
+    "farmer_rejected": {
+      "title": "Farmer Account Not Approved",
+      "body": "Your farmer profile was not approved. {{reason}}"
+    },
+    "product_hidden": {
+      "title": "Product Hidden by Admin",
+      "body": "Your product '{{productName}}' was hidden by admin. {{reason}}"
+    },
+    "product_restored": {
+      "title": "Product Restored",
+      "body": "Your product '{{productName}}' has been restored by admin."
+    },
+    "low_stock": {
+      "title": "Low Stock Warning",
+      "body": "Low stock alert: '{{productName}}' has only {{remainingStock}} units remaining."
+    }
   }
 }

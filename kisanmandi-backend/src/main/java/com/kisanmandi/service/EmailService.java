@@ -8,6 +8,12 @@ public interface EmailService {
 
     void sendPasswordChanged(String toEmail, String recipientName, String lang);
 
+    void sendOrderPlaced(String toEmail, String customerName, Long orderId, java.math.BigDecimal amount, String link, String lang);
+
+    void sendNewOrderForFarmer(String toEmail, String farmerName, Long orderId, String customerName, java.math.BigDecimal amount, String link, String lang);
+
+    void sendOrderStatusUpdate(String toEmail, String customerName, Long orderId, com.kisanmandi.entity.OrderStatus status, String note, String link, String lang);
+
     boolean isEmailEnabled();
 
     // Backward-compatible convenience overloads

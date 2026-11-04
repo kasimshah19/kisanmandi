@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -32,6 +32,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import { SkeletonRow } from '../../components/Skeleton';
 import { formatINR, formatDate, formatDateTime, orderNumber } from '../../utils/format';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import usePolling from '../../hooks/usePolling';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 10;
@@ -62,6 +63,8 @@ export default function FarmerOrders() {
 
   // Delivered cash confirmation state
   const [deliveryConfirmOrder, setDeliveryConfirmOrder] = useState(null);
+  const [hasNewOrders, setHasNewOrders] = useState(false);
+  const initialPlacedRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -82,7 +85,11 @@ export default function FarmerOrders() {
       ]);
       setOrders(ordersRes.data?.content || []);
       setTotalPages(ordersRes.data?.totalPages || 0);
-      setCounts(summaryRes.data || null);
+      const summaryData = summaryRes.data || null;
+      setCounts(summaryData);
+      if (initialPlacedRef.current === null && summaryData) {
+        initialPlacedRef.current = summaryData.placed || 0;
+      }
     } catch (err) {
       const msg = err.friendlyMessage || err.response?.data?.message || t('errors.generic_retry');
       setError(msg);
@@ -91,6 +98,41 @@ export default function FarmerOrders() {
       setLoading(false);
     }
   };
+
+  // Adaptive 20s polling for farmer orders & summary counts
+  usePolling(
+    async () => {
+      try {
+        const [ordersRes, summaryRes] = await Promise.all([
+          farmerOrderService.list({
+            status: specificStatus || undefined,
+            page,
+            size: PAGE_SIZE,
+            sort: 'createdAt,desc',
+          }),
+          farmerOrderService.summary(),
+        ]);
+        const summaryData = summaryRes.data || null;
+        if (summaryData) {
+          const currentPlaced = summaryData.placed || 0;
+          if (initialPlacedRef.current !== null && currentPlaced > initialPlacedRef.current) {
+            setHasNewOrders(true);
+          }
+          setCounts(summaryData);
+        }
+        setOrders(ordersRes.data?.content || []);
+        setTotalPages(ordersRes.data?.totalPages || 0);
+      } catch {
+        // Handled silently by usePolling backoff
+      }
+    },
+    {
+      intervalMs: 20000,
+      enabled: !loading,
+      whenVisible: true,
+      immediateOnVisible: false,
+    }
+  );
 
   const handleGroupSelect = (group) => {
     setActiveGroup(group);
@@ -162,6 +204,28 @@ export default function FarmerOrders() {
           title={t('farmer.manage_orders')}
           subtitle="Review incoming customer orders, dispatch harvest, and collect cash on delivery."
         />
+
+        {hasNewOrders && (
+          <div className="flex items-center justify-between p-3.5 bg-brand-50 border border-brand-200 rounded-2xl text-brand-900 text-sm shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-600"></span>
+              </span>
+              <span className="font-semibold">{t('orders.new_orders_arrived', 'New orders received!')}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setHasNewOrders(false);
+                loadData();
+              }}
+              className="text-xs font-bold px-3 py-1.5 bg-brand-700 text-white rounded-xl hover:bg-brand-800 transition shadow-xs"
+            >
+              {t('common.refresh', 'Refresh')}
+            </button>
+          </div>
+        )}
 
         {/* Sticky Status Pill Tabs ("New", "In progress", "Done") */}
         <div className="sticky top-16 z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 bg-[#fafaf7]/95 backdrop-blur-md border-b border-neutral-200/80">

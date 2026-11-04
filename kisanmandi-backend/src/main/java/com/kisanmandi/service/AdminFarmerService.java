@@ -20,6 +20,7 @@ public class AdminFarmerService {
 
     private final FarmerProfileRepository farmerProfileRepository;
     private final CloudinaryService cloudinaryService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<FarmerProfileResponse> listFarmers(ApprovalStatus status) {
@@ -48,6 +49,14 @@ public class AdminFarmerService {
         profile.setReviewedAt(LocalDateTime.now());
         profile.setRejectionReason(null);
         farmerProfileRepository.save(profile);
+
+        if (eventPublisher != null && profile.getUser() != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.FarmerApprovalChangedEvent(
+                    profile.getUser().getId(),
+                    ApprovalStatus.APPROVED,
+                    null
+            ));
+        }
     }
 
     @Transactional
@@ -59,6 +68,14 @@ public class AdminFarmerService {
         profile.setReviewedAt(LocalDateTime.now());
         profile.setRejectionReason(reason);
         farmerProfileRepository.save(profile);
+
+        if (eventPublisher != null && profile.getUser() != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.FarmerApprovalChangedEvent(
+                    profile.getUser().getId(),
+                    ApprovalStatus.REJECTED,
+                    reason
+            ));
+        }
     }
 
     @Transactional(readOnly = true)

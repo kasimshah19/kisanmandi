@@ -40,6 +40,7 @@ public class OrderService {
     private final AppMetricsService appMetricsService;
     private final NotificationService notificationService;
     private final PaymentService paymentService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @org.springframework.beans.factory.annotation.Value("${app.auth.require-verified-email:false}")
     private boolean requireVerifiedEmail;
@@ -100,10 +101,26 @@ public class OrderService {
                 }
 
                 // Atomic stock check and decrease
+                BigDecimal previousStock = p.getQuantityAvailable();
                 int updatedRows = productRepository.decreaseStock(p.getId(), cItem.getQuantity());
                 if (updatedRows == 0) {
                     appMetricsService.incrementCheckoutFailures("insufficient_stock");
                     throw new InsufficientStockException(p.getName() + ": not enough stock or product unavailable");
+                }
+
+                if (previousStock != null) {
+                    BigDecimal remainingStock = previousStock.subtract(cItem.getQuantity());
+                    if (previousStock.compareTo(new BigDecimal("5.00")) > 0
+                            && remainingStock.compareTo(new BigDecimal("5.00")) <= 0) {
+                        if (eventPublisher != null) {
+                            eventPublisher.publishEvent(new com.kisanmandi.event.LowStockDetectedEvent(
+                                    p.getId(),
+                                    farmer.getId(),
+                                    p.getName(),
+                                    remainingStock
+                            ));
+                        }
+                    }
                 }
 
                 BigDecimal lineTotal = p.getPricePerUnit().multiply(cItem.getQuantity()).setScale(2, RoundingMode.HALF_UP);
@@ -138,14 +155,8 @@ public class OrderService {
                 appMetricsService.incrementOrderStatusChanges(OrderStatus.PLACED.name());
             }
 
-            if (notificationService != null) {
-                notificationService.createNotification(
-                        farmer,
-                        "New Order Received",
-                        "Order #" + savedOrder.getId() + " placed by " + customer.getName() + " for \u20B9" + savedOrder.getTotalAmount(),
-                        "ORDER_PLACED",
-                        String.valueOf(savedOrder.getId())
-                );
+            if (eventPublisher != null) {
+                eventPublisher.publishEvent(new com.kisanmandi.event.OrderPlacedEvent(savedOrder));
             }
         }
 
@@ -237,14 +248,15 @@ public class OrderService {
             paymentService.processRefund(order, request != null ? request.getReason() : "Customer cancelled");
         }
 
-        if (notificationService != null) {
-            notificationService.createNotification(
-                    order.getFarmer(),
-                    "Order Cancelled",
-                    "Order #" + order.getId() + " was cancelled by the customer.",
-                    "ORDER_CANCELLED",
-                    String.valueOf(order.getId())
-            );
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.OrderStatusChangedEvent(
+                    order.getId(),
+                    order,
+                    OrderStatus.PLACED,
+                    OrderStatus.CANCELLED,
+                    "CUSTOMER",
+                    request != null ? request.getReason() : null
+            ));
         }
     }
 

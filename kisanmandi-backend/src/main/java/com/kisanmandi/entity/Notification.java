@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notifications", indexes = {
-        @Index(name = "idx_notifications_user_read", columnList = "user_id, is_read, created_at")
+        @Index(name = "idx_notifications_user_read_created", columnList = "user_id, read_at, created_at DESC")
 })
 @Getter
 @Setter
@@ -28,23 +28,38 @@ public class Notification {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
-    @Column(nullable = false, length = 200)
-    private String title;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String message;
-
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 40)
     private String type;
 
-    @Column(name = "reference_id", length = 100)
-    private String referenceId;
+    @Column(name = "title_key", nullable = false, length = 80)
+    private String titleKey;
 
-    @Column(name = "is_read", nullable = false)
-    @Builder.Default
-    private boolean read = false;
+    @Column(name = "body_key", nullable = false, length = 80)
+    private String bodyKey;
+
+    @Column(name = "params_json", columnDefinition = "TEXT")
+    private String paramsJson;
+
+    @Column(name = "fallback_text", nullable = false, length = 300)
+    private String fallbackText;
+
+    @Column(length = 200)
+    private String link;
+
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public boolean isRead() {
+        return readAt != null;
+    }
+
+    public void markRead() {
+        if (this.readAt == null) {
+            this.readAt = LocalDateTime.now();
+        }
+    }
 }

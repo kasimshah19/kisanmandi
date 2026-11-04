@@ -19,10 +19,12 @@ import {
   Home as HomeIcon,
   ShoppingBag,
   Shield,
+  Bell,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth, getDashboardPath } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useNotifications } from '../context/NotificationContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import TextSizeControl from './ui/TextSizeControl';
 import Button from './ui/Button';
@@ -32,6 +34,7 @@ export default function Navbar() {
   const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const { cartCount } = useCart();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -490,6 +493,19 @@ export default function Navbar() {
                   >
                     <LayoutDashboard size={18} className="text-green-700" />
                     <span>{t('nav.dashboard', 'Dashboard')}</span>
+                  </NavLink>
+                  <NavLink
+                    to="/notifications"
+                    onClick={() => setMenuOpen(false)}
+                    className={mobileNavLinkClass}
+                  >
+                    <Bell size={18} className="text-emerald-700" />
+                    <span className="flex-1">{t('nav.notifications', 'Notifications')}</span>
+                    {unreadCount > 0 && (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
                   </NavLink>
                   <NavLink
                     to="/account/security"

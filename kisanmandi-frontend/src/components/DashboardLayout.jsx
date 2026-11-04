@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { farmerOrderService } from '../services/farmerOrderService';
 import LanguageSwitcher from './LanguageSwitcher';
+import NotificationBell from './NotificationBell';
 import TextSizeControl from './ui/TextSizeControl';
 import Badge from './ui/Badge';
 
@@ -243,7 +244,7 @@ export default function DashboardLayout({ children, role }) {
             </div>
           </div>
 
-          {/* Right: Language switcher & TextSizeControl & User avatar */}
+          {/* Right: Language switcher & TextSizeControl & NotificationBell & User avatar */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             {role === 'FARMER' && (
               <>
@@ -251,6 +252,8 @@ export default function DashboardLayout({ children, role }) {
                 <TextSizeControl variant="compact" />
               </>
             )}
+
+            <NotificationBell />
 
             <div className="flex items-center gap-2 pl-2 border-l border-neutral-200">
               <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-800 font-bold text-xs flex items-center justify-center border border-brand-200 shadow-2xs">

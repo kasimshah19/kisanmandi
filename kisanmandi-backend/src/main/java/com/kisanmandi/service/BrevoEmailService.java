@@ -78,6 +78,39 @@ public class BrevoEmailService implements EmailService {
         sendViaBrevo(toEmail, recipientName, content.subject(), content.htmlContent(), content.textContent());
     }
 
+    @Override
+    public void sendOrderPlaced(String toEmail, String customerName, Long orderId, java.math.BigDecimal amount, String link, String lang) {
+        if (!isEmailEnabled()) {
+            fallbackService.sendOrderPlaced(toEmail, customerName, orderId, amount, link, lang);
+            return;
+        }
+
+        EmailTemplates.EmailContent content = EmailTemplates.buildOrderPlacedCustomerEmail(customerName, orderId, amount, link, lang);
+        sendViaBrevo(toEmail, customerName, content.subject(), content.htmlContent(), content.textContent());
+    }
+
+    @Override
+    public void sendNewOrderForFarmer(String toEmail, String farmerName, Long orderId, String customerName, java.math.BigDecimal amount, String link, String lang) {
+        if (!isEmailEnabled()) {
+            fallbackService.sendNewOrderForFarmer(toEmail, farmerName, orderId, customerName, amount, link, lang);
+            return;
+        }
+
+        EmailTemplates.EmailContent content = EmailTemplates.buildNewOrderFarmerEmail(farmerName, orderId, customerName, amount, link, lang);
+        sendViaBrevo(toEmail, farmerName, content.subject(), content.htmlContent(), content.textContent());
+    }
+
+    @Override
+    public void sendOrderStatusUpdate(String toEmail, String customerName, Long orderId, com.kisanmandi.entity.OrderStatus status, String note, String link, String lang) {
+        if (!isEmailEnabled()) {
+            fallbackService.sendOrderStatusUpdate(toEmail, customerName, orderId, status, note, link, lang);
+            return;
+        }
+
+        EmailTemplates.EmailContent content = EmailTemplates.buildOrderStatusCustomerEmail(customerName, orderId, status, note, link, lang);
+        sendViaBrevo(toEmail, customerName, content.subject(), content.htmlContent(), content.textContent());
+    }
+
     private void sendViaBrevo(String toEmail, String recipientName, String subject, String htmlContent, String textContent) {
         String masked = LogScrubberUtil.maskEmail(toEmail);
         String name = (recipientName != null && !recipientName.isBlank()) ? recipientName : "User";

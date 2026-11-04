@@ -32,7 +32,8 @@ import ErrorState from '../../components/ErrorState';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import { formatINR, formatDateTime, unitLabel } from '../../utils/format';
 import { getOptimizedImageUrl } from '../../utils/image';
-import { isActiveStatus } from '../../utils/orderStatus';
+import { isActiveStatus, isTerminalStatus } from '../../utils/orderStatus';
+import usePolling from '../../hooks/usePolling';
 import toast from 'react-hot-toast';
 
 export default function OrderTracking() {
@@ -54,15 +55,28 @@ export default function OrderTracking() {
     loadOrder(true);
   }, [id]);
 
-  // 30s auto-refresh for order status
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (id) {
-        orderService.get(id).then((res) => setOrder(res.data)).catch(() => {});
+  const isTerminal = order ? isTerminalStatus(order.status) : false;
+  const isActive = order ? isActiveStatus(order.status) : false;
+  const intervalMs = isActive ? 15000 : 60000;
+
+  // Adaptive polling for order status (15s active, 60s otherwise, paused on terminal/hidden tab)
+  usePolling(
+    async () => {
+      if (!id || isTerminal) return;
+      try {
+        const res = await orderService.get(id);
+        setOrder(res.data);
+      } catch {
+        // Handled silently by usePolling backoff
       }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [id]);
+    },
+    {
+      intervalMs,
+      enabled: Boolean(id) && !isTerminal && !loading,
+      whenVisible: true,
+      immediateOnVisible: true,
+    }
+  );
 
   const loadOrder = async (isInitial = false) => {
     if (isInitial) setLoading(true);

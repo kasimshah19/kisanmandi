@@ -92,6 +92,14 @@ public class AppMetricsService {
                 .increment();
     }
 
+    public void incrementNotificationsCreated(String type) {
+        Counter.builder("notifications_created_total")
+                .description("Total in-app notifications created")
+                .tag("type", type != null ? type : "UNKNOWN")
+                .register(meterRegistry)
+                .increment();
+    }
+
     public MeterRegistry getMeterRegistry() {
         return meterRegistry;
     }

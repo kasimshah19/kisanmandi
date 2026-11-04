@@ -26,6 +26,7 @@ public class FarmerOrderService {
     private final AppMetricsService appMetricsService;
     private final NotificationService notificationService;
     private final PaymentService paymentService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public PageResponse<OrderSummaryResponse> list(Long farmerId, OrderStatus status, int page, int size) {
@@ -140,53 +141,19 @@ public class FarmerOrderService {
             appMetricsService.incrementOrderStatusChanges(target.name());
         }
 
-        if (target == OrderStatus.REJECTED) {
-            if (paymentService != null) {
-                paymentService.processRefund(order, request.getNote());
-            }
-            if (notificationService != null) {
-                notificationService.createNotification(
-                        order.getCustomer(),
-                        "Order Rejected",
-                        "Your Order #" + order.getId() + " was rejected by the farmer. Reason: " + request.getNote(),
-                        "ORDER_REJECTED",
-                        String.valueOf(order.getId())
-                );
-            }
-        } else if (notificationService != null) {
-            if (target == OrderStatus.ACCEPTED) {
-                notificationService.createNotification(
-                        order.getCustomer(),
-                        "Order Accepted",
-                        "Your Order #" + order.getId() + " has been accepted by the farmer.",
-                        "ORDER_ACCEPTED",
-                        String.valueOf(order.getId())
-                );
-            } else if (target == OrderStatus.PACKED) {
-                notificationService.createNotification(
-                        order.getCustomer(),
-                        "Order Packed",
-                        "Your Order #" + order.getId() + " is packed and ready for dispatch.",
-                        "ORDER_PACKED",
-                        String.valueOf(order.getId())
-                );
-            } else if (target == OrderStatus.OUT_FOR_DELIVERY) {
-                notificationService.createNotification(
-                        order.getCustomer(),
-                        "Out for Delivery",
-                        "Your Order #" + order.getId() + " is out for delivery.",
-                        "ORDER_OUT_FOR_DELIVERY",
-                        String.valueOf(order.getId())
-                );
-            } else if (target == OrderStatus.DELIVERED) {
-                notificationService.createNotification(
-                        order.getCustomer(),
-                        "Order Delivered",
-                        "Your Order #" + order.getId() + " has been delivered! Please review your items.",
-                        "ORDER_DELIVERED",
-                        String.valueOf(order.getId())
-                );
-            }
+        if (target == OrderStatus.REJECTED && paymentService != null) {
+            paymentService.processRefund(order, request.getNote());
+        }
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.OrderStatusChangedEvent(
+                    order.getId(),
+                    order,
+                    current,
+                    target,
+                    "FARMER",
+                    request.getNote()
+            ));
         }
     }
 

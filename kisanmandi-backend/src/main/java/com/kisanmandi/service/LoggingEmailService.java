@@ -51,5 +51,26 @@ public class LoggingEmailService implements EmailService {
         log.info("[EMAIL DEV/LOG] Password changed security notice sent to {} (lang={})", masked, lang);
         appMetricsService.incrementEmailSent("degraded");
     }
+
+    @Override
+    public void sendOrderPlaced(String toEmail, String customerName, Long orderId, java.math.BigDecimal amount, String link, String lang) {
+        String masked = LogScrubberUtil.maskEmail(toEmail);
+        log.info("[EMAIL DEV/LOG] Order placed confirmation sent to {} for order #{} amount={} (lang={})", masked, orderId, amount, lang);
+        appMetricsService.incrementEmailSent("degraded");
+    }
+
+    @Override
+    public void sendNewOrderForFarmer(String toEmail, String farmerName, Long orderId, String customerName, java.math.BigDecimal amount, String link, String lang) {
+        String masked = LogScrubberUtil.maskEmail(toEmail);
+        log.info("[EMAIL DEV/LOG] New order notification sent to farmer {} for order #{} amount={} (lang={})", masked, orderId, amount, lang);
+        appMetricsService.incrementEmailSent("degraded");
+    }
+
+    @Override
+    public void sendOrderStatusUpdate(String toEmail, String customerName, Long orderId, com.kisanmandi.entity.OrderStatus status, String note, String link, String lang) {
+        String masked = LogScrubberUtil.maskEmail(toEmail);
+        log.info("[EMAIL DEV/LOG] Order status update ({}) sent to {} for order #{} (lang={})", status, masked, orderId, lang);
+        appMetricsService.incrementEmailSent("degraded");
+    }
 }
 

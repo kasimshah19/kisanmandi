@@ -8,7 +8,6 @@ import com.kisanmandi.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,12 +27,13 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<PageResponse<NotificationResponse>> getNotifications(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Boolean unreadOnly) {
         Long userId = authService.getCurrentUser().getId();
-        return ResponseEntity.ok(notificationService.getMyNotifications(userId, PageRequest.of(page, size)));
+        return ResponseEntity.ok(notificationService.getMyNotifications(userId, page, size, unreadOnly));
     }
 
-    @Operation(summary = "Get recent 20 notifications for notification dropdown")
+    @Operation(summary = "Get latest notifications for notification bell dropdown")
     @GetMapping("/recent")
     public ResponseEntity<List<NotificationResponse>> getRecentNotifications() {
         Long userId = authService.getCurrentUser().getId();
@@ -47,19 +47,27 @@ public class NotificationController {
         return ResponseEntity.ok(new UnreadCountResponse(notificationService.getUnreadCount(userId)));
     }
 
-    @Operation(summary = "Mark a notification as read")
-    @PutMapping("/{id}/read")
+    @Operation(summary = "Mark a notification as read (PATCH or PUT)")
+    @RequestMapping(value = "/{id}/read", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<Map<String, String>> markAsRead(@PathVariable Long id) {
         Long userId = authService.getCurrentUser().getId();
         notificationService.markAsRead(userId, id);
         return ResponseEntity.ok(Map.of("message", "Notification marked as read"));
     }
 
-    @Operation(summary = "Mark all notifications as read for current user")
-    @PutMapping("/read-all")
+    @Operation(summary = "Mark all notifications as read for current user (POST or PUT)")
+    @RequestMapping(value = "/read-all", method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<Map<String, String>> markAllAsRead() {
         Long userId = authService.getCurrentUser().getId();
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
+    }
+
+    @Operation(summary = "Delete a notification")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteNotification(@PathVariable Long id) {
+        Long userId = authService.getCurrentUser().getId();
+        notificationService.deleteNotification(userId, id);
+        return ResponseEntity.ok(Map.of("message", "Notification deleted"));
     }
 }

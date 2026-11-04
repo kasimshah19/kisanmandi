@@ -20,6 +20,7 @@ import {
   FileCheck2
 } from 'lucide-react';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
+import usePolling from '../../hooks/usePolling';
 import toast from 'react-hot-toast';
 
 export default function MandiSyncLogs() {
@@ -32,19 +33,22 @@ export default function MandiSyncLogs() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [errorLogs, setErrorLogs] = useState(null);
 
-  // Poll status when syncing
   useEffect(() => {
     fetchStatus();
-    
-    let intervalId;
-    if (isSyncing) {
-      intervalId = setInterval(fetchStatus, 5000);
+  }, []);
+
+  // Adaptive polling (5s) while sync is actively running
+  usePolling(
+    async () => {
+      await fetchStatus();
+    },
+    {
+      intervalMs: 5000,
+      enabled: isSyncing,
+      whenVisible: true,
+      immediateOnVisible: true,
     }
-    
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isSyncing]);
+  );
 
   // Fetch logs when page changes or status indicates sync completed
   useEffect(() => {

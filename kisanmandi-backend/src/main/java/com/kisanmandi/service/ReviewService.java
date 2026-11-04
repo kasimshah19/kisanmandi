@@ -28,6 +28,7 @@ public class ReviewService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final FarmerProfileRepository farmerProfileRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void createReview(Long customerId, Long orderId, ReviewRequest request) {
@@ -60,13 +61,27 @@ public class ReviewService {
                 .hidden(false)
                 .build();
 
+        Review savedReview;
         try {
-            reviewRepository.saveAndFlush(review);
+            savedReview = reviewRepository.saveAndFlush(review);
         } catch (DataIntegrityViolationException e) {
             throw new IllegalStateException("Already reviewed");
         }
 
         recalculateFarmerRating(order.getFarmer().getId());
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.ReviewCreatedEvent(
+                    savedReview.getId(),
+                    order.getId(),
+                    order.getFarmer().getId(),
+                    order.getCustomer().getId(),
+                    order.getCustomer().getName(),
+                    savedReview.getRating(),
+                    savedReview.getComment(),
+                    savedReview
+            ));
+        }
     }
 
     @Transactional

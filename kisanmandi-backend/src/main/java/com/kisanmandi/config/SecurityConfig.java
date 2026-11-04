@@ -130,6 +130,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/mandi/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/farmers/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/nearby/**").permitAll()
+                // Authenticated user notifications (any role)
+                .requestMatchers("/api/notifications/**").authenticated()
                 // Role-restricted routes
                 .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/farmer/**").hasRole("FARMER")

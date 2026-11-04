@@ -12,6 +12,7 @@ import { cartService } from '../services/cartService';
 import { addressService } from '../services/addressService';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import '../i18n';
 
 // Mock react-hot-toast
@@ -41,13 +42,15 @@ describe('Online Payments & In-App Notifications Frontend', () => {
 
   describe('NotificationBell Component', () => {
     it('renders notification bell and shows unread badge when unreadCount > 0', async () => {
-      vi.spyOn(notificationService, 'getUnreadCount').mockResolvedValueOnce({ unreadCount: 3 });
+      vi.spyOn(notificationService, 'getUnreadCount').mockResolvedValue({ unreadCount: 3 });
 
       render(
         <AuthContext.Provider value={mockAuth}>
-          <MemoryRouter>
-            <NotificationBell />
-          </MemoryRouter>
+          <NotificationProvider>
+            <MemoryRouter>
+              <NotificationBell />
+            </MemoryRouter>
+          </NotificationProvider>
         </AuthContext.Provider>
       );
 
@@ -61,12 +64,13 @@ describe('Online Payments & In-App Notifications Frontend', () => {
     });
 
     it('opens notification dropdown on click and displays notification items', async () => {
-      vi.spyOn(notificationService, 'getUnreadCount').mockResolvedValueOnce({ unreadCount: 1 });
-      vi.spyOn(notificationService, 'getRecentNotifications').mockResolvedValueOnce([
+      vi.spyOn(notificationService, 'getUnreadCount').mockResolvedValue({ unreadCount: 1 });
+      vi.spyOn(notificationService, 'getRecentNotifications').mockResolvedValue([
         {
           id: 101,
           title: 'Order Placed',
           message: 'Your order #55 was placed successfully.',
+          fallbackText: 'Your order #55 was placed successfully.',
           type: 'ORDER_PLACED',
           referenceId: '55',
           read: false,
@@ -76,9 +80,11 @@ describe('Online Payments & In-App Notifications Frontend', () => {
 
       render(
         <AuthContext.Provider value={mockAuth}>
-          <MemoryRouter>
-            <NotificationBell />
-          </MemoryRouter>
+          <NotificationProvider>
+            <MemoryRouter>
+              <NotificationBell />
+            </MemoryRouter>
+          </NotificationProvider>
         </AuthContext.Provider>
       );
 
@@ -93,18 +99,20 @@ describe('Online Payments & In-App Notifications Frontend', () => {
     });
 
     it('marks all notifications as read when clicking mark all read button', async () => {
-      vi.spyOn(notificationService, 'getUnreadCount').mockResolvedValueOnce({ unreadCount: 2 });
-      vi.spyOn(notificationService, 'getRecentNotifications').mockResolvedValueOnce([
-        { id: 1, title: 'Alert 1', message: 'Msg 1', type: 'INFO', read: false },
-        { id: 2, title: 'Alert 2', message: 'Msg 2', type: 'INFO', read: false },
+      vi.spyOn(notificationService, 'getUnreadCount').mockResolvedValue({ unreadCount: 2 });
+      vi.spyOn(notificationService, 'getRecentNotifications').mockResolvedValue([
+        { id: 1, title: 'Alert 1', message: 'Msg 1', fallbackText: 'Msg 1', type: 'INFO', read: false },
+        { id: 2, title: 'Alert 2', message: 'Msg 2', fallbackText: 'Msg 2', type: 'INFO', read: false },
       ]);
-      vi.spyOn(notificationService, 'markAllAsRead').mockResolvedValueOnce({});
+      vi.spyOn(notificationService, 'markAllAsRead').mockResolvedValue({});
 
       render(
         <AuthContext.Provider value={mockAuth}>
-          <MemoryRouter>
-            <NotificationBell />
-          </MemoryRouter>
+          <NotificationProvider>
+            <MemoryRouter>
+              <NotificationBell />
+            </MemoryRouter>
+          </NotificationProvider>
         </AuthContext.Provider>
       );
 

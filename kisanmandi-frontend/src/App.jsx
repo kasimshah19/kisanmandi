@@ -60,6 +60,7 @@ const AllOrders = lazy(() => import('./pages/admin/AllOrders'));
 const ManageReviews = lazy(() => import('./pages/admin/ManageReviews'));
 const AdminSystem = lazy(() => import('./pages/admin/AdminSystem'));
 const Security = lazy(() => import('./pages/account/Security'));
+const Notifications = lazy(() => import('./pages/account/Notifications'));
 
 function App() {
   const location = useLocation();
@@ -75,7 +76,8 @@ function App() {
     location.pathname.startsWith('/farmer/orders') ||
     location.pathname === '/farmer/earnings' ||
     location.pathname === '/farmer/reviews' ||
-    (location.pathname === '/account/security' && (user?.role === 'FARMER' || user?.role === 'ADMIN'));
+    ((location.pathname === '/account/security' || location.pathname === '/notifications') &&
+      (user?.role === 'FARMER' || user?.role === 'ADMIN'));
 
   const isFullBleed =
     isDashboardRoute ||
@@ -125,6 +127,16 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['CUSTOMER', 'FARMER', 'ADMIN']}>
                   <Security />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Shared Authenticated Notifications Route */}
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute allowedRoles={['CUSTOMER', 'FARMER', 'ADMIN']}>
+                  <Notifications />
                 </ProtectedRoute>
               }
             />

@@ -32,6 +32,7 @@ public class AdminService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final org.springframework.core.env.Environment environment;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -358,6 +359,16 @@ public class AdminService {
         product.setAdminHidden(true);
         product.setAdminHiddenReason(request != null ? request.getReason() : null);
         productRepository.save(product);
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.ProductModeratedByAdminEvent(
+                    product.getId(),
+                    product.getFarmer() != null ? product.getFarmer().getId() : null,
+                    product.getName(),
+                    true,
+                    request != null ? request.getReason() : null
+            ));
+        }
     }
 
     @Transactional
@@ -367,6 +378,16 @@ public class AdminService {
         product.setAdminHidden(false);
         product.setAdminHiddenReason(null);
         productRepository.save(product);
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.ProductModeratedByAdminEvent(
+                    product.getId(),
+                    product.getFarmer() != null ? product.getFarmer().getId() : null,
+                    product.getName(),
+                    false,
+                    null
+            ));
+        }
     }
 
     @Transactional
@@ -410,6 +431,17 @@ public class AdminService {
         order.addHistory(history);
         orderRepository.save(order);
         appMetricsService.incrementOrderStatusChanges(OrderStatus.CANCELLED.name());
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.kisanmandi.event.OrderStatusChangedEvent(
+                    order.getId(),
+                    order,
+                    current,
+                    OrderStatus.CANCELLED,
+                    "ADMIN",
+                    request != null ? request.getReason() : null
+            ));
+        }
     }
 
     @Transactional
