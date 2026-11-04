@@ -8,3 +8,4 @@ public record LowStockDetectedEvent(
         String productName,
         BigDecimal remainingStock
 ) {}
+

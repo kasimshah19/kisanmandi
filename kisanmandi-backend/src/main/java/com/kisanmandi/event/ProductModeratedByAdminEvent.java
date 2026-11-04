@@ -7,3 +7,4 @@ public record ProductModeratedByAdminEvent(
         boolean hidden,
         String reason
 ) {}
+

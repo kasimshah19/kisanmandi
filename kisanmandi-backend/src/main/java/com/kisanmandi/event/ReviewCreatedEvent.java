@@ -12,3 +12,4 @@ public record ReviewCreatedEvent(
         String comment,
         Review review
 ) {}
+

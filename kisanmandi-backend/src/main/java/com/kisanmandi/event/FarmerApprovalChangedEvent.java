@@ -7,3 +7,4 @@ public record FarmerApprovalChangedEvent(
         ApprovalStatus status,
         String reason
 ) {}
+

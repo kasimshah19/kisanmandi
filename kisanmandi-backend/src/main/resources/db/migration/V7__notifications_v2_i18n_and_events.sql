@@ -30,3 +30,4 @@ ALTER TABLE `notifications`
 -- Create composite index on (user_id, read_at, created_at DESC)
 CREATE INDEX `idx_notifications_user_read_created`
   ON `notifications` (`user_id`, `read_at`, `created_at` DESC);
+

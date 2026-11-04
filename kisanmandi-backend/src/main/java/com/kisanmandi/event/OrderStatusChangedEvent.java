@@ -11,3 +11,4 @@ public record OrderStatusChangedEvent(
         String actorRole,
         String note
 ) {}
+

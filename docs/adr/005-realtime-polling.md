@@ -66,3 +66,4 @@ When KisanMandi scales to paid dedicated infrastructure (e.g., Render Starter/St
 1. **Backend**: Implement an `SseEmitter` registry in `NotificationService`, broadcasting lightweight notification IDs or event envelopes to connected user streams on domain event publication.
 2. **Frontend**: Update `usePolling` or create `useSse` to connect to `GET /api/notifications/stream`. The existing `NotificationContext` will ingest incoming events directly without changing UI components (`NotificationBell`, `Notifications.jsx`, `FarmerOrders.jsx`).
 3. **Resilience**: Keep the `usePolling` mechanism as a fallback when SSE disconnects or during network interruptions.
+
