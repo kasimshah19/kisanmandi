@@ -209,5 +209,45 @@ describe('Online Payments & In-App Notifications Frontend', () => {
         expect(screen.queryByText(/online payment/i)).toBeNull();
       });
     });
+
+    it('submits checkout with Idempotency-Key header', async () => {
+      vi.spyOn(cartService, 'get').mockResolvedValueOnce({ data: mockCart });
+      vi.spyOn(addressService, 'getAll').mockResolvedValueOnce({ data: mockAddresses });
+      vi.spyOn(configService, 'getPublicConfig').mockResolvedValueOnce({
+        paymentEnabled: true,
+        razorpayKeyId: 'rzp_test_123',
+      });
+      const checkoutSpy = vi.spyOn(orderService, 'checkout').mockResolvedValueOnce({
+        data: {
+          orders: [{ id: 42, status: 'PLACED' }],
+        },
+      });
+
+      render(
+        <AuthContext.Provider value={mockAuth}>
+          <CartContext.Provider value={mockCartContext}>
+            <MemoryRouter>
+              <Checkout />
+            </MemoryRouter>
+          </CartContext.Provider>
+        </AuthContext.Provider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(/pay cash when you receive/i)).toBeTruthy();
+      });
+
+      const placeOrderBtn = screen.getByRole('button', { name: /confirm & place order|place order/i });
+      fireEvent.click(placeOrderBtn);
+
+      await waitFor(() => {
+        expect(checkoutSpy).toHaveBeenCalled();
+        const callArgs = checkoutSpy.mock.calls[0];
+        expect(callArgs[0]).toBe(1); // addressId
+        expect(callArgs[1]).toBe('COD'); // paymentMode
+        expect(callArgs[2]).toBeDefined(); // idempotencyKey
+        expect(typeof callArgs[2]).toBe('string');
+      });
+    });
   });
 });

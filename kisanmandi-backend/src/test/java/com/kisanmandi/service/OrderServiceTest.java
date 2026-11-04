@@ -1,6 +1,7 @@
 package com.kisanmandi.service;
 
 import com.kisanmandi.dto.CheckoutRequest;
+import com.kisanmandi.dto.CheckoutResponse;
 import com.kisanmandi.dto.OrderSummaryResponse;
 import com.kisanmandi.entity.*;
 import com.kisanmandi.exception.CartEmptyException;
@@ -168,7 +169,8 @@ class OrderServiceTest {
         request.setAddressId(100L);
         request.setPaymentMode(PaymentMode.COD);
 
-        List<OrderSummaryResponse> summaries = orderService.checkout(1L, request);
+        CheckoutResponse checkoutResponse = orderService.checkout(1L, request);
+        List<OrderSummaryResponse> summaries = checkoutResponse.getOrders();
 
         assertEquals(2, summaries.size());
         verify(orderRepository, times(2)).save(any(Order.class));

@@ -40,7 +40,7 @@ public class FarmerStatsService {
         LocalDateTime thirtyDaysAgo = today.minusDays(29).atStartOfDay();
         LocalDateTime sixMonthsAgo = today.minusMonths(5).withDayOfMonth(1).atStartOfDay();
 
-        long totalOrders = orderRepository.countByFarmerId(farmerId);
+        long totalOrders = orderRepository.countByFarmerIdAndStatusNot(farmerId, OrderStatus.AWAITING_PAYMENT);
         long pendingOrders = orderRepository.countByFarmerIdAndStatus(farmerId, OrderStatus.PLACED);
         long completedOrders = orderRepository.countByFarmerIdAndStatus(farmerId, OrderStatus.DELIVERED);
 
@@ -52,6 +52,11 @@ public class FarmerStatsService {
         BigDecimal pending = orderRepository.sumPendingAmountByFarmerId(farmerId);
         if (pending == null) {
             pending = BigDecimal.ZERO;
+        }
+
+        BigDecimal pendingCash = orderRepository.sumPendingCodAmountByFarmerId(farmerId);
+        if (pendingCash == null) {
+            pendingCash = BigDecimal.ZERO;
         }
 
         BigDecimal earningsToday = orderRepository.sumFarmerTotalAmountByStatusAndCreatedAtAfter(farmerId, OrderStatus.DELIVERED, startOfToday);
@@ -142,7 +147,7 @@ public class FarmerStatsService {
                 .earningsToday(earningsToday)
                 .earningsThisMonth(earningsThisMonth)
                 .pendingPayouts(pending)
-                .pendingCash(pending)
+                .pendingCash(pendingCash)
                 .totalOrders(totalOrders)
                 .pendingOrders(pendingOrders)
                 .completedOrders(completedOrders)

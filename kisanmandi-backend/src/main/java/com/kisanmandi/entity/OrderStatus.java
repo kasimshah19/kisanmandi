@@ -1,6 +1,7 @@
 package com.kisanmandi.entity;
 
 public enum OrderStatus {
+    AWAITING_PAYMENT,
     PLACED,
     ACCEPTED,
     PACKED,

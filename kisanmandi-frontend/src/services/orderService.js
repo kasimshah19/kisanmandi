@@ -2,8 +2,17 @@ import axiosInstance from './axiosInstance';
 
 // Customer order operations
 export const orderService = {
-  checkout: (addressId, paymentMode = 'COD') =>
-    axiosInstance.post('/customer/orders/checkout', { addressId, paymentMode }),
+  checkout: (addressId, paymentMode = 'COD', idempotencyKey = null) => {
+    const headers = {};
+    if (idempotencyKey) {
+      headers['Idempotency-Key'] = idempotencyKey;
+    }
+    return axiosInstance.post(
+      '/customer/orders/checkout',
+      { addressId, paymentMode },
+      { headers }
+    );
+  },
 
   list: (params) => {
     // Remove empty/null params before sending

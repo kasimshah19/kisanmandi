@@ -55,6 +55,12 @@ class PaymentIntegrationTest {
     private AddressRepository addressRepository;
 
     @Autowired
+    private com.kisanmandi.repository.PaymentRepository paymentRepository;
+
+    @Autowired
+    private com.kisanmandi.repository.PaymentEventRepository paymentEventRepository;
+
+    @Autowired
     private JwtUtil jwtUtil;
 
     @Autowired
@@ -67,6 +73,8 @@ class PaymentIntegrationTest {
 
     @BeforeEach
     void setup() {
+        paymentEventRepository.deleteAll();
+        paymentRepository.deleteAll();
         orderRepository.deleteAll();
         addressRepository.deleteAll();
         productRepository.deleteAll();
@@ -98,7 +106,7 @@ class PaymentIntegrationTest {
                 .customer(customer)
                 .farmer(farmer)
                 .totalAmount(new BigDecimal("450.00"))
-                .status(OrderStatus.PLACED)
+                .status(OrderStatus.AWAITING_PAYMENT)
                 .paymentMode(PaymentMode.ONLINE)
                 .paymentStatus(PaymentStatus.PENDING)
                 .shipName("Test Customer")
@@ -114,6 +122,8 @@ class PaymentIntegrationTest {
 
     @org.junit.jupiter.api.AfterEach
     void tearDown() {
+        paymentEventRepository.deleteAll();
+        paymentRepository.deleteAll();
         orderRepository.deleteAll();
         addressRepository.deleteAll();
         productRepository.deleteAll();
@@ -150,9 +160,18 @@ class PaymentIntegrationTest {
     @Test
     @DisplayName("POST /api/payment/verify with mock signature sets order to PAID")
     void testVerifyPaymentSuccess() throws Exception {
+        CreatePaymentOrderRequest orderReq = new CreatePaymentOrderRequest(testOrder.getId());
+        mockMvc.perform(post("/api/payment/create-order")
+                        .header("Authorization", "Bearer " + customerJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(orderReq)))
+                .andExpect(status().isOk());
+
+        Order updatedBefore = orderRepository.findById(testOrder.getId()).orElseThrow();
+
         PaymentVerificationRequest request = new PaymentVerificationRequest(
                 testOrder.getId(),
-                "order_mock_test123",
+                updatedBefore.getRazorpayOrderId(),
                 "pay_mock_test123",
                 "mock_sig_valid"
         );
@@ -162,17 +181,18 @@ class PaymentIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.verified", is(true)))
-                .andExpect(jsonPath("$.orderId", is(testOrder.getId().intValue())));
+                .andExpect(jsonPath("$.verified", is(true)));
 
         Order updated = orderRepository.findById(testOrder.getId()).orElseThrow();
+        assertEquals(OrderStatus.PLACED, updated.getStatus());
         assertEquals(PaymentStatus.PAID, updated.getPaymentStatus());
         assertEquals("pay_mock_test123", updated.getRazorpayPaymentId());
     }
 
     @Test
-    @DisplayName("processRefund marks online paid order as REFUNDED and sets refund metadata")
+    @DisplayName("processRefund marks online paid order with refundStatus REQUIRED")
     void testProcessRefund() {
+        testOrder.setPaymentMode(PaymentMode.ONLINE);
         testOrder.setPaymentStatus(PaymentStatus.PAID);
         testOrder.setRazorpayPaymentId("pay_test_refund_123");
         orderRepository.save(testOrder);
@@ -180,9 +200,6 @@ class PaymentIntegrationTest {
         paymentService.processRefund(testOrder, "Customer requested cancel");
 
         Order refunded = orderRepository.findById(testOrder.getId()).orElseThrow();
-        assertEquals(PaymentStatus.REFUNDED, refunded.getPaymentStatus());
-        assertNotNull(refunded.getRefundId());
-        assertEquals(new BigDecimal("450.00"), refunded.getRefundAmount());
-        assertNotNull(refunded.getRefundedAt());
+        assertEquals(RefundStatus.REQUIRED, refunded.getRefundStatus());
     }
 }

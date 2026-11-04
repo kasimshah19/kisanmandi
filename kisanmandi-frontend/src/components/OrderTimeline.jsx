@@ -7,13 +7,15 @@ import {
   Truck,
   XCircle,
   AlertTriangle,
-  UserCheck
+  UserCheck,
+  CreditCard
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { HAPPY_PATH, getOrderStatusLabel } from '../utils/orderStatus';
+import { HAPPY_PATH, ONLINE_HAPPY_PATH, getOrderStatusLabel } from '../utils/orderStatus';
 import { formatDateTime } from '../utils/format';
 
 const STEP_ICONS = {
+  AWAITING_PAYMENT: CreditCard,
   PLACED: Clock,
   ACCEPTED: UserCheck,
   PACKED: Package,
@@ -23,7 +25,7 @@ const STEP_ICONS = {
   CANCELLED: XCircle
 };
 
-export default function OrderTimeline({ history, currentStatus }) {
+export default function OrderTimeline({ history, currentStatus, paymentMode }) {
   const { t } = useTranslation();
 
   const historyMap = {};
@@ -35,13 +37,16 @@ export default function OrderTimeline({ history, currentStatus }) {
   const isCancelled = currentStatus === 'CANCELLED';
   const isTerminal = isRejected || isCancelled;
 
-  // Find index of current status in HAPPY_PATH
-  const currentPathIndex = HAPPY_PATH.indexOf(currentStatus);
+  const isOnline = paymentMode === 'ONLINE' || !!historyMap.AWAITING_PAYMENT || currentStatus === 'AWAITING_PAYMENT';
+  const activePath = isOnline ? ONLINE_HAPPY_PATH : HAPPY_PATH;
+
+  // Find index of current status in activePath
+  const currentPathIndex = activePath.indexOf(currentStatus);
 
   const steps = [];
 
-  for (let i = 0; i < HAPPY_PATH.length; i++) {
-    const status = HAPPY_PATH[i];
+  for (let i = 0; i < activePath.length; i++) {
+    const status = activePath[i];
     const h = historyMap[status];
 
     // If terminal and step wasn't reached, omit or skip

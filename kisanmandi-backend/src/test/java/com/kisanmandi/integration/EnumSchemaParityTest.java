@@ -33,7 +33,9 @@ class EnumSchemaParityTest extends MySqlIntegrationTest {
                 com.kisanmandi.entity.OrderItem.class, "order_items",
                 com.kisanmandi.entity.OrderStatusHistory.class, "order_status_history",
                 com.kisanmandi.entity.MandiPrice.class, "mandi_prices",
-                com.kisanmandi.entity.MandiSyncLog.class, "mandi_sync_logs"
+                com.kisanmandi.entity.MandiSyncLog.class, "mandi_sync_logs",
+                com.kisanmandi.entity.Payment.class, "payments",
+                com.kisanmandi.entity.IdempotencyKey.class, "idempotency_keys"
         );
 
         for (Map.Entry<Class<?>, String> entry : entityTableMap.entrySet()) {

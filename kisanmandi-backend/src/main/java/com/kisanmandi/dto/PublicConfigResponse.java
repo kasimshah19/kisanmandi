@@ -13,5 +13,6 @@ public class PublicConfigResponse {
     private boolean emailEnabled;
     private boolean requireVerifiedEmail;
     private boolean paymentEnabled;
+    private boolean onlinePaymentsEnabled;
     private String razorpayKeyId;
 }

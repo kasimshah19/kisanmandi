@@ -6,11 +6,13 @@ import {
   Package,
   Truck,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  CreditCard
 } from 'lucide-react';
 import { STATUS_META, getOrderStatusLabel } from '../utils/orderStatus';
 
 const STATUS_ICONS = {
+  AWAITING_PAYMENT: CreditCard,
   PLACED: Clock,
   ACCEPTED: CheckCircle2,
   PACKED: Package,

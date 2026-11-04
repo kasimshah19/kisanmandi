@@ -22,6 +22,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"customer", "customer.profile", "farmer", "farmer.profile"})
     Page<Order> findByFarmerIdAndStatus(Long farmerId, OrderStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"customer", "customer.profile", "farmer", "farmer.profile"})
+    Page<Order> findByFarmerIdAndStatusNot(Long farmerId, OrderStatus status, Pageable pageable);
+
+    java.util.List<Order> findByPaymentGroupId(String paymentGroupId);
+
+    java.util.List<Order> findByStatusAndPaymentExpiresAtBefore(OrderStatus status, java.time.LocalDateTime threshold);
+
     @Override
     @EntityGraph(attributePaths = {"customer", "customer.profile", "farmer", "farmer.profile"})
     @org.springframework.lang.NonNull
@@ -38,6 +45,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByFarmerIdAndStatus(Long farmerId, OrderStatus status);
 
+    long countByFarmerIdAndStatusNot(Long farmerId, OrderStatus status);
+
     @org.springframework.data.jpa.repository.Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.farmer.id = :farmerId AND o.status = :status")
     java.math.BigDecimal sumTotalAmountByFarmerIdAndStatus(@org.springframework.data.repository.query.Param("farmerId") Long farmerId, @org.springframework.data.repository.query.Param("status") OrderStatus status);
 
@@ -46,6 +55,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @org.springframework.data.jpa.repository.Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.farmer.id = :farmerId AND o.status IN ('PLACED', 'ACCEPTED', 'PACKED', 'OUT_FOR_DELIVERY')")
     java.math.BigDecimal sumPendingAmountByFarmerId(@org.springframework.data.repository.query.Param("farmerId") Long farmerId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.farmer.id = :farmerId AND o.paymentMode = com.kisanmandi.entity.PaymentMode.COD AND o.status IN ('PLACED', 'ACCEPTED', 'PACKED', 'OUT_FOR_DELIVERY')")
+    java.math.BigDecimal sumPendingCodAmountByFarmerId(@org.springframework.data.repository.query.Param("farmerId") Long farmerId);
 
     java.util.List<Order> findByFarmerIdAndStatus(Long farmerId, OrderStatus status);
 

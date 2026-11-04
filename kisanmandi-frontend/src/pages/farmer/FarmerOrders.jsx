@@ -462,15 +462,26 @@ export default function FarmerOrders() {
                       </div>
                     </div>
 
-                    {/* Prominent Collect Cash Box */}
-                    <div className="p-3 sm:px-4 sm:py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-left sm:text-right">
-                      <span className="text-2xs font-extrabold text-emerald-800 uppercase tracking-wider block">
-                        Cash on Delivery
-                      </span>
-                      <span className="text-xl sm:text-2xl font-black text-emerald-950 font-mono tabular-nums">
-                        Collect {formatINR(order.totalAmount)}
-                      </span>
-                    </div>
+                    {/* Prominent Payment Box */}
+                    {order.paymentMode === 'ONLINE' ? (
+                      <div className="p-3 sm:px-4 sm:py-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-left sm:text-right">
+                        <span className="text-2xs font-extrabold text-blue-800 uppercase tracking-wider block">
+                          Online Payment
+                        </span>
+                        <span className="text-sm sm:text-base font-black text-blue-950">
+                          Paid online. Nothing to collect.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="p-3 sm:px-4 sm:py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-left sm:text-right">
+                        <span className="text-2xs font-extrabold text-emerald-800 uppercase tracking-wider block">
+                          Cash on Delivery
+                        </span>
+                        <span className="text-xl sm:text-2xl font-black text-emerald-950 font-mono tabular-nums">
+                          Collect {formatINR(order.totalAmount)}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* ONE Big Primary Action in Plain Words */}

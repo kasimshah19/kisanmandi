@@ -15,6 +15,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import com.kisanmandi.service.payment.PaymentGatewayException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -210,6 +211,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SyncAlreadyRunningException.class)
     public ResponseEntity<Map<String, Object>> handleSyncAlreadyRunningException(SyncAlreadyRunningException ex) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleConflictException(ConflictException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnprocessableEntityException.class)
+    public ResponseEntity<Map<String, Object>> handleUnprocessableEntityException(UnprocessableEntityException ex) {
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+    @ExceptionHandler(PaymentGatewayException.class)
+    public ResponseEntity<Map<String, Object>> handlePaymentGatewayException(PaymentGatewayException ex) {
+        log.error("Payment Gateway Error: ", ex);
+        return buildResponse(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
     // ─── Catch-all for unexpected errors → 500 ───

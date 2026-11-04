@@ -1,6 +1,8 @@
 package com.kisanmandi.dto;
 
 import com.kisanmandi.entity.OrderStatus;
+import com.kisanmandi.entity.PaymentMode;
+import com.kisanmandi.entity.PaymentStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,6 +19,10 @@ public class OrderSummaryResponse {
     private String firstItemName;
     private String firstItemImageUrl;
     private LocalDateTime createdAt;
+    private PaymentMode paymentMode;
+    private PaymentStatus paymentStatus;
+    private String paymentGroupId;
+    private LocalDateTime paymentExpiresAt;
     
     // other party's name (farmer name for customer view, customer name for farmer view)
     private String otherPartyName;

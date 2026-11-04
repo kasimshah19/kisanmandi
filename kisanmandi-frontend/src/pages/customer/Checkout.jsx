@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,13 +12,16 @@ import {
   PackageCheck,
   Phone,
   CreditCard,
-  X
+  X,
+  Clock,
+  RotateCw
 } from 'lucide-react';
 import { addressService } from '../../services/addressService';
 import { cartService } from '../../services/cartService';
 import { orderService } from '../../services/orderService';
 import { getPublicConfig } from '../../services/configService';
-import { createPaymentOrder, verifyPayment } from '../../services/paymentService';
+import { verifyPayment, retryPayment, cancelPaymentGroup } from '../../services/paymentService';
+import { loadRazorpayScript } from '../../utils/razorpay';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import AddressForm from '../../components/AddressForm';
@@ -50,9 +53,41 @@ export default function Checkout() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [simulatedModal, setSimulatedModal] = useState(null);
 
+  // Calm state when online payment is interrupted / dismissed
+  const [awaitingPaymentState, setAwaitingPaymentState] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState({ minutes: 15, seconds: 0, expired: false });
+
+  // Idempotency key stored in ref, reset on address or cart change
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    idempotencyKeyRef.current = crypto.randomUUID();
+  }, [selectedAddressId, cart?.items]);
+
+  // Countdown timer for calm state
+  useEffect(() => {
+    if (!awaitingPaymentState?.expiresAt) return;
+
+    const updateTimer = () => {
+      const expiry = new Date(awaitingPaymentState.expiresAt).getTime();
+      const diff = expiry - Date.now();
+      if (diff <= 0) {
+        setTimeRemaining({ minutes: 0, seconds: 0, expired: true });
+      } else {
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setTimeRemaining({ minutes: m, seconds: s, expired: false });
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [awaitingPaymentState?.expiresAt]);
 
   const loadData = async () => {
     try {
@@ -104,6 +139,89 @@ export default function Checkout() {
     }
   };
 
+  const launchRazorpay = (checkoutData, primaryOrder, paymentDetails) => {
+    const keyId = paymentDetails.keyId || paymentConfig.razorpayKeyId;
+
+    // Check if key is a test/fake stub
+    if (!keyId || keyId.startsWith('fake_') || keyId.includes('mock') || keyId.includes('simulated')) {
+      setSimulatedModal({
+        order: primaryOrder,
+        paymentDetails,
+        paymentGroupId: primaryOrder.paymentGroupId
+      });
+      return;
+    }
+
+    if (window.Razorpay) {
+      const rzpOptions = {
+        key: keyId,
+        amount: paymentDetails.amountPaise,
+        currency: paymentDetails.currency || 'INR',
+        name: 'KisanMandi',
+        description: `Order #${primaryOrder.id}`,
+        order_id: paymentDetails.razorpayOrderId,
+        handler: async function (response) {
+          try {
+            await verifyPayment({
+              paymentGroupId: primaryOrder.paymentGroupId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            toast.success(t('checkout.payment_success', 'Payment successful!'));
+            refreshCart();
+            navigate('/customer/orders', { state: { justPlacedOrder: primaryOrder } });
+          } catch {
+            toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
+            navigate('/customer/orders');
+          }
+        },
+        prefill: {
+          name: paymentDetails.customerPrefill?.name || user?.name,
+          email: paymentDetails.customerPrefill?.email || user?.email,
+          contact: paymentDetails.customerPrefill?.contact || user?.phone
+        },
+        theme: { color: '#15803d' },
+        modal: {
+          ondismiss: function () {
+            setAwaitingPaymentState({
+              paymentGroupId: primaryOrder.paymentGroupId,
+              orderId: primaryOrder.id,
+              expiresAt: paymentDetails.expiresAt,
+              totalAmount: cart?.totalAmount,
+              paymentDetails,
+              primaryOrder
+            });
+            toast(t('checkout.payment_dismissed', 'Payment not completed. Your items are kept for 15 minutes.'), {
+              icon: '⏳'
+            });
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(rzpOptions);
+      rzp.on('payment.failed', function (resp) {
+        setAwaitingPaymentState({
+          paymentGroupId: primaryOrder.paymentGroupId,
+          orderId: primaryOrder.id,
+          expiresAt: paymentDetails.expiresAt,
+          totalAmount: cart?.totalAmount,
+          paymentDetails,
+          primaryOrder
+        });
+        toast.error(resp.error?.description || t('checkout.payment_failed', 'Payment failed'));
+      });
+      rzp.open();
+    } else {
+      // Razorpay checkout script not available, fallback to simulation
+      setSimulatedModal({
+        order: primaryOrder,
+        paymentDetails,
+        paymentGroupId: primaryOrder.paymentGroupId
+      });
+    }
+  };
+
   const handleCheckout = async () => {
     if (!selectedAddressId) {
       toast.error(t('checkout.select_address_error'));
@@ -111,62 +229,66 @@ export default function Checkout() {
     }
     setPlacingOrder(true);
     try {
-      const res = await orderService.checkout(selectedAddressId, paymentMode);
-      const placed = Array.isArray(res.data) ? res.data[0] : res.data;
-
       if (paymentMode === 'ONLINE') {
-        const paymentOrder = await createPaymentOrder(placed.id);
+        await loadRazorpayScript();
+      }
 
-        if (window.Razorpay && paymentConfig?.razorpayKeyId && !paymentConfig.razorpayKeyId.includes('simulated')) {
-          const rzpOptions = {
-            key: paymentConfig.razorpayKeyId,
-            amount: paymentOrder.amount * 100,
-            currency: 'INR',
-            name: 'KisanMandi',
-            description: `Order #${placed.id}`,
-            order_id: paymentOrder.razorpayOrderId,
-            handler: async function (response) {
-              try {
-                await verifyPayment({
-                  orderId: placed.id,
-                  razorpayOrderId: response.razorpay_order_id,
-                  razorpayPaymentId: response.razorpay_payment_id,
-                  razorpaySignature: response.razorpay_signature
-                });
-                toast.success(t('checkout.payment_success', 'Payment successful!'));
-                refreshCart();
-                navigate('/customer/orders', { state: { justPlacedOrder: placed } });
-              } catch (err) {
-                toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
-                navigate('/customer/orders');
-              }
-            },
-            prefill: {
-              name: user?.name,
-              email: user?.email,
-              contact: user?.phone
-            },
-            theme: { color: '#15803d' }
-          };
-          const rzp = new window.Razorpay(rzpOptions);
-          rzp.open();
-        } else {
-          // Fallback simulation modal for test/local development
-          setSimulatedModal({ order: placed, paymentOrder });
-        }
+      const res = await orderService.checkout(selectedAddressId, paymentMode, idempotencyKeyRef.current);
+      const checkoutData = res.data;
+      const orders = checkoutData.orders || [];
+      const primaryOrder = orders[0] || { id: Date.now() };
+
+      if (paymentMode === 'ONLINE' && checkoutData.payment) {
+        launchRazorpay(checkoutData, primaryOrder, checkoutData.payment);
       } else {
         toast.success(t('checkout.order_success_title'));
         refreshCart();
-        navigate('/customer/orders', { state: { justPlacedOrder: placed || { id: Date.now() } } });
+        navigate('/customer/orders', { state: { justPlacedOrder: primaryOrder } });
       }
     } catch (error) {
       if (error.response?.status === 409) {
-        toast.error(error.response?.data?.message || 'Price or stock changed. Please review your cart.');
-        navigate('/customer/cart');
+        toast.error(error.response?.data?.message || 'A checkout request is already processing or items changed.');
+      } else if (error.response?.status === 422) {
+        toast.error(error.response?.data?.message || 'Checkout details mismatch. Please try again.');
+        idempotencyKeyRef.current = crypto.randomUUID();
       } else {
         toast.error(error.response?.data?.message || t('errors.generic_retry'));
       }
+    } finally {
       setPlacingOrder(false);
+    }
+  };
+
+  const handleRetryPayment = async () => {
+    if (!awaitingPaymentState) return;
+    setPlacingOrder(true);
+    try {
+      await loadRazorpayScript();
+      const paymentDetails = await retryPayment(awaitingPaymentState.paymentGroupId);
+      setAwaitingPaymentState((prev) => ({
+        ...prev,
+        expiresAt: paymentDetails.expiresAt,
+        paymentDetails
+      }));
+      launchRazorpay(null, awaitingPaymentState.primaryOrder, paymentDetails);
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('checkout.payment_expired', 'Payment window has expired'));
+      navigate('/customer/orders');
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
+  const handleCancelAwaitingOrder = async () => {
+    if (!awaitingPaymentState) return;
+    try {
+      await cancelPaymentGroup(awaitingPaymentState.paymentGroupId);
+      toast.success(t('orders.timeline_cancelled', 'Order cancelled'));
+      setAwaitingPaymentState(null);
+      refreshCart();
+      navigate('/customer/orders');
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('errors.generic_retry'));
     }
   };
 
@@ -174,8 +296,8 @@ export default function Checkout() {
     if (!simulatedModal) return;
     try {
       await verifyPayment({
-        orderId: simulatedModal.order.id,
-        razorpayOrderId: simulatedModal.paymentOrder.razorpayOrderId,
+        paymentGroupId: simulatedModal.paymentGroupId,
+        razorpayOrderId: simulatedModal.paymentDetails.razorpayOrderId,
         razorpayPaymentId: `pay_sim_${Date.now()}`,
         razorpaySignature: 'mock_sig_valid'
       });
@@ -184,7 +306,7 @@ export default function Checkout() {
       const placed = simulatedModal.order;
       setSimulatedModal(null);
       navigate('/customer/orders', { state: { justPlacedOrder: placed } });
-    } catch (err) {
+    } catch {
       toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
       setSimulatedModal(null);
       navigate('/customer/orders');
@@ -247,6 +369,62 @@ export default function Checkout() {
             ))}
           </div>
         </div>
+
+        {/* CALM STATE BANNER: When Payment was not completed / dismissed */}
+        {awaitingPaymentState && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-6 shadow-sm space-y-4 animate-in fade-in">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <Clock size={24} className="stroke-[2.5]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-black text-lg text-amber-900">
+                  {t('checkout.payment_not_completed', 'Payment not completed')}
+                </h3>
+                <p className="text-sm text-amber-800 mt-1">
+                  {t('checkout.items_kept_message', 'Your items are safely reserved for 15 minutes. Complete your payment to confirm your order.')}
+                </p>
+                <div className="mt-2 flex items-center gap-2 font-mono text-xs font-bold text-amber-900">
+                  <span className="bg-amber-200/80 px-2.5 py-1 rounded-full">
+                    {timeRemaining.expired
+                      ? t('checkout.payment_expired', 'Reservation expired')
+                      : t('checkout.time_left', 'Time remaining: {{time}}', {
+                          time: `${String(timeRemaining.minutes).padStart(2, '0')}:${String(timeRemaining.seconds).padStart(2, '0')}`
+                        })}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-amber-200">
+              <Button
+                variant="primary"
+                onClick={handleRetryPayment}
+                disabled={timeRemaining.expired || placingOrder}
+                loading={placingOrder}
+                className="text-sm font-bold"
+              >
+                <RotateCw size={15} className="mr-1.5" />
+                {t('checkout.try_payment_again', 'Try payment again')}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancelAwaitingOrder}
+                className="text-sm font-bold text-red-600 border-red-200 hover:bg-red-50"
+              >
+                {t('common.cancel_order', 'Cancel order')}
+              </Button>
+              <Button
+                as={Link}
+                to="/customer/orders"
+                variant="ghost"
+                className="text-sm font-bold text-neutral-700 ml-auto"
+              >
+                {t('checkout.view_my_orders', 'View in My Orders')} &rarr;
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left 2 Columns: Steps 1 & 2 */}
@@ -537,14 +715,22 @@ export default function Checkout() {
                 disabled={!selectedAddressId}
                 className="py-4 text-base font-black shadow-md shadow-green-700/20"
               >
-                <span>{paymentMode === 'ONLINE' ? t('checkout.pay_and_place', 'Pay & Place Order') : t('checkout.place_order_button')}</span>
+                <span>{paymentMode === 'ONLINE' ? t('checkout.pay_and_place', 'Pay & Place Order') : t('checkout.place_order_btn', 'Confirm & Place Order')}</span>
                 <ArrowRight size={18} className="ml-1.5" />
               </Button>
 
-              {/* Trust Badge */}
-              <div className="flex items-center justify-center gap-2 text-xs text-neutral-600 pt-1">
-                <ShieldCheck size={16} className="text-green-700 shrink-0" />
-                <span>{t('checkout.direct_from_farmers_trust')}</span>
+              {/* Trust Badges */}
+              <div className="space-y-1.5 pt-1 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-xs text-neutral-600">
+                  <ShieldCheck size={16} className="text-green-700 shrink-0" />
+                  <span>{t('checkout.direct_from_farmers_trust')}</span>
+                </div>
+                {paymentMode === 'ONLINE' && (
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-neutral-500">
+                    <CreditCard size={14} className="text-blue-600 shrink-0" />
+                    <span>{t('checkout.razorpay_trust_badge', '100% Secure Payment powered by Razorpay')}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -584,12 +770,12 @@ export default function Checkout() {
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>{t('checkout.gateway_order_id', 'Gateway Order ID')}</span>
                 <span className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate max-w-[200px]">
-                  {simulatedModal.paymentOrder.razorpayOrderId}
+                  {simulatedModal.paymentDetails.razorpayOrderId}
                 </span>
               </div>
               <div className="flex justify-between font-bold text-base text-gray-900 dark:text-gray-100 pt-2 border-t border-gray-200 dark:border-gray-700">
                 <span>{t('common.total', 'Total Amount')}</span>
-                <span className="text-emerald-700">{formatINR(simulatedModal.paymentOrder.amount)}</span>
+                <span className="text-emerald-700">{formatINR(simulatedModal.paymentDetails.amountPaise ? simulatedModal.paymentDetails.amountPaise / 100 : cart?.totalAmount)}</span>
               </div>
             </div>
 

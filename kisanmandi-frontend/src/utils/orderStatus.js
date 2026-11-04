@@ -2,6 +2,7 @@ import i18n from '../i18n';
 
 // Metadata for every order status: label, Tailwind color classes, icon name
 export const STATUS_META = {
+  AWAITING_PAYMENT: { label: 'Awaiting Payment', bg: 'bg-amber-100',  text: 'text-amber-800',  border: 'border-amber-200',  dot: 'bg-amber-500'  },
   PLACED:           { label: 'Placed',           bg: 'bg-blue-100',   text: 'text-blue-800',   border: 'border-blue-200',   dot: 'bg-blue-500'   },
   ACCEPTED:         { label: 'Accepted',         bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-200', dot: 'bg-indigo-500' },
   PACKED:           { label: 'Packed',           bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200', dot: 'bg-purple-500' },
@@ -13,7 +14,7 @@ export const STATUS_META = {
 
 // Check if order is still in progress (not terminal)
 export function isActiveStatus(s) {
-  return ['PLACED', 'ACCEPTED', 'PACKED', 'OUT_FOR_DELIVERY'].includes(s);
+  return ['AWAITING_PAYMENT', 'PLACED', 'ACCEPTED', 'PACKED', 'OUT_FOR_DELIVERY'].includes(s);
 }
 
 // Check if order has reached a final state
@@ -36,3 +37,4 @@ export function getOrderStatusLabel(status, t) {
 
 // The happy-path sequence of statuses
 export const HAPPY_PATH = ['PLACED', 'ACCEPTED', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+export const ONLINE_HAPPY_PATH = ['AWAITING_PAYMENT', 'PLACED', 'ACCEPTED', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED'];

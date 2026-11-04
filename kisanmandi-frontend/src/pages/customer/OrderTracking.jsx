@@ -15,9 +15,13 @@ import {
   XCircle,
   Truck,
   AlertTriangle,
-  CreditCard
+  CreditCard,
+  Clock,
+  X
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
+import { retryPayment, verifyPayment } from '../../services/paymentService';
+import { loadRazorpayScript } from '../../utils/razorpay';
 import OrderTimeline from '../../components/OrderTimeline';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -36,6 +40,30 @@ import { isActiveStatus, isTerminalStatus } from '../../utils/orderStatus';
 import usePolling from '../../hooks/usePolling';
 import toast from 'react-hot-toast';
 
+function CountdownText({ expiresAt, onExpired }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('00:00 (Expired)');
+        if (onExpired) onExpired();
+      } else {
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setTimeLeft(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+      }
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return <span>{timeLeft}</span>;
+}
+
 export default function OrderTracking() {
   const { id } = useParams();
   const { t, i18n } = useTranslation();
@@ -46,6 +74,8 @@ export default function OrderTracking() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [paymentRetrying, setPaymentRetrying] = useState(false);
+  const [simulatedModal, setSimulatedModal] = useState(null);
 
   const formattedOrderNo = order ? `KM-${String(order.id).padStart(5, '0')}` : '';
 
@@ -109,6 +139,68 @@ export default function OrderTracking() {
     }
   };
 
+  const handlePayNow = async () => {
+    if (!order?.paymentGroupId) return;
+    setPaymentRetrying(true);
+    try {
+      await loadRazorpayScript();
+      const paymentDetails = await retryPayment(order.paymentGroupId);
+      if (!window.Razorpay || !paymentDetails.keyId || paymentDetails.keyId.startsWith('fake_')) {
+        setSimulatedModal({ paymentDetails, paymentGroupId: order.paymentGroupId });
+        return;
+      }
+      const rzp = new window.Razorpay({
+        key: paymentDetails.keyId,
+        amount: paymentDetails.amountPaise,
+        currency: paymentDetails.currency || 'INR',
+        name: 'KisanMandi',
+        description: `Order #${order.id}`,
+        order_id: paymentDetails.razorpayOrderId,
+        handler: async function (response) {
+          try {
+            await verifyPayment({
+              paymentGroupId: order.paymentGroupId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            toast.success(t('checkout.payment_success', 'Payment successful!'));
+            loadOrder(false);
+          } catch {
+            toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
+            loadOrder(false);
+          }
+        },
+        theme: { color: '#15803d' }
+      });
+      rzp.open();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('checkout.payment_expired', 'Payment window has expired'));
+      loadOrder(false);
+    } finally {
+      setPaymentRetrying(false);
+    }
+  };
+
+  const handleSimulatePaymentSuccess = async () => {
+    if (!simulatedModal) return;
+    try {
+      await verifyPayment({
+        paymentGroupId: simulatedModal.paymentGroupId,
+        razorpayOrderId: simulatedModal.paymentDetails.razorpayOrderId,
+        razorpayPaymentId: `pay_sim_${Date.now()}`,
+        razorpaySignature: 'mock_sig_valid'
+      });
+      toast.success(t('checkout.payment_success', 'Payment successful!'));
+      setSimulatedModal(null);
+      loadOrder(false);
+    } catch {
+      toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
+      setSimulatedModal(null);
+      loadOrder(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafaf7] py-8">
@@ -136,7 +228,7 @@ export default function OrderTracking() {
     );
   }
 
-  const canCancel = isActiveStatus(order.status) && order.status !== 'OUT_FOR_DELIVERY';
+  const canCancel = (isActiveStatus(order.status) && order.status !== 'OUT_FOR_DELIVERY') || order.status === 'AWAITING_PAYMENT';
 
   // Construct audio speech text for ListenButton
   const currentStatusLabel = t(`status.${order.status}`);
@@ -242,6 +334,52 @@ export default function OrderTracking() {
           </div>
         </div>
 
+        {/* Awaiting Payment Banner for Online Orders */}
+        {order.status === 'AWAITING_PAYMENT' && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                <Clock size={24} className="stroke-[2.5]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-black text-lg text-amber-900">
+                  {t('orders.awaiting_payment_heading', 'Payment Required to Confirm Order')}
+                </h3>
+                <p className="text-xs sm:text-sm text-amber-800 mt-1">
+                  {t('orders.awaiting_payment_desc', 'Your produce items are temporarily held for 15 minutes. Please complete payment before time runs out to avoid automatic cancellation.')}
+                </p>
+                {order.paymentExpiresAt && (
+                  <div className="mt-3 inline-flex items-center gap-2 bg-amber-200/90 text-amber-950 font-mono text-xs font-bold px-3 py-1 rounded-full">
+                    <Clock size={13} />
+                    <span>
+                      {t('checkout.time_left', 'Time remaining: ')}
+                      <CountdownText expiresAt={order.paymentExpiresAt} onExpired={() => loadOrder(false)} />
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-amber-200">
+              <Button
+                variant="primary"
+                onClick={handlePayNow}
+                loading={paymentRetrying}
+                className="text-xs sm:text-sm font-bold"
+              >
+                <CreditCard size={15} className="mr-1.5" />
+                {t('orders.pay_now', 'Pay Now')}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCancelModalOpen(true)}
+                className="text-xs sm:text-sm font-bold text-red-600 border-red-200 hover:bg-red-50"
+              >
+                {t('orders.cancel_order', 'Cancel Order')}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* 2-Column Detail Layout: Timeline (Left) + Summary & Contacts (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Tracking Timeline Column: BIG Vertical Progress Tracker */}
@@ -251,7 +389,7 @@ export default function OrderTracking() {
               {t('orders.tracking_history')}
             </h3>
 
-            <OrderTimeline history={order.history} currentStatus={order.status} />
+            <OrderTimeline history={order.history} currentStatus={order.status} paymentMode={order.paymentMode} />
           </div>
 
           {/* Right Column: Address, Farmer, and Items */}
@@ -479,6 +617,66 @@ export default function OrderTracking() {
           onConfirm={handleCancel}
           onCancel={() => setCancelModalOpen(false)}
         />
+        {/* Test / Simulated Payment Modal */}
+        {simulatedModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5 border border-gray-100">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-emerald-600" />
+                  <h3 className="font-black text-lg text-gray-900">
+                    {t('checkout.gateway_simulation', 'Razorpay Gateway (Test Mode)')}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSimulatedModal(null)}
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 bg-gray-50 p-4 rounded-2xl text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>{t('orders.order_id', 'Order ID')}</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    #{order.id}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>{t('checkout.gateway_order_id', 'Gateway Order ID')}</span>
+                  <span className="font-mono text-xs text-gray-700 truncate max-w-[200px]">
+                    {simulatedModal.paymentDetails.razorpayOrderId}
+                  </span>
+                </div>
+                <div className="flex justify-between font-bold text-base text-gray-900 pt-2 border-t border-gray-200">
+                  <span>{t('common.total', 'Total Amount')}</span>
+                  <span className="text-emerald-700">
+                    {formatINR(simulatedModal.paymentDetails.amountPaise ? simulatedModal.paymentDetails.amountPaise / 100 : order.totalAmount)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  fullWidth
+                  onClick={() => setSimulatedModal(null)}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </Button>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={handleSimulatePaymentSuccess}
+                >
+                  {t('checkout.simulate_success', 'Simulate Success')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

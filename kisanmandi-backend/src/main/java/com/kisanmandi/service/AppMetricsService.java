@@ -100,6 +100,23 @@ public class AppMetricsService {
                 .increment();
     }
 
+    public void incrementPaymentEvents(String type, String outcome) {
+        Counter.builder("payment_events_total")
+                .description("Total payment webhook events processed")
+                .tag("type", type != null ? type : "UNKNOWN")
+                .tag("outcome", outcome != null ? outcome : "UNKNOWN")
+                .register(meterRegistry)
+                .increment();
+    }
+
+    public void incrementPayments(String status) {
+        Counter.builder("payments_total")
+                .description("Total payment status transitions")
+                .tag("status", status != null ? status : "UNKNOWN")
+                .register(meterRegistry)
+                .increment();
+    }
+
     public MeterRegistry getMeterRegistry() {
         return meterRegistry;
     }

@@ -218,7 +218,9 @@ export default function FarmerOrderDetail() {
               {/* Total Summary */}
               <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
                 <span className="text-sm font-bold text-neutral-600">
-                  {t('orders.total_amount')} (Cash on Delivery)
+                  {order.paymentMode === 'ONLINE'
+                    ? `${t('orders.total_amount')} (Paid online. Nothing to collect.)`
+                    : `${t('orders.total_amount')} (Cash on Delivery)`}
                 </span>
                 <span className="text-xl sm:text-2xl font-extrabold text-brand-900 font-mono">
                   {formatINR(order.totalAmount)}

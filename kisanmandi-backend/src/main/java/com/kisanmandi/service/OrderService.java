@@ -2,17 +2,17 @@ package com.kisanmandi.service;
 
 import com.kisanmandi.dto.*;
 import com.kisanmandi.entity.*;
-import com.kisanmandi.exception.CartEmptyException;
-import com.kisanmandi.exception.InsufficientStockException;
-import com.kisanmandi.exception.InvalidStatusTransitionException;
-import com.kisanmandi.exception.ProductUnavailableException;
-import com.kisanmandi.exception.ResourceNotFoundException;
-import com.kisanmandi.repository.AddressRepository;
-import com.kisanmandi.repository.CartItemRepository;
-import com.kisanmandi.repository.OrderRepository;
-import com.kisanmandi.repository.ProductRepository;
-import com.kisanmandi.repository.UserRepository;
+import com.kisanmandi.event.LowStockDetectedEvent;
+import com.kisanmandi.event.OrderPlacedEvent;
+import com.kisanmandi.exception.*;
+import com.kisanmandi.service.payment.GatewayOrder;
+import com.kisanmandi.service.payment.PaymentGatewayException;
+import com.kisanmandi.repository.*;
+import lombok.Builder;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,11 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -36,27 +36,78 @@ public class OrderService {
     private final AddressRepository addressRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final com.kisanmandi.repository.ReviewRepository reviewRepository;
+    private final ReviewRepository reviewRepository;
     private final AppMetricsService appMetricsService;
-    private final NotificationService notificationService;
     private final PaymentService paymentService;
-    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
-    @org.springframework.beans.factory.annotation.Value("${app.auth.require-verified-email:false}")
-    private boolean requireVerifiedEmail;
+    @Data
+    @Builder
+    public static class PreparedOnlineCheckout {
+        private String paymentGroupId;
+        private Long amountPaise;
+        private LocalDateTime paymentExpiresAt;
+        private List<Order> orders;
+        private User customer;
+    }
+
+    public CheckoutResponse checkout(Long customerId, CheckoutRequest request) {
+        if (request.getPaymentMode() == PaymentMode.ONLINE) {
+            if (!paymentService.isPaymentEnabled()) {
+                throw new IllegalArgumentException("Online payments are currently disabled");
+            }
+
+            PreparedOnlineCheckout prep = checkoutOnlineStep1(customerId, request);
+
+            GatewayOrder gatewayOrder;
+            try {
+                gatewayOrder = paymentService.createGatewayOrder(
+                        prep.getPaymentGroupId(),
+                        prep.getAmountPaise(),
+                        "INR",
+                        customerId
+                );
+            } catch (Exception e) {
+                log.error("Failed to create Razorpay order for paymentGroupId={}, running compensating transaction: {}",
+                        prep.getPaymentGroupId(), e.getMessage());
+                compensateOnlineCheckoutFailure(prep.getPaymentGroupId(), e.getMessage());
+                paymentService.markFailed(prep.getPaymentGroupId(), e.getMessage());
+                throw new PaymentGatewayException("Payment gateway is temporarily unavailable. Please try again later.", e);
+            }
+
+            paymentService.recordGatewayOrderId(prep.getPaymentGroupId(), gatewayOrder.id());
+
+            List<OrderSummaryResponse> summaries = prep.getOrders().stream()
+                    .map(this::mapToSummary)
+                    .collect(Collectors.toList());
+
+            return CheckoutResponse.builder()
+                    .orders(summaries)
+                    .payment(CheckoutPaymentDetails.builder()
+                            .keyId(paymentService.getKeyId())
+                            .razorpayOrderId(gatewayOrder.id())
+                            .amountPaise(prep.getAmountPaise())
+                            .currency("INR")
+                            .expiresAt(prep.getPaymentExpiresAt())
+                            .customerPrefill(CustomerPrefill.builder()
+                                    .name(prep.getCustomer().getName())
+                                    .email(prep.getCustomer().getEmail())
+                                    .phone(prep.getCustomer().getPhone())
+                                    .build())
+                            .build())
+                    .build();
+        } else {
+            return checkoutCod(customerId, request);
+        }
+    }
 
     @Transactional
-    public List<OrderSummaryResponse> checkout(Long customerId, CheckoutRequest request) {
+    public PreparedOnlineCheckout checkoutOnlineStep1(Long customerId, CheckoutRequest request) {
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
-        if (requireVerifiedEmail && !customer.isEmailVerified()) {
-            throw new com.kisanmandi.exception.EmailNotVerifiedException("Please verify your email address to checkout.");
-        }
-
         List<CartItem> cartItems = cartItemRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
         if (cartItems.isEmpty()) {
-            appMetricsService.incrementCheckoutFailures("cart_empty");
             throw new CartEmptyException("Cart is empty");
         }
 
@@ -66,7 +117,145 @@ public class OrderService {
             throw new ResourceNotFoundException("Address not found");
         }
 
-        // Group items by farmer
+        String paymentGroupId = UUID.randomUUID().toString();
+        LocalDateTime paymentExpiresAt = LocalDateTime.now().plusMinutes(paymentService.getWindowMinutes());
+
+        Map<Long, List<CartItem>> itemsByFarmer = cartItems.stream()
+                .collect(Collectors.groupingBy(item -> item.getProduct().getFarmer().getId()));
+
+        List<Order> createdOrders = new ArrayList<>();
+        BigDecimal grandTotal = BigDecimal.ZERO;
+
+        for (Map.Entry<Long, List<CartItem>> entry : itemsByFarmer.entrySet()) {
+            Long farmerId = entry.getKey();
+            List<CartItem> farmerItems = entry.getValue();
+
+            User farmer = userRepository.findById(farmerId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Farmer not found"));
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            Order order = Order.builder()
+                    .customer(customer)
+                    .farmer(farmer)
+                    .paymentMode(PaymentMode.ONLINE)
+                    .paymentStatus(PaymentStatus.PENDING)
+                    .status(OrderStatus.AWAITING_PAYMENT)
+                    .paymentGroupId(paymentGroupId)
+                    .paymentExpiresAt(paymentExpiresAt)
+                    .refundStatus(RefundStatus.NONE)
+                    .shipName(address.getFullName())
+                    .shipPhone(address.getPhone())
+                    .shipLine1(address.getLine1())
+                    .shipCity(address.getCity())
+                    .shipState(address.getState())
+                    .shipPincode(address.getPincode())
+                    .build();
+
+            for (CartItem cItem : farmerItems) {
+                Product p = cItem.getProduct();
+                if (!p.isPubliclyVisible()) {
+                    if (appMetricsService != null) appMetricsService.incrementCheckoutFailures("product_unavailable");
+                    throw new ProductUnavailableException(p.getName() + " is no longer available.");
+                }
+
+                int updatedRows = productRepository.decreaseStock(p.getId(), cItem.getQuantity());
+                if (updatedRows == 0) {
+                    if (appMetricsService != null) appMetricsService.incrementCheckoutFailures("insufficient_stock");
+                    throw new InsufficientStockException(p.getName() + ": not enough stock or product unavailable");
+                }
+
+                BigDecimal lineTotal = p.getPricePerUnit().multiply(cItem.getQuantity()).setScale(2, RoundingMode.HALF_UP);
+                totalAmount = totalAmount.add(lineTotal);
+
+                OrderItem orderItem = OrderItem.builder()
+                        .product(p)
+                        .productName(p.getName())
+                        .unit(p.getUnit())
+                        .imageUrl(p.getImageUrl())
+                        .quantity(cItem.getQuantity())
+                        .priceAtOrder(p.getPricePerUnit())
+                        .lineTotal(lineTotal)
+                        .build();
+
+                order.addItem(orderItem);
+            }
+
+            order.setTotalAmount(totalAmount);
+            grandTotal = grandTotal.add(totalAmount);
+
+            OrderStatusHistory history = OrderStatusHistory.builder()
+                    .status(OrderStatus.AWAITING_PAYMENT)
+                    .changedByRole("SYSTEM")
+                    .note("Awaiting payment")
+                    .build();
+            order.addHistory(history);
+
+            Order savedOrder = orderRepository.save(order);
+            createdOrders.add(savedOrder);
+
+            if (appMetricsService != null) {
+                appMetricsService.incrementOrdersPlaced("ONLINE");
+                appMetricsService.incrementOrderStatusChanges(OrderStatus.AWAITING_PAYMENT.name());
+            }
+        }
+
+        long amountPaise = grandTotal.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValueExact();
+
+        paymentService.createPaymentRecord(paymentGroupId, customerId, amountPaise, "INR", paymentExpiresAt);
+
+        cartItemRepository.deleteByCustomerId(customerId);
+
+        return PreparedOnlineCheckout.builder()
+                .paymentGroupId(paymentGroupId)
+                .amountPaise(amountPaise)
+                .paymentExpiresAt(paymentExpiresAt)
+                .orders(createdOrders)
+                .customer(customer)
+                .build();
+    }
+
+    @Transactional
+    public void compensateOnlineCheckoutFailure(String paymentGroupId, String reason) {
+        List<Order> orders = orderRepository.findByPaymentGroupId(paymentGroupId);
+        for (Order order : orders) {
+            int updated = orderRepository.updateStatusIfCurrentStatus(order.getId(), OrderStatus.AWAITING_PAYMENT, OrderStatus.CANCELLED);
+            if (updated > 0) {
+                for (OrderItem item : order.getItems()) {
+                    if (item.getProduct() != null) {
+                        productRepository.increaseStock(item.getProduct().getId(), item.getQuantity());
+                    }
+                }
+                order.setStatus(OrderStatus.CANCELLED);
+                OrderStatusHistory history = OrderStatusHistory.builder()
+                        .status(OrderStatus.CANCELLED)
+                        .changedByRole("SYSTEM")
+                        .note("Payment gateway order creation failed: " + reason)
+                        .build();
+                order.addHistory(history);
+                orderRepository.save(order);
+                if (appMetricsService != null) {
+                    appMetricsService.incrementOrderStatusChanges(OrderStatus.CANCELLED.name());
+                }
+            }
+        }
+    }
+
+    @Transactional
+    public CheckoutResponse checkoutCod(Long customerId, CheckoutRequest request) {
+        User customer = userRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        List<CartItem> cartItems = cartItemRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
+        if (cartItems.isEmpty()) {
+            throw new CartEmptyException("Cart is empty");
+        }
+
+        Address address = addressRepository.findById(request.getAddressId())
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+        if (!address.getUser().getId().equals(customerId)) {
+            throw new ResourceNotFoundException("Address not found");
+        }
+
         Map<Long, List<CartItem>> itemsByFarmer = cartItems.stream()
                 .collect(Collectors.groupingBy(item -> item.getProduct().getFarmer().getId()));
 
@@ -83,7 +272,10 @@ public class OrderService {
             Order order = Order.builder()
                     .customer(customer)
                     .farmer(farmer)
-                    .paymentMode(request.getPaymentMode())
+                    .paymentMode(PaymentMode.COD)
+                    .paymentStatus(PaymentStatus.PENDING)
+                    .status(OrderStatus.PLACED)
+                    .refundStatus(RefundStatus.NONE)
                     .shipName(address.getFullName())
                     .shipPhone(address.getPhone())
                     .shipLine1(address.getLine1())
@@ -94,17 +286,15 @@ public class OrderService {
 
             for (CartItem cItem : farmerItems) {
                 Product p = cItem.getProduct();
-                
                 if (!p.isPubliclyVisible()) {
-                    appMetricsService.incrementCheckoutFailures("product_unavailable");
+                    if (appMetricsService != null) appMetricsService.incrementCheckoutFailures("product_unavailable");
                     throw new ProductUnavailableException(p.getName() + " is no longer available.");
                 }
 
-                // Atomic stock check and decrease
                 BigDecimal previousStock = p.getQuantityAvailable();
                 int updatedRows = productRepository.decreaseStock(p.getId(), cItem.getQuantity());
                 if (updatedRows == 0) {
-                    appMetricsService.incrementCheckoutFailures("insufficient_stock");
+                    if (appMetricsService != null) appMetricsService.incrementCheckoutFailures("insufficient_stock");
                     throw new InsufficientStockException(p.getName() + ": not enough stock or product unavailable");
                 }
 
@@ -113,7 +303,7 @@ public class OrderService {
                     if (previousStock.compareTo(new BigDecimal("5.00")) > 0
                             && remainingStock.compareTo(new BigDecimal("5.00")) <= 0) {
                         if (eventPublisher != null) {
-                            eventPublisher.publishEvent(new com.kisanmandi.event.LowStockDetectedEvent(
+                            eventPublisher.publishEvent(new LowStockDetectedEvent(
                                     p.getId(),
                                     farmer.getId(),
                                     p.getName(),
@@ -140,50 +330,51 @@ public class OrderService {
             }
 
             order.setTotalAmount(totalAmount);
-            
+
             OrderStatusHistory history = OrderStatusHistory.builder()
                     .status(OrderStatus.PLACED)
                     .changedByRole("CUSTOMER")
-                    .note("Order placed")
+                    .note("Order placed (Cash on Delivery)")
                     .build();
             order.addHistory(history);
 
             Order savedOrder = orderRepository.save(order);
             createdOrders.add(savedOrder);
+
             if (appMetricsService != null) {
-                appMetricsService.incrementOrdersPlaced(savedOrder.getPaymentMode().name());
+                appMetricsService.incrementOrdersPlaced("COD");
                 appMetricsService.incrementOrderStatusChanges(OrderStatus.PLACED.name());
             }
 
             if (eventPublisher != null) {
-                eventPublisher.publishEvent(new com.kisanmandi.event.OrderPlacedEvent(savedOrder));
+                eventPublisher.publishEvent(new OrderPlacedEvent(savedOrder));
             }
         }
 
         cartItemRepository.deleteByCustomerId(customerId);
 
-        return createdOrders.stream().map(this::mapToSummary).collect(Collectors.toList());
+        List<OrderSummaryResponse> summaries = createdOrders.stream()
+                .map(this::mapToSummary)
+                .collect(Collectors.toList());
+
+        return CheckoutResponse.builder()
+                .orders(summaries)
+                .build();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PageResponse<OrderSummaryResponse> myOrders(Long customerId, OrderStatus status, int page, int size) {
+        paymentService.expirePendingOrders(LocalDateTime.now());
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        
-        Page<Order> orderPage;
-        // In Phase 3, we don't have a status filter on customer side repo yet (as per req, farmer has it),
-        // but let's implement it if passed just in case, or ignore. The req said:
-        // CustomerOrderController /api/customer/orders: GET (?status=&page=&size=)
-        // I will implement a filter if needed, but let's just get all for customer if status is null.
-        // Wait, I only added `findByCustomerId` in repo without status. Let me fetch all and let the user see them.
-        // I will just use `findByCustomerId`.
-        orderPage = orderRepository.findByCustomerId(customerId, pageable);
+        Page<Order> orderPage = orderRepository.findByCustomerId(customerId, pageable);
 
         List<OrderSummaryResponse> content = orderPage.getContent().stream()
                 .filter(o -> status == null || o.getStatus() == status)
                 .map(this::mapToSummary)
                 .collect(Collectors.toList());
 
-        return new PageResponse<OrderSummaryResponse>(
+        return new PageResponse<>(
                 content,
                 orderPage.getNumber(),
                 orderPage.getSize(),
@@ -192,8 +383,10 @@ public class OrderService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public OrderResponse getMyOrder(Long customerId, Long orderId) {
+        paymentService.expirePendingOrders(LocalDateTime.now());
+
         Order order = orderRepository.findWithItemsAndHistoryById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
@@ -213,19 +406,30 @@ public class OrderService {
             throw new ResourceNotFoundException("Order not found");
         }
 
-        if (order.getStatus() != OrderStatus.PLACED) {
-            throw new InvalidStatusTransitionException("You can only cancel an order that is PLACED.");
+        if (order.getStatus() == OrderStatus.AWAITING_PAYMENT) {
+            if (order.getPaymentGroupId() != null) {
+                paymentService.cancelPaymentGroup(order.getPaymentGroupId(), request != null ? request.getReason() : "Customer cancelled");
+            } else {
+                cancelSingleOrder(order, request != null ? request.getReason() : "Customer cancelled");
+            }
+            return;
         }
 
-        // Atomic check-and-update
-        int updated = orderRepository.updateStatusIfCurrentStatus(orderId, OrderStatus.PLACED, OrderStatus.CANCELLED);
+        if (order.getStatus() != OrderStatus.PLACED) {
+            throw new InvalidStatusTransitionException("You can only cancel an order that is PLACED or AWAITING_PAYMENT.");
+        }
+
+        cancelSingleOrder(order, request != null ? request.getReason() : "Customer cancelled");
+    }
+
+    private void cancelSingleOrder(Order order, String reason) {
+        int updated = orderRepository.updateStatusIfCurrentStatus(order.getId(), order.getStatus(), OrderStatus.CANCELLED);
         if (updated == 0) {
-            throw new InvalidStatusTransitionException("Order is no longer in PLACED state");
+            throw new InvalidStatusTransitionException("Order is no longer in cancellable state");
         }
 
         order.setStatus(OrderStatus.CANCELLED);
 
-        // Restore stock
         for (OrderItem item : order.getItems()) {
             if (item.getProduct() != null) {
                 productRepository.increaseStock(item.getProduct().getId(), item.getQuantity());
@@ -235,9 +439,9 @@ public class OrderService {
         OrderStatusHistory history = OrderStatusHistory.builder()
                 .status(OrderStatus.CANCELLED)
                 .changedByRole("CUSTOMER")
-                .note(request != null ? request.getReason() : null)
+                .note(reason)
                 .build();
-        
+
         order.addHistory(history);
         orderRepository.save(order);
         if (appMetricsService != null) {
@@ -245,33 +449,26 @@ public class OrderService {
         }
 
         if (paymentService != null) {
-            paymentService.processRefund(order, request != null ? request.getReason() : "Customer cancelled");
-        }
-
-        if (eventPublisher != null) {
-            eventPublisher.publishEvent(new com.kisanmandi.event.OrderStatusChangedEvent(
-                    order.getId(),
-                    order,
-                    OrderStatus.PLACED,
-                    OrderStatus.CANCELLED,
-                    "CUSTOMER",
-                    request != null ? request.getReason() : null
-            ));
+            paymentService.processRefund(order, reason);
         }
     }
 
-    private OrderSummaryResponse mapToSummary(Order order) {
+    public OrderSummaryResponse mapToSummary(Order order) {
         String firstItemName = "";
         String firstItemImage = "";
         if (!order.getItems().isEmpty()) {
-            OrderItem firstItem = order.getItems().get(0);
-            firstItemName = firstItem.getProductName();
-            firstItemImage = firstItem.getImageUrl();
+            OrderItem first = order.getItems().get(0);
+            firstItemName = first.getProductName();
+            firstItemImage = first.getImageUrl();
         }
 
         return OrderSummaryResponse.builder()
                 .id(order.getId())
                 .status(order.getStatus())
+                .paymentMode(order.getPaymentMode())
+                .paymentStatus(order.getPaymentStatus())
+                .paymentGroupId(order.getPaymentGroupId())
+                .paymentExpiresAt(order.getPaymentExpiresAt())
                 .totalAmount(order.getTotalAmount())
                 .itemCount(order.getItems().size())
                 .firstItemName(firstItemName)
@@ -281,7 +478,7 @@ public class OrderService {
                 .build();
     }
 
-    private OrderResponse mapToResponse(Order order, boolean forCustomer) {
+    public OrderResponse mapToResponse(Order order, boolean forCustomer) {
         List<OrderItemResponse> itemResponses = order.getItems().stream()
                 .map(item -> OrderItemResponse.builder()
                         .id(item.getId())
@@ -308,6 +505,9 @@ public class OrderService {
                 .status(order.getStatus())
                 .paymentMode(order.getPaymentMode())
                 .paymentStatus(order.getPaymentStatus())
+                .paymentGroupId(order.getPaymentGroupId())
+                .paymentExpiresAt(order.getPaymentExpiresAt())
+                .refundStatus(order.getRefundStatus())
                 .razorpayOrderId(order.getRazorpayOrderId())
                 .refundAmount(order.getRefundAmount())
                 .refundedAt(order.getRefundedAt())
@@ -328,16 +528,16 @@ public class OrderService {
             builder.farmerPhone(order.getFarmer().getPhone());
 
             if (order.getStatus() == OrderStatus.DELIVERED) {
-                java.util.Optional<Review> reviewOpt = reviewRepository.findByOrderId(order.getId());
+                Optional<Review> reviewOpt = reviewRepository.findByOrderId(order.getId());
                 if (reviewOpt.isEmpty()) {
                     builder.canReview(true);
                 } else {
                     builder.canReview(false);
                     Review review = reviewOpt.get();
-                    
+
                     String[] parts = review.getCustomer().getFullName().trim().split("\\s+");
                     String reviewerName = parts.length == 1 ? parts[0] : parts[0] + " " + parts[parts.length - 1].substring(0, 1).toUpperCase() + ".";
-                    
+
                     ReviewResponse rr = ReviewResponse.builder()
                             .id(review.getId())
                             .rating(review.getRating())

@@ -120,6 +120,7 @@ public class SecurityConfig {
                     "/api/config/public",
                     "/api/public/config",
                     "/api/payment/webhook",
+                    "/api/payments/razorpay/webhook",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**"

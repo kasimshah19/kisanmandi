@@ -28,11 +28,13 @@ public class ConfigController {
     @Operation(summary = "Get public configuration and active feature flags")
     @GetMapping({"/api/config/public", "/api/public/config"})
     public ResponseEntity<PublicConfigResponse> getPublicConfig() {
+        boolean onlineEnabled = paymentService.isPaymentEnabled();
         return ResponseEntity.ok(PublicConfigResponse.builder()
                 .emailEnabled(emailService.isEmailEnabled())
                 .requireVerifiedEmail(requireVerifiedEmail)
-                .paymentEnabled(paymentService.isPaymentEnabled())
-                .razorpayKeyId(paymentService.isPaymentEnabled() ? paymentService.getKeyId() : "")
+                .paymentEnabled(onlineEnabled)
+                .onlinePaymentsEnabled(onlineEnabled)
+                .razorpayKeyId(onlineEnabled ? paymentService.getKeyId() : "")
                 .build());
     }
 }

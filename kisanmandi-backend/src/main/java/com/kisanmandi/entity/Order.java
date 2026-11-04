@@ -54,6 +54,12 @@ public class Order {
     @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
+    @Column(name = "payment_group_id", length = 36)
+    private String paymentGroupId;
+
+    @Column(name = "payment_expires_at")
+    private LocalDateTime paymentExpiresAt;
+
     @Column(name = "razorpay_order_id", length = 100)
     private String razorpayOrderId;
 
@@ -71,6 +77,11 @@ public class Order {
 
     @Column(name = "refunded_at")
     private LocalDateTime refundedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_status", nullable = false, length = 20)
+    @Builder.Default
+    private RefundStatus refundStatus = RefundStatus.NONE;
 
     // Address Snapshot
     @Column(nullable = false, length = 100)

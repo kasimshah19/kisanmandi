@@ -32,11 +32,15 @@ public class FarmerOrderService {
     public PageResponse<OrderSummaryResponse> list(Long farmerId, OrderStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         
+        if (status == OrderStatus.AWAITING_PAYMENT) {
+            return new PageResponse<>(List.of(), page, size, 0, 0);
+        }
+
         Page<Order> orderPage;
         if (status != null) {
             orderPage = orderRepository.findByFarmerIdAndStatus(farmerId, status, pageable);
         } else {
-            orderPage = orderRepository.findByFarmerId(farmerId, pageable);
+            orderPage = orderRepository.findByFarmerIdAndStatusNot(farmerId, OrderStatus.AWAITING_PAYMENT, pageable);
         }
 
         List<OrderSummaryResponse> content = orderPage.getContent().stream()
@@ -57,7 +61,7 @@ public class FarmerOrderService {
         Order order = orderRepository.findWithItemsAndHistoryById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
-        if (!order.getFarmer().getId().equals(farmerId)) {
+        if (!order.getFarmer().getId().equals(farmerId) || order.getStatus() == OrderStatus.AWAITING_PAYMENT) {
             throw new ResourceNotFoundException("Order not found");
         }
 

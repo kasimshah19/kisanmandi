@@ -436,9 +436,22 @@
     "payment_verify_failed": "Payment verification failed",
     "gateway_simulation": "Razorpay Gateway (Test Mode)",
     "gateway_order_id": "Gateway Order ID",
-    "simulate_success": "Simulate Success"
+    "simulate_success": "Simulate Success",
+    "razorpay_trust_badge": "100% Secure Payment powered by Razorpay",
+    "payment_not_completed": "Payment not completed",
+    "items_kept_message": "Your items are safely reserved for 15 minutes. Complete your payment to confirm your order.",
+    "time_left": "Time remaining: {{time}}",
+    "try_payment_again": "Try payment again",
+    "view_my_orders": "View in My Orders",
+    "payment_expired": "Payment window has expired",
+    "payment_dismissed": "Payment not completed. Your items are kept for 15 minutes.",
+    "payment_failed": "Payment failed"
   },
   "orders": {
+    "awaiting_payment_notice": "Payment pending — items reserved for 15 minutes",
+    "awaiting_payment_heading": "Payment Required to Confirm Order",
+    "awaiting_payment_desc": "Your produce items are temporarily held for 15 minutes. Please complete payment before time runs out to avoid automatic cancellation.",
+    "pay_now": "Pay now",
     "my_orders_title": "My Orders",
     "my_orders_subtitle": "Track your past and active produce deliveries",
     "incoming_orders_title": "Incoming Customer Orders",
@@ -717,6 +730,7 @@
     "insufficient_stock": "Not enough stock available. Please reduce quantity."
   },
   "status": {
+    "AWAITING_PAYMENT": "Awaiting Payment",
     "PENDING": "Pending",
     "PLACED": "Placed",
     "ACCEPTED": "Accepted",
@@ -727,6 +741,9 @@
     "REJECTED": "Could not accept",
     "APPROVED": "Approved",
     "NOT_SUBMITTED": "Not Submitted",
+    "awaiting_payment": {
+      "next": "Waiting for your online payment to confirm the order"
+    },
     "placed": {
       "next": "Order sent. Waiting for the farmer to accept"
     },
@@ -748,6 +765,7 @@
     "cancelled": {
       "next": "Order cancelled"
     },
+    "AWAITING_PAYMENT_next": "Waiting for your online payment to confirm the order",
     "PLACED_next": "Order sent. Waiting for the farmer to accept",
     "ACCEPTED_next": "Farmer accepted your order",
     "PACKED_next": "Your order is being packed",

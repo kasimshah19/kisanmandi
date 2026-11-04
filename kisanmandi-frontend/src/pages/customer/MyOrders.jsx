@@ -12,9 +12,13 @@ import {
   Banknote,
   X,
   ArrowRight,
-  ShoppingBag
+  ShoppingBag,
+  Clock,
+  CreditCard
 } from 'lucide-react';
 import { orderService } from '../../services/orderService';
+import { retryPayment, verifyPayment } from '../../services/paymentService';
+import { loadRazorpayScript } from '../../utils/razorpay';
 import OrderStatusBadge, { StatusPill } from '../../components/OrderStatusBadge';
 import Pagination from '../../components/Pagination';
 import EmptyState from '../../components/EmptyState';
@@ -31,6 +35,30 @@ import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 10;
+
+function CountdownText({ expiresAt, onExpired }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const update = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft('00:00 (Expired)');
+        if (onExpired) onExpired();
+      } else {
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+        setTimeLeft(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+      }
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return <span>{timeLeft}</span>;
+}
 
 export default function MyOrders() {
   const { t } = useTranslation();
@@ -99,8 +127,59 @@ export default function MyOrders() {
     { key: 'CANCELLED', label: t('orders.tab_cancelled'), count: cancelledCount }
   ];
 
+  const handlePayNow = async (order) => {
+    try {
+      await loadRazorpayScript();
+      const paymentDetails = await retryPayment(order.paymentGroupId);
+      if (!window.Razorpay || !paymentDetails.keyId || paymentDetails.keyId.startsWith('fake_')) {
+        toast('Redirecting to order details for payment simulation...', { icon: 'ℹ️' });
+        navigate(`/customer/orders/${order.id}`);
+        return;
+      }
+      const rzp = new window.Razorpay({
+        key: paymentDetails.keyId,
+        amount: paymentDetails.amountPaise,
+        currency: paymentDetails.currency || 'INR',
+        name: 'KisanMandi',
+        description: `Order #${order.id}`,
+        order_id: paymentDetails.razorpayOrderId,
+        handler: async function (response) {
+          try {
+            await verifyPayment({
+              paymentGroupId: order.paymentGroupId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            toast.success(t('checkout.payment_success', 'Payment successful!'));
+            loadOrders();
+          } catch {
+            toast.error(t('checkout.payment_verify_failed', 'Payment verification failed'));
+          }
+        },
+        theme: { color: '#15803d' }
+      });
+      rzp.open();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('checkout.payment_expired', 'Payment window has expired'));
+      loadOrders();
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    try {
+      await orderService.cancel(orderId, 'Customer cancelled awaiting payment');
+      toast.success(t('orders.timeline_cancelled', 'Order cancelled'));
+      loadOrders();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('errors.generic_retry'));
+    }
+  };
+
   const getStatusBorderClass = (status) => {
     switch (status) {
+      case 'AWAITING_PAYMENT':
+        return 'border-l-6 border-l-amber-500';
       case 'DELIVERED':
         return 'border-l-6 border-l-green-600';
       case 'OUT_FOR_DELIVERY':
@@ -334,6 +413,40 @@ export default function MyOrders() {
                       <StatusPill status={order.status} size="sm" />
                     </div>
                   </div>
+
+                  {/* Awaiting Payment Banner for Online Orders */}
+                  {order.status === 'AWAITING_PAYMENT' && (
+                    <div className="bg-amber-50/90 px-5 sm:px-6 py-3 border-b border-amber-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 text-amber-900 font-semibold">
+                        <Clock size={16} className="text-amber-700 shrink-0" />
+                        <span>{t('orders.awaiting_payment_notice', 'Payment pending — items reserved for 15 minutes')}</span>
+                        {order.paymentExpiresAt && (
+                          <span className="font-mono font-bold bg-amber-200/80 text-amber-950 px-2 py-0.5 rounded">
+                            <CountdownText expiresAt={order.paymentExpiresAt} onExpired={loadOrders} />
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => handlePayNow(order)}
+                          className="text-xs font-bold py-1.5 px-3"
+                        >
+                          <CreditCard size={13} className="mr-1" />
+                          {t('orders.pay_now', 'Pay now')}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCancelOrder(order.id)}
+                          className="text-xs font-bold py-1.5 px-3 text-red-600 border-red-200 hover:bg-red-50"
+                        >
+                          {t('common.cancel', 'Cancel')}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Order Card Body */}
                   <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

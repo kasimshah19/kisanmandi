@@ -1,24 +1,24 @@
 package com.kisanmandi.controller;
 
-import com.kisanmandi.dto.CancelRequest;
-import com.kisanmandi.dto.CheckoutRequest;
-import com.kisanmandi.dto.OrderResponse;
-import com.kisanmandi.dto.OrderSummaryResponse;
-import com.kisanmandi.dto.PageResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kisanmandi.dto.*;
 import com.kisanmandi.entity.OrderStatus;
 import com.kisanmandi.service.AuthService;
+import com.kisanmandi.service.IdempotencyService;
 import com.kisanmandi.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "Customer Orders", description = "Customer checkout and order tracking")
 @RestController
@@ -28,17 +28,52 @@ public class CustomerOrderController {
 
     private final OrderService orderService;
     private final AuthService authService;
+    private final IdempotencyService idempotencyService;
+    private final ObjectMapper objectMapper;
 
     @Operation(summary = "Checkout active cart into farmer orders")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Orders placed successfully"),
             @ApiResponse(responseCode = "400", description = "Cart empty or invalid address"),
-            @ApiResponse(responseCode = "409", description = "Insufficient stock or product unavailable")
+            @ApiResponse(responseCode = "409", description = "Insufficient stock or duplicate request in-progress"),
+            @ApiResponse(responseCode = "422", description = "Idempotency key reused with different payload")
     })
     @PostMapping("/checkout")
-    public ResponseEntity<List<OrderSummaryResponse>> checkout(
-            @Valid @RequestBody CheckoutRequest request) {
-        return new ResponseEntity<>(orderService.checkout(authService.getCurrentUser().getId(), request), HttpStatus.CREATED);
+    public ResponseEntity<?> checkout(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @Valid @RequestBody CheckoutRequest request,
+            HttpServletRequest httpRequest) {
+
+        Long userId = authService.getCurrentUser().getId();
+        String rawBody;
+        try {
+            rawBody = objectMapper.writeValueAsString(request);
+        } catch (JsonProcessingException e) {
+            rawBody = request.toString();
+        }
+
+        String fingerprint = idempotencyService.computeFingerprint(userId, httpRequest.getMethod(), httpRequest.getRequestURI(), rawBody);
+
+        IdempotencyService.CheckResult check = idempotencyService.checkAndLock(userId, idempotencyKey, fingerprint);
+        if (check.isReplay()) {
+            return ResponseEntity.status(check.getResponseStatus())
+                    .header("Idempotent-Replay", "true")
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .body(check.getResponseBody());
+        }
+
+        try {
+            CheckoutResponse response = orderService.checkout(userId, request);
+            String responseJson = objectMapper.writeValueAsString(response);
+            idempotencyService.complete(userId, idempotencyKey, HttpStatus.CREATED.value(), responseJson);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            idempotencyService.fail(userId, idempotencyKey);
+            throw e;
+        } catch (Exception e) {
+            idempotencyService.fail(userId, idempotencyKey);
+            throw new RuntimeException(e);
+        }
     }
 
     @Operation(summary = "List customer orders with optional status filter")
@@ -56,12 +91,12 @@ public class CustomerOrderController {
         return ResponseEntity.ok(orderService.getMyOrder(authService.getCurrentUser().getId(), id));
     }
 
-    @Operation(summary = "Cancel a PLACED customer order")
+    @Operation(summary = "Cancel a PLACED or AWAITING_PAYMENT customer order")
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancelOrder(
+    public ResponseEntity<Void> cancel(
             @PathVariable Long id,
-            @Valid @RequestBody(required = false) CancelRequest request) {
+            @RequestBody(required = false) CancelRequest request) {
         orderService.cancel(authService.getCurrentUser().getId(), id, request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

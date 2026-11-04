@@ -17,6 +17,9 @@ public class OrderResponse {
     private OrderStatus status;
     private PaymentMode paymentMode;
     private PaymentStatus paymentStatus;
+    private String paymentGroupId;
+    private LocalDateTime paymentExpiresAt;
+    private com.kisanmandi.entity.RefundStatus refundStatus;
     private String razorpayOrderId;
     private BigDecimal refundAmount;
     private LocalDateTime refundedAt;
